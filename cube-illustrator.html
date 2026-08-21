@@ -50,6 +50,12 @@ svg.out{max-width:100%;height:auto;display:block}
 .btn.mv{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;min-width:38px;padding:8px 6px}
 .btn.mod{border-color:var(--teal);color:var(--teal)}
 .btn[aria-pressed=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
+.ang{display:flex;align-items:center;gap:8px;margin-bottom:7px;color:var(--muted);font-size:12px}
+.ang b{width:12px}
+.ang input[type=range]{flex:1;accent-color:var(--teal);min-width:0}
+.ang input[type=number]{width:64px;background:#0c1e35;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 6px;font:inherit;font-size:13px}
+.btn.slot{min-width:44px}
+.btn.slot.empty{border-style:dashed;color:var(--muted);background:transparent}
 .grp{margin-bottom:11px}
 .grp b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.4px}
 label.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer;padding:3px 0}
@@ -91,6 +97,18 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <h2>돌리기</h2>
         <div class="row" id="rots"></div>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="snap" checked> 드래그를 놓으면 반듯하게 정렬</label>
+        <label class="chk"><input type="checkbox" id="lock"> 드래그 잠그기 (지금 각도 보호)</label>
+        <h2 style="margin-top:22px">각도 (°)</h2>
+        <div id="angles"></div>
+        <h2 style="margin-top:22px">각도 슬롯</h2>
+        <div class="row" id="slots"></div>
+        <p class="hint" style="margin:8px 0 0">빈 슬롯을 누르면 지금 각도가 저장되고, 채워진 슬롯을 누르면 그 각도로 돌아갑니다. 채워진 슬롯에 우클릭하면 지금 각도로 덮어씁니다.</p>
+        <h2 style="margin-top:22px">투명도</h2>
+        <div class="ang">
+          <input type="range" id="alpha" min="0" max="90" step="5" value="0">
+          <input type="number" id="alphanum" min="0" max="90" step="5" value="0">
+        </div>
+        <p class="hint" style="margin:2px 0 0">0%면 불투명입니다. 높일수록 앞면이 비쳐 뒷면 스티커가 보이고, 보조면은 자동으로 꺼집니다.</p>
         <h2 style="margin-top:22px">보조면</h2>
         <div id="auxbox"></div>
       </div>
@@ -184,7 +202,7 @@ const FACES={
 const FKEYS=['U','D','F','B','R','L'];
 
 /* ========== 상태 ========== */
-let state={}, orient=[[1,0,0],[0,1,0],[0,0,1]], pick='B', view='3d';
+let state={}, orient=[[1,0,0],[0,1,0],[0,0,1]], pick='B', view='3d', cubeAlpha=0;
 let auxOn={U:true,D:true,F:true,B:true,R:true,L:true};
 function resetState(){state={};FKEYS.forEach(f=>{
   state[f]=[0,1,2].map(r=>[0,1,2].map(c=>(r===1&&c===1)?CENTER[f]:'X'));});}
@@ -195,7 +213,7 @@ const applyM=(M,p)=>[M[0][0]*p[0]+M[0][1]*p[1]+M[0][2]*p[2],
 const matMul=(A,B)=>[0,1,2].map(i=>[0,1,2].map(j=>A[i][0]*B[0][j]+A[i][1]*B[1][j]+A[i][2]*B[2][j]));
 const ROT={x:[[1,0,0],[0,0,1],[0,-1,0]],y:[[0,0,-1],[0,1,0],[1,0,0]],z:[[0,1,0],[-1,0,0],[0,0,1]]};
 const inv=M=>[0,1,2].map(i=>[0,1,2].map(j=>M[j][i]));
-function rotate(code){const M=ROT[code[0]];orient=matMul(code.length>1?inv(M):M,orient);drawCube();persist();}
+function rotate(code){const M=ROT[code[0]];orient=matMul(code.length>1?inv(M):M,orient);drawCube();updateAngleUI();persist();}
 
 /* ---- 자유 회전(드래그) 도우미 ---- */
 function rotM(ax,a){const c=Math.cos(a),s=Math.sin(a);
@@ -250,20 +268,30 @@ function auxSide(f){                       /* 보조면이 화면 어디로 나�
   if(p[1]>Math.abs(p[0])*0.6) return '아래쪽';
   return p[0]>0 ? '뒤쪽' : '왼쪽';
 }
-function buildCubeSVG(){
-  const W=680,H=620, draw=[], useAux=!dragging3d&&isAligned(orient);
+function buildCubeSVG(tight){
+  const W=680,H=620, draw=[];
   FKEYS.forEach(f=>{
     const vis=faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5)));
-    if(vis) draw.push([f,0,false]);
-    else if(useAux&&auxOn[f]) draw.push([f,AUXGAP,true]);
+    if(cubeAlpha>0) draw.push([f,0,false,vis]);          /* 투명 모드: 6면 전부, 보조면 없이 */
+    else if(vis) draw.push([f,0,false,true]);
+    else if(auxOn[f]) draw.push([f,AUXGAP,true,false]);
   });
-  let bounds=[];
-  draw.forEach(([f,o])=>{bounds=bounds.concat(faceOutline(f,o).map(p=>applyM(orient,p)));});
-  if(!bounds.length) bounds=faceOutline('U',0).map(p=>applyM(orient,p));
-  const T=fit(bounds,W,H,12), groups=[];
-  draw.forEach(([face,off,isAux])=>{
+  let T;
+  if(tight){                       /* 내보내기: 내용에 딱 맞게 */
+    let bounds=[];
+    draw.forEach(([f,o])=>{bounds=bounds.concat(faceOutline(f,o).map(p=>applyM(orient,p)));});
+    if(!bounds.length) bounds=faceOutline('U',0).map(p=>applyM(orient,p));
+    T=fit(bounds,W,H,12);
+  }else{                           /* 화면: 어떤 각도·보조면에도 흔들리지 않는 고정 프레임 */
+    const R3=Math.hypot(1.5+AUXGAP,1.5,1.5), fx=R3/Math.sqrt(DIST*DIST-R3*R3);
+    const s=Math.min((W-24)/(2*fx),(H-24)/(2*fx)), cx=W/2, cy=H/2;
+    T=q=>{const r=projPt(q);return [r[0]*s+cx,r[1]*s+cy];};
+  }
+  const groups=[];
+  draw.forEach(([face,off,isAux,vis])=>{
     const depth=camPt(applyM(orient,mul(FACES[face].n,1.5+off)))[2];
-    let s='<g>';
+    /* 투명 모드에서 카메라를 향한 면만 반투명하게: 뒷면이 그 사이로 비쳐 보인다 */
+    let s=(cubeAlpha>0&&vis)?`<g opacity="${(1-cubeAlpha).toFixed(2)}">`:'<g>';
     if(!isAux) s+=`<path d="${path(faceOutline(face,off).map(p=>T(applyM(orient,p))),true)}" fill="#16202b"/>`;
     for(let r=0;r<3;r++)for(let c=0;c<3;c++){
       const pts=shrink(quad(face,r,c,off),isAux?INSET_AUX:INSET).map(p=>T(applyM(orient,p)));
@@ -280,22 +308,25 @@ function buildCubeSVG(){
 
 /* ========== 큐브 그리기 (탑다운, OLL·PLL 도해) ========== */
 function buildTopSVG(){
-  const C=100, D=40, G=12, P=10, S=3*C;
-  const x0=P+D+G, W=x0+S+G+D+P;
+  /* t = 모든 검정 윤곽의 두께. 면 테두리·칸 사이·띠 테두리가 전부 같은 값 */
+  const t=4, cw=96, C=cw+t, Sf=3*C+t, D=40, G=12, P=10;
+  const x0=P+D+G, W=x0+Sf+G+D+P;
   const rr=(x,y,w,h,col,rx,attrs)=>
     `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${col}"${attrs||''}/>`;
   const cell=(f,r,c,x,y,w,h,rx)=>rr(x,y,w,h,COLORS[state[f][r][c]][0],rx,
     ` class="st" data-f="${f}" data-r="${r}" data-c="${c}" style="cursor:pointer"`);
-  const back=(x,y,w,h)=>rr(x-3.5,y-3.5,w+7,h+7,'#111',8);
+  const back=(x,y,w,h,rx)=>rr(x-t,y-t,w+2*t,h+2*t,'#111',rx);
   let s=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${W}" width="${Math.round(W*1.1)}" height="${Math.round(W*1.1)}">`;
-  s+=rr(x0-7,x0-7,S+14,S+14,'#111',13);              /* 윗면 뒤판 */
+  s+=rr(x0,x0,Sf,Sf,'#111',14);                      /* 윗면 뒤판 */
   for(let r=0;r<3;r++)for(let c=0;c<3;c++)           /* 윗면 9칸: 뒤(B쪽)가 위 */
-    s+=cell('U',r,c,x0+c*C+4.5,x0+r*C+4.5,C-9,C-9,15);
+    s+=cell('U',r,c,x0+t+c*C,x0+t+r*C,cw,cw,12);
+  const y1=x0+Sf+G;
   for(let c=0;c<3;c++){                              /* 옆면 윗줄 12칸 */
-    s+=back(x0+c*C+4.5,P,C-9,D)      +cell('B',0,2-c,x0+c*C+4.5,P,C-9,D,6);        /* 위 = B */
-    s+=back(x0+c*C+4.5,x0+S+G,C-9,D) +cell('F',0,c,  x0+c*C+4.5,x0+S+G,C-9,D,6);   /* 아래 = F */
-    s+=back(P,x0+c*C+4.5,D,C-9)      +cell('L',0,c,  P,x0+c*C+4.5,D,C-9,6);        /* 왼쪽 = L */
-    s+=back(x0+S+G,x0+c*C+4.5,D,C-9) +cell('R',0,2-c,x0+S+G,x0+c*C+4.5,D,C-9,6);   /* 오른쪽 = R */
+    const p=x0+t+c*C;
+    s+=back(p,P,cw,D,8) +cell('B',0,2-c,p,P,cw,D,5);       /* 위 = B */
+    s+=back(p,y1,cw,D,8)+cell('F',0,c,  p,y1,cw,D,5);      /* 아래 = F */
+    s+=back(P,p,D,cw,8) +cell('L',0,c,  P,p,D,cw,5);       /* 왼쪽 = L */
+    s+=back(y1,p,D,cw,8)+cell('R',0,2-c,y1,p,D,cw,5);      /* 오른쪽 = R */
   }
   return s+'</svg>';
 }
@@ -328,8 +359,8 @@ function bindStickers(){
 }
 function renderAux(){
   const box=document.getElementById('auxbox'), hid=hiddenFaces();
-  if(!isAligned(orient)){
-    box.innerHTML='<p class="hint" style="margin:0">반듯한 각도에서만 쓸 수 있습니다.</p>';
+  if(cubeAlpha>0){
+    box.innerHTML='<p class="hint" style="margin:0">투명 모드에서는 보조면 대신 뒷면이 비쳐 보입니다.</p>';
     return;
   }
   box.innerHTML=hid.map(f=>
@@ -342,6 +373,7 @@ let drag3=null;
 const stage1El=document.getElementById('stage1');
 stage1El.addEventListener('pointerdown',e=>{
   if(view!=='3d') return;
+  if(document.getElementById('lock').checked) return;
   if(e.target.classList&&e.target.classList.contains('st')) return;
   e.preventDefault();
   drag3={x:e.clientX,y:e.clientY};
@@ -354,7 +386,7 @@ addEventListener('pointermove',e=>{
   dragging3d=true;
   const Sp=0.0075, R=matMul(rotM('x',dy*Sp),rotM('y',dx*Sp));
   orient=matMul(CMT,matMul(R,matMul(CM,orient)));   /* 화면 기준 회전 */
-  drawCube();
+  drawCube(); updateAngleUI();
 });
 addEventListener('pointerup',()=>{
   if(!drag3) return;
@@ -362,7 +394,7 @@ addEventListener('pointerup',()=>{
   if(dragging3d){
     dragging3d=false;
     orient=document.getElementById('snap').checked?snapOrient(orient):orthonormalize(orient);
-    drawCube(); persist();
+    drawCube(); updateAngleUI(); persist();
   }
 });
 
@@ -379,12 +411,12 @@ document.querySelectorAll('#views .btn').forEach(b=>b.onclick=()=>setView(b.data
 const pal=document.getElementById('pal');
 ORDER.forEach(k=>{
   const b=document.createElement('button');
-  b.className='chip'; b.dataset.k=k; b.setAttribute('aria-pressed',k===pick); b.title=COLORS[k][1];
+  b.className='chip'; b.dataset.col=k; b.setAttribute('aria-pressed',k===pick); b.title=COLORS[k][1];
   b.innerHTML=`<i style="background:${COLORS[k][0]}"></i><span>${COLORS[k][1]}</span>`;
   b.onclick=()=>{pick=k;[...pal.children].forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');persist();};
   pal.appendChild(b);
 });
-function reflectPick(){[...pal.children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.k===pick));}
+function reflectPick(){[...pal.children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.col===pick));}
 
 /* 돌리기 버튼: 회전축을 타원 화살표로 */
 function icon(kind,rev){
@@ -405,7 +437,64 @@ document.getElementById('rots').innerHTML=ROTBTN.map(([k,p,t])=>
   `<button class="btn ico" title="${t}" data-rot="${k}${p}">${icon(k,!!p)}</button>`).join('');
 document.querySelectorAll('[data-rot]').forEach(b=>b.onclick=()=>rotate(b.dataset.rot));
 document.getElementById('reset').onclick=()=>{resetState();orient=[[1,0,0],[0,1,0],[0,0,1]];
-  FKEYS.forEach(f=>auxOn[f]=true);drawCube();persist();};
+  FKEYS.forEach(f=>auxOn[f]=true);drawCube();updateAngleUI();persist();};
+
+/* 각도 슬라이더: orient = Rx(X)·Ry(Y)·Rz(Z) */
+const AXES=['x','y','z'];
+document.getElementById('angles').innerHTML=AXES.map(ax=>
+  `<div class="ang"><b>${ax.toUpperCase()}</b>
+   <input type="range" id="rg-${ax}" min="-180" max="180" step="1" value="0">
+   <input type="number" id="num-${ax}" min="-180" max="180" step="1" value="0"></div>`).join('');
+const rg=ax=>document.getElementById('rg-'+ax), num=ax=>document.getElementById('num-'+ax);
+function eulerFromOrient(M){
+  const b=Math.asin(Math.max(-1,Math.min(1,M[0][2])));
+  let a,c;
+  if(Math.abs(Math.cos(b))<1e-6){a=Math.atan2(M[2][1],M[1][1]);c=0;}   /* 짐벌락: Z를 0으로 */
+  else{a=Math.atan2(-M[1][2],M[2][2]);c=Math.atan2(-M[0][1],M[0][0]);}
+  return [a/RAD,b/RAD,c/RAD];
+}
+const orientFromEuler=(x,y,z)=>matMul(rotM('x',x*RAD),matMul(rotM('y',y*RAD),rotM('z',z*RAD)));
+function updateAngleUI(){
+  const e=eulerFromOrient(orient);
+  AXES.forEach((ax,i)=>{const v=Math.round(e[i]);rg(ax).value=v;num(ax).value=v;});
+}
+function applyAngles(){
+  orient=orientFromEuler(+num('x').value||0,+num('y').value||0,+num('z').value||0);
+  drawCube();persist();
+}
+AXES.forEach(ax=>{
+  rg(ax).addEventListener('input',()=>{num(ax).value=rg(ax).value;applyAngles();});
+  num(ax).addEventListener('input',()=>{rg(ax).value=num(ax).value;applyAngles();});
+});
+
+/* 투명도 */
+const alRg=document.getElementById('alpha'), alNum=document.getElementById('alphanum');
+function setAlpha(v){
+  v=Math.max(0,Math.min(90,+v||0));
+  cubeAlpha=v/100; alRg.value=v; alNum.value=v;
+  drawCube(); persist();
+}
+alRg.addEventListener('input',()=>setAlpha(alRg.value));
+alNum.addEventListener('input',()=>setAlpha(alNum.value));
+
+/* 각도 슬롯 */
+let slots=[null,null,null];
+const okMat=m=>Array.isArray(m)&&m.length===3&&m.every(r=>Array.isArray(r)&&r.length===3&&r.every(x=>typeof x==='number'));
+function renderSlots(){
+  const el=document.getElementById('slots');
+  el.innerHTML=slots.map((s,i)=>
+    `<button class="btn slot${s?'':' empty'}" data-slot="${i}" title="${s?'클릭: 불러오기 / 우클릭: 지금 각도로 덮어쓰기':'클릭: 지금 각도 저장'}">${i+1}</button>`).join('');
+  el.querySelectorAll('[data-slot]').forEach(b=>{
+    const i=+b.dataset.slot;
+    const save=msg=>{slots[i]=orient.map(r=>r.slice());renderSlots();persist();toast(msg);};
+    b.onclick=()=>{
+      if(slots[i]){orient=slots[i].map(r=>r.slice());drawCube();updateAngleUI();persist();toast(`슬롯 ${i+1} 각도로 이동했습니다`);}
+      else save(`슬롯 ${i+1}에 저장했습니다`);
+    };
+    b.oncontextmenu=e=>{e.preventDefault();save(`슬롯 ${i+1}에 덮어썼습니다`);};
+  });
+}
+renderSlots();
 
 /* ========== 회전기호 도해 ========== */
 const MOVEC='#FFFFFF', STATC='#CFD6DD';
@@ -558,7 +647,7 @@ document.getElementById('keys').innerHTML=
       <button class="btn mv mod" data-mod="2">2</button></div></div>`;
 const ta=document.getElementById('alg');
 function setVal(v){ta.value=v;drawAlg();persist();}
-document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+document.querySelectorAll('#keys [data-k]').forEach(b=>b.onclick=()=>{
   const v=ta.value.trim(); setVal((v?v+' ':'')+b.dataset.k);});
 document.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{
   const t=ta.value.trim().split(/\s+/).filter(Boolean); if(!t.length)return;
@@ -609,7 +698,7 @@ async function copy(svg,tr){
     await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('클립보드에 복사했습니다');
   }catch(e){toast('이 브라우저에서는 복사가 막혀 있습니다. 저장을 쓰세요');}
 }
-const cubeSVG=()=>view==='top'?buildTopSVG():buildCubeSVG();
+const cubeSVG=()=>view==='top'?buildTopSVG():buildCubeSVG(true);
 document.getElementById('save1').onclick=()=>save(cubeSVG(),document.getElementById('trans').checked,view==='top'?'cube-top.png':'cube.png');
 document.getElementById('copy1').onclick=()=>copy(cubeSVG(),document.getElementById('trans').checked);
 document.getElementById('save2').onclick=()=>save(buildAlgSVG(),document.getElementById('trans2').checked,'algorithm.png');
@@ -617,6 +706,7 @@ document.getElementById('copy2').onclick=()=>copy(buildAlgSVG(),document.getElem
 document.getElementById('trans').onchange=persist;
 document.getElementById('trans2').onchange=persist;
 document.getElementById('snap').onchange=persist;
+document.getElementById('lock').onchange=persist;
 
 /* 탭 */
 const t1=document.getElementById('t1'),t2=document.getElementById('t2');
@@ -633,9 +723,10 @@ let saveTimer=null;
 function persistNow(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
-      state,orient,auxOn,pick,view,tab:activeTab,zoom,
+      state,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,
       alg:ta.value,
       snap:document.getElementById('snap').checked,
+      lock:document.getElementById('lock').checked,
       trans:document.getElementById('trans').checked,
       trans2:document.getElementById('trans2').checked
     }));
@@ -652,13 +743,16 @@ function loadLocal(){
       FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
         const v=d.state[f][r]&&d.state[f][r][c];
         state[f][r][c]=COLORS[v]?v:'X';}});
-    if(Array.isArray(d.orient)&&d.orient.length===3&&d.orient.every(r=>Array.isArray(r)&&r.length===3&&r.every(x=>typeof x==='number')))
-      orient=d.orient;
+    if(okMat(d.orient)) orient=d.orient;
+    if(Array.isArray(d.slots)&&d.slots.length===3){slots=d.slots.map(s=>okMat(s)?s:null);renderSlots();}
     if(d.auxOn) FKEYS.forEach(f=>{if(typeof d.auxOn[f]==='boolean')auxOn[f]=d.auxOn[f];});
     if(COLORS[d.pick]){pick=d.pick;reflectPick();}
     if(typeof d.alg==='string') ta.value=d.alg;
     if(ZL.includes(d.zoom)){zoom=d.zoom;document.getElementById('zlab').textContent=Math.round(zoom*100)+'%';}
     if(typeof d.snap==='boolean') document.getElementById('snap').checked=d.snap;
+    if(typeof d.lock==='boolean') document.getElementById('lock').checked=d.lock;
+    if(typeof d.alpha==='number'){cubeAlpha=Math.max(0,Math.min(.9,d.alpha));
+      alRg.value=Math.round(cubeAlpha*100);alNum.value=Math.round(cubeAlpha*100);}
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
@@ -667,5 +761,6 @@ function loadLocal(){
 }
 
 loadLocal();
+updateAngleUI();
 drawCube(); drawAlg();
 </script>
