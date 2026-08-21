@@ -1,0 +1,671 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>큐브 일러스트 제작소 · 큐마길</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
+<style>
+@font-face{font-family:'Paperlogy';src:url('https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-9Black.woff2') format('woff2');font-weight:900;font-display:swap}
+:root{--navy:#0e2440;--navy-2:#132e4f;--line:#22456f;--teal:#4dd8cf;--ink:#eaf3f8;--muted:#8fb0c9}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--navy);color:var(--ink);
+  font-family:Pretendard,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
+  background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
+  background-size:29px 29px}
+header{padding:26px 24px 18px;border-bottom:1px solid var(--line)}
+.wrap{max-width:1240px;margin:0 auto}
+h1{font-family:'Paperlogy',Pretendard,sans-serif;font-weight:900;font-size:30px;margin:0;letter-spacing:-1px}
+h1 .a{color:#fff}h1 .b{color:var(--teal)}
+.sub{color:var(--muted);font-size:14px;margin-top:6px}
+nav{display:flex;gap:8px;margin-top:18px}
+nav button{background:transparent;border:1.5px solid var(--line);color:var(--muted);
+  padding:9px 18px;border-radius:9px;font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
+nav button[aria-selected=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
+main{max-width:1240px;margin:0 auto;padding:24px}
+.panel{display:none}.panel.on{display:block}
+.grid{display:grid;grid-template-columns:308px 1fr;gap:22px;align-items:start}
+@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.card{background:var(--navy-2);border:1px solid var(--line);border-radius:14px;padding:18px}
+.card+.card{margin-top:14px}
+.card h2{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:700}
+.card h2+h2{margin-top:22px}
+.stage{background:#fff;border-radius:14px;padding:12px;display:flex;justify-content:center;align-items:center;min-height:360px;overflow:auto}
+#stage1{touch-action:none}
+svg.out{max-width:100%;height:auto;display:block}
+
+.pal{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:8px}
+.chip{position:relative;aspect-ratio:1;border:none;background:none;padding:0 0 15px;cursor:pointer}
+.chip i{display:block;width:100%;height:100%;border-radius:4px;border:2.5px solid #12233a;transition:transform .12s}
+.chip:hover i{transform:scale(1.07)}
+.chip[aria-pressed=true] i{box-shadow:0 0 0 3px var(--teal)}
+.chip span{position:absolute;left:0;right:0;bottom:0;font-size:10.5px;color:var(--muted);text-align:center}
+
+.row{display:flex;flex-wrap:wrap;gap:7px;align-items:center}
+.btn{background:#17365c;border:1px solid var(--line);color:var(--ink);border-radius:8px;
+  padding:8px 12px;font:inherit;font-size:13.5px;font-weight:600;cursor:pointer;line-height:1}
+.btn:hover{border-color:var(--teal)}
+.btn.pri{background:var(--teal);color:#08243a;border-color:var(--teal)}
+.btn.gh{background:transparent}
+.btn.ico{padding:7px;display:grid;place-items:center}
+.btn.ico svg{display:block}
+.btn.mv{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;min-width:38px;padding:8px 6px}
+.btn.mod{border-color:var(--teal);color:var(--teal)}
+.btn[aria-pressed=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
+.grp{margin-bottom:11px}
+.grp b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.4px}
+label.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer;padding:3px 0}
+input[type=checkbox]{accent-color:var(--teal);width:16px;height:16px;flex:none}
+.hint{font-size:12.5px;color:var(--muted);line-height:1.7;margin:12px 0 0}
+textarea{width:100%;background:#0c1e35;border:1px solid var(--line);color:var(--ink);border-radius:10px;
+  padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;resize:vertical;min-height:74px}
+textarea:focus{outline:2px solid var(--teal);outline-offset:1px}
+.err{color:#ffb4a8;font-size:13px;margin-top:8px;min-height:17px}
+.zoom{margin-left:auto;display:flex;align-items:center;gap:7px;color:var(--muted);font-size:13px}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(70px);
+  background:var(--teal);color:#08243a;padding:11px 20px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:.25s;pointer-events:none}
+.toast.on{opacity:1;transform:translateX(-50%)}
+.foot{color:var(--muted);font-size:12.5px;padding:8px 24px 40px;max-width:1240px;margin:0 auto}
+kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:ui-monospace,monospace}
+</style>
+
+<header><div class="wrap">
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span></h1>
+  <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
+  <nav>
+    <button id="t1" aria-selected="true">큐브 색칠</button>
+    <button id="t2" aria-selected="false">회전기호 도해</button>
+  </nav>
+</div></header>
+
+<main>
+<section class="panel on" id="p1"><div class="grid">
+  <div>
+    <div class="card">
+      <h2>보기</h2>
+      <div class="row" id="views" style="margin-bottom:14px">
+        <button class="btn" data-view="3d" aria-pressed="true">입체</button>
+        <button class="btn" data-view="top" aria-pressed="false">탑다운 (OLL·PLL)</button>
+      </div>
+      <h2>색</h2>
+      <div class="pal" id="pal"></div>
+      <div id="only3d">
+        <h2>돌리기</h2>
+        <div class="row" id="rots"></div>
+        <label class="chk" style="margin-top:8px"><input type="checkbox" id="snap" checked> 드래그를 놓으면 반듯하게 정렬</label>
+        <h2 style="margin-top:22px">보조면</h2>
+        <div id="auxbox"></div>
+      </div>
+      <h2>저장 설정</h2>
+      <label class="chk"><input type="checkbox" id="trans"> 배경 투명하게</label>
+      <div class="row" style="margin-top:14px">
+        <button class="btn pri" id="save1">PNG 저장</button>
+        <button class="btn" id="copy1">복사</button>
+        <button class="btn gh" id="reset">초기화</button>
+      </div>
+      <p class="hint">스티커를 눌러 칠합니다. 끌면 이어서 칠해지고, <b>이미 그 색인 칸을 누르면 회색으로 돌아갑니다.</b> 센터 6칸은 배색 기준이라 초기화해도 남습니다. 입체 보기에서 큐브 바깥 빈 곳을 끌면 큐브가 자유롭게 돌아갑니다. 탑다운 보기는 윗면과 옆면 윗줄을 위에서 내려다본 그림이라 OLL·PLL 도해에 씁니다. 두 보기는 같은 큐브를 공유합니다.</p>
+    </div>
+  </div>
+  <div class="card"><div class="stage" id="stage1"></div></div>
+</div></section>
+
+<section class="panel" id="p2"><div class="grid">
+  <div>
+    <div class="card">
+      <h2>회전기호</h2>
+      <textarea id="alg" spellcheck="false">R U2 R' U' R U R'</textarea>
+      <div class="err" id="err"></div>
+      <div id="keys"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn gh" id="undo">마지막 지우기</button>
+        <button class="btn gh" id="clear">전체 지우기</button>
+      </div>
+      <h2>저장 설정</h2>
+      <div class="row">
+        <label class="chk"><input type="checkbox" id="trans2"> 배경 투명하게</label>
+        <span class="zoom">크기
+          <button class="btn" id="zout">−</button><span id="zlab">100%</span><button class="btn" id="zin">+</button>
+        </span>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn pri" id="save2">PNG 저장</button>
+        <button class="btn" id="copy2">복사</button>
+      </div>
+      <p class="hint">뒤에 <kbd>'</kbd>는 반대 방향, <kbd>2</kbd>는 180도입니다. <kbd>U'2</kbd>처럼 겹쳐 쓸 수 있고, <kbd>U' U'</kbd>는 <kbd>U'2</kbd>로 자동 정리됩니다. 움직이는 층만 흰색으로 남고 나머지는 회색으로 깔립니다. 뒤나 안쪽이라 실제로는 보이지 않는 <kbd>B</kbd>·<kbd>S</kbd>는 점선 화살표로 그립니다.</p>
+    </div>
+  </div>
+  <div class="card"><div class="stage" id="stage2"></div></div>
+</div></section>
+</main>
+
+<div class="foot">두 도구가 같은 투시각(요 −33°, 피치 20°, 카메라 거리 9)을 씁니다. 교본 안에서 그림들의 각도가 어긋나지 않습니다. 작업 내용은 이 브라우저에 자동 저장되어 새로고침해도 유지됩니다.</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ========== 투영 ========== */
+const RAD=Math.PI/180, TH=-33*RAD, PH=20*RAD, DIST=9;
+function camPt(p){
+  const [x,y,z]=p;
+  const x1= x*Math.cos(TH)+z*Math.sin(TH);
+  const z1=-x*Math.sin(TH)+z*Math.cos(TH);
+  const y2= y*Math.cos(PH)-z1*Math.sin(PH);
+  const z2= y*Math.sin(PH)+z1*Math.cos(PH);
+  return [x1,y2,z2];
+}
+function projPt(p){const c=camPt(p);const k=1/(DIST-c[2]);return [c[0]*k,-c[1]*k];}
+function faceVisible(n,c0){const n2=camPt(n),c=camPt(c0);
+  return n2[0]*(-c[0])+n2[1]*(-c[1])+n2[2]*(DIST-c[2])>0;}
+const add=(a,b)=>[a[0]+b[0],a[1]+b[1],a[2]+b[2]];
+const mul=(a,s)=>[a[0]*s,a[1]*s,a[2]*s];
+function fit(pts3,W,H,pad){
+  const p=pts3.map(projPt), xs=p.map(q=>q[0]), ys=p.map(q=>q[1]);
+  const mnx=Math.min(...xs),mxx=Math.max(...xs),mny=Math.min(...ys),mxy=Math.max(...ys);
+  const s=Math.min((W-2*pad)/(mxx-mnx),(H-2*pad)/(mxy-mny));
+  const cx=W/2-(mnx+mxx)/2*s, cy=H/2-(mny+mxy)/2*s;
+  return q=>{const r=projPt(q);return [r[0]*s+cx,r[1]*s+cy];};
+}
+const path=(pts,cl)=>'M '+pts.map(p=>p[0].toFixed(2)+' '+p[1].toFixed(2)).join(' L ')+(cl?' Z':'');
+const esc=s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function arcPts(c,u,v,R,start,span){
+  const o=[];
+  for(let i=0;i<=44;i++){const t=(start+span*i/44)*RAD;
+    o.push(add(c,add(mul(u,R*Math.cos(t)),mul(v,R*Math.sin(t)))));}
+  return o;
+}
+
+/* ========== 색 / 면 ========== */
+const COLORS={W:['#FDFDFD','하양'],Y:['#FFD500','노랑'],R:['#D42B23','빨강'],O:['#FF6D1F','주황'],
+              B:['#1B5CD9','파랑'],G:['#12A544','초록'],P:['#FF6FB5','핑크'],X:['#BFC4C9','회색']};
+const ORDER=['B','G','O','R','W','Y','P','X'];
+const CENTER={U:'W',D:'Y',F:'G',B:'B',R:'R',L:'O'};
+const FACES={
+  U:{n:[0,1,0], u:[1,0,0], v:[0,0,1]},   D:{n:[0,-1,0],u:[1,0,0], v:[0,0,-1]},
+  F:{n:[0,0,1], u:[1,0,0], v:[0,-1,0]},  B:{n:[0,0,-1],u:[-1,0,0],v:[0,-1,0]},
+  R:{n:[1,0,0], u:[0,0,-1],v:[0,-1,0]},  L:{n:[-1,0,0],u:[0,0,1], v:[0,-1,0]}
+};
+const FKEYS=['U','D','F','B','R','L'];
+
+/* ========== 상태 ========== */
+let state={}, orient=[[1,0,0],[0,1,0],[0,0,1]], pick='B', view='3d';
+let auxOn={U:true,D:true,F:true,B:true,R:true,L:true};
+function resetState(){state={};FKEYS.forEach(f=>{
+  state[f]=[0,1,2].map(r=>[0,1,2].map(c=>(r===1&&c===1)?CENTER[f]:'X'));});}
+resetState();
+const applyM=(M,p)=>[M[0][0]*p[0]+M[0][1]*p[1]+M[0][2]*p[2],
+                     M[1][0]*p[0]+M[1][1]*p[1]+M[1][2]*p[2],
+                     M[2][0]*p[0]+M[2][1]*p[1]+M[2][2]*p[2]];
+const matMul=(A,B)=>[0,1,2].map(i=>[0,1,2].map(j=>A[i][0]*B[0][j]+A[i][1]*B[1][j]+A[i][2]*B[2][j]));
+const ROT={x:[[1,0,0],[0,0,1],[0,-1,0]],y:[[0,0,-1],[0,1,0],[1,0,0]],z:[[0,1,0],[-1,0,0],[0,0,1]]};
+const inv=M=>[0,1,2].map(i=>[0,1,2].map(j=>M[j][i]));
+function rotate(code){const M=ROT[code[0]];orient=matMul(code.length>1?inv(M):M,orient);drawCube();persist();}
+
+/* ---- 자유 회전(드래그) 도우미 ---- */
+function rotM(ax,a){const c=Math.cos(a),s=Math.sin(a);
+  if(ax==='x')return[[1,0,0],[0,c,-s],[0,s,c]];
+  if(ax==='y')return[[c,0,s],[0,1,0],[-s,0,c]];
+  return[[c,-s,0],[s,c,0],[0,0,1]];}
+const CM=matMul(rotM('x',PH),rotM('y',TH)), CMT=inv(CM);   /* 카메라 회전과 그 역행렬 */
+const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
+function isAligned(M){return M.flat().every(v=>Math.abs(v)<1e-4||Math.abs(Math.abs(v)-1)<1e-4);}
+function snapOrient(M){                    /* 각 축을 가장 가까운 좌표축으로 붙인다 */
+  const cols=[0,1].map(j=>[M[0][j],M[1][j],M[2][j]]), used=[];
+  const sn=cols.map(v=>{
+    let bi=-1;
+    for(let i=0;i<3;i++) if(!used.includes(i)&&(bi<0||Math.abs(v[i])>Math.abs(v[bi]))) bi=i;
+    used.push(bi);
+    const o=[0,0,0]; o[bi]=v[bi]>=0?1:-1; return o;});
+  const c2=cross(sn[0],sn[1]);
+  return [0,1,2].map(i=>[sn[0][i],sn[1][i],c2[i]]);
+}
+function orthonormalize(M){                /* 드래그 누적 오차 정리 */
+  const n=v=>{const l=Math.hypot(v[0],v[1],v[2]);return v.map(x=>x/l);};
+  let r0=n(M[0]);
+  const d=r0[0]*M[1][0]+r0[1]*M[1][1]+r0[2]*M[1][2];
+  const r1=n([M[1][0]-d*r0[0],M[1][1]-d*r0[1],M[1][2]-d*r0[2]]);
+  return [r0,r1,cross(r0,r1)];
+}
+
+/* ========== 큐브 그리기 (입체) ========== */
+const AUXGAP=1.95, INSET=0.90, INSET_AUX=0.865;
+let dragging3d=false;
+function quad(face,r,c,off){
+  const F=FACES[face], base=mul(F.n,1.5+(off||0)), o=[];
+  [[0,0],[1,0],[1,1],[0,1]].forEach(([du,dv])=>{
+    o.push(add(base,add(mul(F.u,-1.5+(c+du)),mul(F.v,-1.5+(r+dv)))));});
+  return o;
+}
+function shrink(pts,k){
+  const g=[0,1,2].map(i=>pts.reduce((s,p)=>s+p[i],0)/pts.length);
+  return pts.map(p=>[0,1,2].map(i=>g[i]+(p[i]-g[i])*k));
+}
+function faceOutline(face,off){
+  const F=FACES[face], base=mul(F.n,1.5+(off||0)), o=[];
+  [[-1.5,-1.5],[1.5,-1.5],[1.5,1.5],[-1.5,1.5]].forEach(([a,b])=>
+    o.push(add(base,add(mul(F.u,a),mul(F.v,b)))));
+  return o;
+}
+function hiddenFaces(){
+  return FKEYS.filter(f=>!faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5))));
+}
+function auxSide(f){                       /* 보조면이 화면 어디로 나가는지 */
+  const p=projPt(applyM(orient,mul(FACES[f].n,1.5+AUXGAP)));
+  if(p[1]>Math.abs(p[0])*0.6) return '아래쪽';
+  return p[0]>0 ? '뒤쪽' : '왼쪽';
+}
+function buildCubeSVG(){
+  const W=680,H=620, draw=[], useAux=!dragging3d&&isAligned(orient);
+  FKEYS.forEach(f=>{
+    const vis=faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5)));
+    if(vis) draw.push([f,0,false]);
+    else if(useAux&&auxOn[f]) draw.push([f,AUXGAP,true]);
+  });
+  let bounds=[];
+  draw.forEach(([f,o])=>{bounds=bounds.concat(faceOutline(f,o).map(p=>applyM(orient,p)));});
+  if(!bounds.length) bounds=faceOutline('U',0).map(p=>applyM(orient,p));
+  const T=fit(bounds,W,H,12), groups=[];
+  draw.forEach(([face,off,isAux])=>{
+    const depth=camPt(applyM(orient,mul(FACES[face].n,1.5+off)))[2];
+    let s='<g>';
+    if(!isAux) s+=`<path d="${path(faceOutline(face,off).map(p=>T(applyM(orient,p))),true)}" fill="#16202b"/>`;
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+      const pts=shrink(quad(face,r,c,off),isAux?INSET_AUX:INSET).map(p=>T(applyM(orient,p)));
+      const st=isAux?'':' stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"';
+      s+=`<path class="st" data-f="${face}" data-r="${r}" data-c="${c}" d="${path(pts,true)}"
+           fill="${COLORS[state[face][r][c]][0]}"${st} style="cursor:pointer"/>`;
+    }
+    groups.push([depth,s+'</g>']);
+  });
+  groups.sort((a,b)=>a[0]-b[0]);
+  return `<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`
+       +groups.map(g=>g[1]).join('')+'</svg>';
+}
+
+/* ========== 큐브 그리기 (탑다운, OLL·PLL 도해) ========== */
+function buildTopSVG(){
+  const C=100, D=40, G=12, P=10, S=3*C;
+  const x0=P+D+G, W=x0+S+G+D+P;
+  const rr=(x,y,w,h,col,rx,attrs)=>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${col}"${attrs||''}/>`;
+  const cell=(f,r,c,x,y,w,h,rx)=>rr(x,y,w,h,COLORS[state[f][r][c]][0],rx,
+    ` class="st" data-f="${f}" data-r="${r}" data-c="${c}" style="cursor:pointer"`);
+  const back=(x,y,w,h)=>rr(x-3.5,y-3.5,w+7,h+7,'#111',8);
+  let s=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${W}" width="${Math.round(W*1.1)}" height="${Math.round(W*1.1)}">`;
+  s+=rr(x0-7,x0-7,S+14,S+14,'#111',13);              /* 윗면 뒤판 */
+  for(let r=0;r<3;r++)for(let c=0;c<3;c++)           /* 윗면 9칸: 뒤(B쪽)가 위 */
+    s+=cell('U',r,c,x0+c*C+4.5,x0+r*C+4.5,C-9,C-9,15);
+  for(let c=0;c<3;c++){                              /* 옆면 윗줄 12칸 */
+    s+=back(x0+c*C+4.5,P,C-9,D)      +cell('B',0,2-c,x0+c*C+4.5,P,C-9,D,6);        /* 위 = B */
+    s+=back(x0+c*C+4.5,x0+S+G,C-9,D) +cell('F',0,c,  x0+c*C+4.5,x0+S+G,C-9,D,6);   /* 아래 = F */
+    s+=back(P,x0+c*C+4.5,D,C-9)      +cell('L',0,c,  P,x0+c*C+4.5,D,C-9,6);        /* 왼쪽 = L */
+    s+=back(x0+S+G,x0+c*C+4.5,D,C-9) +cell('R',0,2-c,x0+S+G,x0+c*C+4.5,D,C-9,6);   /* 오른쪽 = R */
+  }
+  return s+'</svg>';
+}
+
+function drawCube(){
+  document.getElementById('stage1').innerHTML = view==='top'?buildTopSVG():buildCubeSVG();
+  bindStickers();
+  if(view==='3d') renderAux();
+}
+
+/* 칠하기: 같은 색을 다시 누르면 회색으로 */
+let down=false, dragCol=null;
+addEventListener('pointerup',()=>{down=false;dragCol=null;});
+function put(el,col){
+  state[el.dataset.f][+el.dataset.r][+el.dataset.c]=col;
+  el.setAttribute('fill',COLORS[col][0]);
+  persist();
+}
+function bindStickers(){
+  document.querySelectorAll('#stage1 .st').forEach(el=>{
+    el.addEventListener('pointerdown',e=>{
+      e.preventDefault(); down=true;
+      const cur=state[el.dataset.f][+el.dataset.r][+el.dataset.c];
+      dragCol=(e.button===2||cur===pick)?'X':pick;
+      put(el,dragCol);
+    });
+    el.addEventListener('pointerenter',()=>{if(down&&dragCol)put(el,dragCol);});
+  });
+  document.getElementById('stage1').oncontextmenu=e=>e.preventDefault();
+}
+function renderAux(){
+  const box=document.getElementById('auxbox'), hid=hiddenFaces();
+  if(!isAligned(orient)){
+    box.innerHTML='<p class="hint" style="margin:0">반듯한 각도에서만 쓸 수 있습니다.</p>';
+    return;
+  }
+  box.innerHTML=hid.map(f=>
+    `<label class="chk"><input type="checkbox" data-aux="${f}" ${auxOn[f]?'checked':''}> ${auxSide(f)} 보조면 <span style="opacity:.6">(${f})</span></label>`).join('');
+  box.querySelectorAll('[data-aux]').forEach(cb=>cb.onchange=()=>{auxOn[cb.dataset.aux]=cb.checked;drawCube();persist();});
+}
+
+/* 드래그로 자유 회전 (입체 보기, 큐브 바깥 빈 곳) */
+let drag3=null;
+const stage1El=document.getElementById('stage1');
+stage1El.addEventListener('pointerdown',e=>{
+  if(view!=='3d') return;
+  if(e.target.classList&&e.target.classList.contains('st')) return;
+  e.preventDefault();
+  drag3={x:e.clientX,y:e.clientY};
+});
+addEventListener('pointermove',e=>{
+  if(!drag3) return;
+  const dx=e.clientX-drag3.x, dy=e.clientY-drag3.y;
+  if(!dx&&!dy) return;
+  drag3.x=e.clientX; drag3.y=e.clientY;
+  dragging3d=true;
+  const Sp=0.0075, R=matMul(rotM('x',dy*Sp),rotM('y',dx*Sp));
+  orient=matMul(CMT,matMul(R,matMul(CM,orient)));   /* 화면 기준 회전 */
+  drawCube();
+});
+addEventListener('pointerup',()=>{
+  if(!drag3) return;
+  drag3=null;
+  if(dragging3d){
+    dragging3d=false;
+    orient=document.getElementById('snap').checked?snapOrient(orient):orthonormalize(orient);
+    drawCube(); persist();
+  }
+});
+
+/* 보기 전환 */
+function setView(v){
+  view=v;
+  document.querySelectorAll('#views .btn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===v));
+  document.getElementById('only3d').style.display=v==='3d'?'':'none';
+  drawCube(); persist();
+}
+document.querySelectorAll('#views .btn').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+/* 팔레트 */
+const pal=document.getElementById('pal');
+ORDER.forEach(k=>{
+  const b=document.createElement('button');
+  b.className='chip'; b.dataset.k=k; b.setAttribute('aria-pressed',k===pick); b.title=COLORS[k][1];
+  b.innerHTML=`<i style="background:${COLORS[k][0]}"></i><span>${COLORS[k][1]}</span>`;
+  b.onclick=()=>{pick=k;[...pal.children].forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');persist();};
+  pal.appendChild(b);
+});
+function reflectPick(){[...pal.children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.k===pick));}
+
+/* 돌리기 버튼: 회전축을 타원 화살표로 */
+function icon(kind,rev){
+  const cx=12,cy=12, rx=kind==='y'?8.6:(kind==='x'?4.9:7.8), ry=kind==='y'?4.9:(kind==='x'?8.6:7.8);
+  const st=kind==='x'?(rev?100:-80):kind==='y'?(rev?190:10):(rev?200:20);
+  const sp=rev?-282:282, pts=[];
+  for(let i=0;i<=40;i++){const t=(st+sp*i/40)*RAD;pts.push([cx+rx*Math.cos(t),cy+ry*Math.sin(t)]);}
+  const a=pts[pts.length-2],b=pts[pts.length-1];
+  const an=Math.atan2(b[1]-a[1],b[0]-a[0]),L=5.4,w=.5;
+  return `<svg width="22" height="22" viewBox="0 0 24 24" fill="none">`
+    +`<path d="${path(pts)}" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>`
+    +`<polygon points="${b[0].toFixed(1)},${b[1].toFixed(1)} ${(b[0]-L*Math.cos(an-w)).toFixed(1)},${(b[1]-L*Math.sin(an-w)).toFixed(1)} ${(b[0]-L*Math.cos(an+w)).toFixed(1)},${(b[1]-L*Math.sin(an+w)).toFixed(1)}" fill="currentColor"/></svg>`;
+}
+const ROTBTN=[['x','',"앞면이 위로 (x)"],['x',"'","앞면이 아래로 (x')"],
+              ['y','',"앞면이 왼쪽으로 (y)"],['y',"'","앞면이 오른쪽으로 (y')"],
+              ['z','',"앞면이 시계방향 (z)"],['z',"'","앞면이 반시계방향 (z')"]];
+document.getElementById('rots').innerHTML=ROTBTN.map(([k,p,t])=>
+  `<button class="btn ico" title="${t}" data-rot="${k}${p}">${icon(k,!!p)}</button>`).join('');
+document.querySelectorAll('[data-rot]').forEach(b=>b.onclick=()=>rotate(b.dataset.rot));
+document.getElementById('reset').onclick=()=>{resetState();orient=[[1,0,0],[0,1,0],[0,0,1]];
+  FKEYS.forEach(f=>auxOn[f]=true);drawCube();persist();};
+
+/* ========== 회전기호 도해 ========== */
+const MOVEC='#FFFFFF', STATC='#CFD6DD';
+function drawBox(lim,off,T,fill){
+  const items=[];
+  FKEYS.forEach(face=>{
+    const n=FACES[face].n, ax=n[0]?0:(n[1]?1:2), pos=(n[0]+n[1]+n[2])>0;
+    const val=pos?lim[ax][1]:lim[ax][0], oth=[0,1,2].filter(a=>a!==ax);
+    const pts=[[0,0],[1,0],[1,1],[0,1]].map(([i,j])=>{
+      const d=[0,0,0]; d[ax]=val; d[oth[0]]=lim[oth[0]][i]; d[oth[1]]=lim[oth[1]][j];
+      return add(d,off);});
+    const ctr=[0,1,2].map(i=>pts.reduce((s,p)=>s+p[i],0)/4);
+    if(!faceVisible(n,ctr)) return;
+    items.push([pts.reduce((s,p)=>s+camPt(p)[2],0)/4,
+      `<path d="${path(pts.map(T),true)}" fill="${fill}" stroke="#111" stroke-width="3" stroke-linejoin="round"/>`]);
+  });
+  items.sort((a,b)=>a[0]-b[0]);
+  return items.map(i=>i[1]).join('');
+}
+function renderBoxes(list,T){
+  const cz=b=>{let s=0,n=0;for(const a of b.lim[0])for(const bb of b.lim[1])for(const c of b.lim[2]){s+=camPt(add([a,bb,c],b.off))[2];n++;}return s/n;};
+  return list.map(b=>[cz(b),drawBox(b.lim,b.off,T,b.fill)]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('');
+}
+function head(a,b){const an=Math.atan2(b[1]-a[1],b[0]-a[0]),L=11.5,w=.44;
+  return `<polygon points="${b[0].toFixed(1)},${b[1].toFixed(1)} ${(b[0]-L*Math.cos(an-w)).toFixed(1)},${(b[1]-L*Math.sin(an-w)).toFixed(1)} ${(b[0]-L*Math.cos(an+w)).toFixed(1)},${(b[1]-L*Math.sin(an+w)).toFixed(1)}" fill="#111"/>`;}
+function drawArrow(p3,T,dbl,dash){
+  const pts=p3.map(T), d=dash?' stroke-dasharray="8 5.5"':'';
+  let s=`<path d="${path(pts)}" fill="none" stroke="#111" stroke-width="3.4" stroke-linecap="round"${d}/>`;
+  s+=head(pts[pts.length-2],pts[pts.length-1]);
+  if(dbl){
+    const a=pts[pts.length-2],b=pts[pts.length-1];
+    const an=Math.atan2(b[1]-a[1],b[0]-a[0]),k=9.5;
+    const c=[b[0]-k*Math.cos(an),b[1]-k*Math.sin(an)];
+    s+=head([c[0]-Math.cos(an),c[1]-Math.sin(an)],c);
+  }
+  return s;
+}
+const AX={R:0,L:0,M:0,U:1,D:1,E:1,F:2,B:2,S:2};
+const SPAN={R:[0.5,1.5],r:[-0.5,1.5],L:[-1.5,-0.5],l:[-1.5,0.5],M:[-0.5,0.5],
+            U:[0.5,1.5],u:[-0.5,1.5],D:[-1.5,-0.5],d:[-1.5,0.5],E:[-0.5,0.5],
+            F:[0.5,1.5],f:[-0.5,1.5],B:[-1.5,-0.5],b:[-1.5,0.5],S:[-0.5,0.5]};
+const BASE={r:'R',l:'L',u:'U',d:'D',f:'F',b:'B',M:'L',E:'D',S:'F'};
+const GAP=0.40;
+
+function moveDiagram(mv,W,H){
+  const raw=mv.letter, base=BASE[raw]||raw, pr=mv.prime, dbl=mv.dbl;
+  const full=[[-1.5,1.5],[-1.5,1.5],[-1.5,1.5]];
+  const rot='xyz'.includes(raw), mid='MES'.includes(raw);
+  const off=[0,0,0], boxes=[];
+  const gap=(base==='B')?0.80:GAP;
+
+  if(rot){
+    boxes.push({lim:full,off:[0,0,0],fill:MOVEC});
+  }else if(mid){                                   /* 가운데 층: 띄우지 않고 선으로만 */
+    const ax=AX[base];
+    [[-1.5,-0.5],[-0.5,0.5],[0.5,1.5]].forEach((sg,i)=>{
+      const L=full.map(a=>a.slice()); L[ax]=sg;
+      boxes.push({lim:L,off:[0,0,0],fill:i===1?MOVEC:STATC});});
+  }else{
+    const ax=AX[base], sp=SPAN[raw], posSide=sp[1]>1.4;
+    const body=full.map(a=>a.slice()), layer=full.map(a=>a.slice());
+    if(posSide){body[ax]=[-1.5,sp[0]];layer[ax]=[sp[0],1.5];off[ax]= gap;}
+    else       {body[ax]=[sp[1],1.5]; layer[ax]=[-1.5,sp[1]];off[ax]=-gap;}
+    boxes.push({lim:body,off:[0,0,0],fill:STATC},{lim:layer,off:off,fill:MOVEC});
+  }
+
+  /* 화살표 */
+  const sp2=SPAN[raw], m=sp2?(sp2[0]+sp2[1])/2:0, at=i=>mid?0:m+off[i];
+  let arc=null,line=null,dash=false;
+  const R=1.08, ROTR=1.34, SW=dbl?320:275, ST=90-SW;
+  if(rot){
+    /* x축 고리는 거의 옆에서 보게 되어 한 바퀴 그리면 겹친다. 짧은 호로 자른다 */
+    if(raw==='x'){const w=dbl?205:165; arc=arcPts([2.15,0,0],[0,0,1],[0,pr?-1:1,0],1.85,90-w,w);}
+    if(raw==='y') arc=arcPts([0,2.30,0],[0,0,1],[pr?1:-1,0,0],ROTR,ST,SW);
+    if(raw==='z') arc=arcPts([0,0,2.30],[0,1,0],[pr?-1:1,0,0],ROTR,ST,SW);
+  }else if(base==='F'){
+    arc=arcPts([0,0,mid?1.56:1.5+gap],[0,1,0],[pr?-1:1,0,0],R,ST,SW); dash=mid;
+  }else if(base==='B'){
+    arc=arcPts([0,0,1.56],[0,1,0],[pr?1:-1,0,0],R,ST,SW); dash=true;
+  }else{
+    const s=1.15, z=1.53;
+    if(base==='R'){const x=at(0);line=[[x,pr?s:-s,z],[x,pr?-s:s,z]];}
+    if(base==='L'){const x=at(0);line=[[x,pr?-s:s,z],[x,pr?s:-s,z]];}
+    if(base==='U'){const y=at(1);line=[[pr?-s:s,y,z],[pr?s:-s,y,z]];}
+    if(base==='D'){const y=at(1);line=[[pr?s:-s,y,z],[pr?-s:s,y,z]];}
+  }
+
+  let bounds=[];
+  boxes.forEach(b=>{for(const a of b.lim[0])for(const bb of b.lim[1])for(const c of b.lim[2])bounds.push(add([a,bb,c],b.off));});
+  if(arc) bounds=bounds.concat(arc);
+  if(line) bounds=bounds.concat(line);
+  const T=fit(bounds,W,H,9);
+
+  let s=renderBoxes(boxes,T);
+  if(arc) s+=drawArrow(arc,T,dbl,dash);
+  if(line) s+=drawArrow(line,T,dbl,false);
+  return s;
+}
+
+/* ========== 파싱 / 정리 ========== */
+function parseAlg(txt){
+  const toks=txt.trim().split(/[\s,]+/).filter(Boolean), out=[], bad=[];
+  toks.forEach(t=>{
+    const m=t.match(/^([RLUDFBrludfbMESxyz])((?:['’]|2)*)$/);
+    if(!m){bad.push(t);return;}
+    out.push({letter:m[1],prime:/['’]/.test(m[2]),dbl:/2/.test(m[2])});
+  });
+  return {moves:merge(out),bad};
+}
+function merge(list){                               /* U' U' → U'2 */
+  const o=[];
+  list.forEach(m=>{
+    const p=o[o.length-1];
+    if(p&&!p.dbl&&!m.dbl&&p.letter===m.letter&&p.prime===m.prime){p.dbl=true;return;}
+    o.push({...m});
+  });
+  return o;
+}
+const lab=m=>m.letter+(m.prime?"'":'')+(m.dbl?'2':'');
+
+/* ========== 도해 SVG ========== */
+let zoom=1; const ZL=[0.55,0.68,0.82,1,1.2,1.45];
+function buildAlgSVG(){
+  const {moves,bad}=parseAlg(document.getElementById('alg').value);
+  document.getElementById('err').textContent = bad.length?`모르는 기호: ${bad.join(', ')}`:'';
+  if(!moves.length) return '<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140"></svg>';
+  const CW=Math.round(124*zoom), CH=Math.round(132*zoom), LBL=Math.round(40*zoom);
+  const PER=Math.max(1,Math.min(moves.length,Math.floor(880/CW)));
+  const rows=Math.ceil(moves.length/PER);
+  const W=PER*CW, H=rows*(CH+LBL);
+  let s=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+  moves.forEach((mv,i)=>{
+    const x=(i%PER)*CW, y=Math.floor(i/PER)*(CH+LBL);
+    s+=`<g transform="translate(${x},${y})">${moveDiagram(mv,CW,CH)}`
+      +`<text x="${CW/2}" y="${CH+Math.round(27*zoom)}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"`
+      +` font-size="${Math.round(25*zoom)}" font-weight="700" fill="#111">${esc(lab(mv))}</text></g>`;
+  });
+  return s+'</svg>';
+}
+function drawAlg(){document.getElementById('stage2').innerHTML=buildAlgSVG();}
+
+/* 기호 버튼 */
+const KEYS=[['바깥 층',['R','L','U','D','F','B']],['두 층 (넓게)',['r','l','u','d','f','b']],
+            ['가운데 층',['M','E','S']],['큐브 전체',['x','y','z']]];
+document.getElementById('keys').innerHTML=
+  KEYS.map(([t,ks])=>`<div class="grp"><b>${t}</b><div class="row">`
+    +ks.map(k=>`<button class="btn mv" data-k="${k}">${k}</button>`).join('')+`</div></div>`).join('')
+  +`<div class="grp"><b>붙이기</b><div class="row">
+      <button class="btn mv mod" data-mod="'">'</button>
+      <button class="btn mv mod" data-mod="2">2</button></div></div>`;
+const ta=document.getElementById('alg');
+function setVal(v){ta.value=v;drawAlg();persist();}
+document.querySelectorAll('[data-k]').forEach(b=>b.onclick=()=>{
+  const v=ta.value.trim(); setVal((v?v+' ':'')+b.dataset.k);});
+document.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{
+  const t=ta.value.trim().split(/\s+/).filter(Boolean); if(!t.length)return;
+  const m=t.pop().match(/^([RLUDFBrludfbMESxyz])((?:['’]|2)*)$/); if(!m){t.push(m);return;}
+  let pr=/['’]/.test(m[2]), db=/2/.test(m[2]);
+  if(b.dataset.mod==="'") pr=!pr; else db=!db;
+  t.push(m[1]+(pr?"'":'')+(db?'2':'')); setVal(t.join(' '));});
+document.getElementById('undo').onclick=()=>{
+  const t=ta.value.trim().split(/\s+/).filter(Boolean); t.pop(); setVal(t.join(' '));};
+document.getElementById('clear').onclick=()=>setVal('');
+ta.addEventListener('input',()=>{drawAlg();persist();});
+ta.addEventListener('blur',()=>{                    /* 자동 정리 */
+  const {moves,bad}=parseAlg(ta.value); if(bad.length)return;
+  const t=moves.map(lab).join(' '); if(t!==ta.value.trim())setVal(t);});
+function setZoom(d){
+  let i=ZL.indexOf(zoom); i=Math.max(0,Math.min(ZL.length-1,i+d)); zoom=ZL[i];
+  document.getElementById('zlab').textContent=Math.round(zoom*100)+'%'; drawAlg(); persist();}
+document.getElementById('zin').onclick=()=>setZoom(1);
+document.getElementById('zout').onclick=()=>setZoom(-1);
+
+/* ========== 내보내기 ========== */
+function toPNG(svg,tr,scale){
+  return new Promise((res,rej)=>{
+    const m=svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/), w=+m[1], h=+m[2];
+    const img=new Image();
+    img.onload=()=>{
+      const cv=document.createElement('canvas');
+      cv.width=Math.round(w*scale); cv.height=Math.round(h*scale);
+      const g=cv.getContext('2d');
+      if(!tr){g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);}
+      g.drawImage(img,0,0,cv.width,cv.height);
+      cv.toBlob(b=>b?res(b):rej(new Error()),'image/png');
+    };
+    img.onerror=()=>rej(new Error());
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  });
+}
+const toast=t=>{const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
+  clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1900);};
+async function save(svg,tr,name){
+  try{const b=await toPNG(svg,tr,3);const a=document.createElement('a');
+    a.href=URL.createObjectURL(b);a.download=name;a.click();
+    setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('PNG로 저장했습니다');
+  }catch(e){toast('저장하지 못했습니다');}
+}
+async function copy(svg,tr){
+  try{const b=await toPNG(svg,tr,3);
+    await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('클립보드에 복사했습니다');
+  }catch(e){toast('이 브라우저에서는 복사가 막혀 있습니다. 저장을 쓰세요');}
+}
+const cubeSVG=()=>view==='top'?buildTopSVG():buildCubeSVG();
+document.getElementById('save1').onclick=()=>save(cubeSVG(),document.getElementById('trans').checked,view==='top'?'cube-top.png':'cube.png');
+document.getElementById('copy1').onclick=()=>copy(cubeSVG(),document.getElementById('trans').checked);
+document.getElementById('save2').onclick=()=>save(buildAlgSVG(),document.getElementById('trans2').checked,'algorithm.png');
+document.getElementById('copy2').onclick=()=>copy(buildAlgSVG(),document.getElementById('trans2').checked);
+document.getElementById('trans').onchange=persist;
+document.getElementById('trans2').onchange=persist;
+document.getElementById('snap').onchange=persist;
+
+/* 탭 */
+const t1=document.getElementById('t1'),t2=document.getElementById('t2');
+function tab(n){t1.setAttribute('aria-selected',n===1);t2.setAttribute('aria-selected',n===2);
+  document.getElementById('p1').classList.toggle('on',n===1);
+  document.getElementById('p2').classList.toggle('on',n===2);
+  activeTab=n;persist();}
+let activeTab=1;
+t1.onclick=()=>tab(1); t2.onclick=()=>tab(2);
+
+/* ========== 로컬 자동 저장 ========== */
+const LSKEY='cubeIllustrator.v1';
+let saveTimer=null;
+function persistNow(){
+  try{
+    localStorage.setItem(LSKEY,JSON.stringify({
+      state,orient,auxOn,pick,view,tab:activeTab,zoom,
+      alg:ta.value,
+      snap:document.getElementById('snap').checked,
+      trans:document.getElementById('trans').checked,
+      trans2:document.getElementById('trans2').checked
+    }));
+  }catch(e){}
+}
+function persist(){clearTimeout(saveTimer);saveTimer=setTimeout(persistNow,250);}
+addEventListener('pagehide',persistNow);
+function loadLocal(){
+  let d=null;
+  try{d=JSON.parse(localStorage.getItem(LSKEY)||'null');}catch(e){}
+  if(!d) return;
+  try{
+    if(d.state&&FKEYS.every(f=>Array.isArray(d.state[f])&&d.state[f].length===3))
+      FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+        const v=d.state[f][r]&&d.state[f][r][c];
+        state[f][r][c]=COLORS[v]?v:'X';}});
+    if(Array.isArray(d.orient)&&d.orient.length===3&&d.orient.every(r=>Array.isArray(r)&&r.length===3&&r.every(x=>typeof x==='number')))
+      orient=d.orient;
+    if(d.auxOn) FKEYS.forEach(f=>{if(typeof d.auxOn[f]==='boolean')auxOn[f]=d.auxOn[f];});
+    if(COLORS[d.pick]){pick=d.pick;reflectPick();}
+    if(typeof d.alg==='string') ta.value=d.alg;
+    if(ZL.includes(d.zoom)){zoom=d.zoom;document.getElementById('zlab').textContent=Math.round(zoom*100)+'%';}
+    if(typeof d.snap==='boolean') document.getElementById('snap').checked=d.snap;
+    if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
+    if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
+    if(d.view==='top'||d.view==='3d') setView(d.view);
+    if(d.tab===2) tab(2);
+  }catch(e){}
+}
+
+loadLocal();
+drawCube(); drawAlg();
+</script>
