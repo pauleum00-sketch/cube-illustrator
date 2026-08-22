@@ -69,6 +69,7 @@ svg.out{max-width:100%;height:auto;display:block}
 .grp b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.4px}
 label.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer;padding:3px 0}
 input[type=checkbox]{accent-color:var(--teal);width:16px;height:16px;flex:none}
+input[type=color]{width:38px;height:26px;border:1px solid var(--line);border-radius:6px;background:none;padding:1px;cursor:pointer}
 .hint{font-size:12.5px;color:var(--muted);line-height:1.7;margin:12px 0 0}
 textarea{width:100%;background:#0c1e35;border:1px solid var(--line);color:var(--ink);border-radius:10px;
   padding:12px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:16px;resize:vertical;min-height:74px}
@@ -103,31 +104,22 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         </div>
         <h2>색</h2>
         <div class="pal" id="pal"></div>
-        <h2>회전기호 적용</h2>
-        <input class="alginput" id="applyAlg" spellcheck="false" placeholder="예: R U R' U'">
-        <div class="row" style="margin-top:8px">
-          <button class="btn" id="applyBtn">적용</button>
-          <button class="btn" id="applyInvBtn">역으로 적용</button>
-          <button class="btn" id="playBtn">▶ 재생</button>
-          <button class="btn gh" id="stopBtn">정지</button>
-        </div>
-        <p class="hint" style="margin:8px 0 0">지금 색칠된 큐브에 회전기호를 실행합니다. <b>역으로 적용</b>을 완성 상태에서 쓰면 그 알고리즘이 풀리는 케이스가 만들어집니다. 재생은 입체 보기에서 한 수씩 움직여 보여주고, 끝나면 적용과 같은 상태가 됩니다.</p>
-        <h2 style="margin-top:22px">단계 프리셋</h2>
+        <h2>단계 프리셋</h2>
         <div class="row">
           <button class="btn" data-preset="full">완성</button>
           <button class="btn" data-preset="cross">크로스</button>
           <button class="btn" data-preset="f1">1층</button>
           <button class="btn" data-preset="f2">2층까지</button>
         </div>
-        <p class="hint" style="margin:8px 0 0">해당 단계까지 완성 색으로 칠하고 나머지는 회색으로 둡니다. 지금 보이는 보기에 적용됩니다. 첫 층은 흰 센터(U) 기준이고, 케이스 그림은 완성을 누른 뒤 역으로 적용을 쓰면 편합니다.</p>
         <h2 style="margin-top:22px">저장 설정</h2>
         <label class="chk"><input type="checkbox" id="trans"> 배경 투명하게</label>
+        <label class="chk">배경색 <input type="color" id="bgcol" value="#DFE6EC"></label>
         <div class="row" style="margin-top:14px">
           <button class="btn pri" id="save1">PNG 저장</button>
           <button class="btn" id="copy1">복사</button>
           <button class="btn gh" id="reset">초기화</button>
         </div>
-        <p class="hint">스티커를 눌러 칠합니다. 끌면 이어서 칠해지고, <b>이미 그 색인 칸을 누르면 회색으로 돌아갑니다.</b> 센터 6칸은 배색 기준이라 초기화해도 남습니다. 입체 보기에서 큐브 바깥 빈 곳을 끌면 큐브가 자유롭게 돌아갑니다. 탑다운 보기는 윗면과 옆면 윗줄을 위에서 내려다본 그림이라 OLL·PLL 도해에 쓰고, <b>입체 보기와는 별개의 큐브</b>라 서로 색이 섞이지 않습니다. 초기화는 지금 보이는 쪽만 초기화합니다.</p>
+        <p class="hint">스티커를 누르면 칠해지고, 같은 색을 다시 누르면 회색이 됩니다. 스티커를 끌면 그 층이 돌아가고, 큐브 바깥을 끌면 큐브 전체가 돌아갑니다. 입체와 탑다운은 별개의 큐브입니다.</p>
       </div>
       <div>
       <div id="only3d">
@@ -137,24 +129,21 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <label class="chk"><input type="checkbox" id="lock"> 드래그 잠그기 (지금 각도 보호)</label>
         <h2 style="margin-top:22px">각도 (°)</h2>
         <div id="angles"></div>
-        <h2 style="margin-top:22px">각도 슬롯</h2>
+        <h2 style="margin-top:22px">각도 슬롯 <span style="text-transform:none;letter-spacing:0">(최대 5개)</span></h2>
         <div class="row">
           <button class="btn" id="slotSave">+ 지금 각도 저장</button>
           <span id="slots" class="row"></span>
         </div>
-        <p class="hint" style="margin:8px 0 0">저장을 누르면 지금 각도가 슬롯으로 추가됩니다(최대 5개). 슬롯을 누르면 그 각도로 이동하고, 마우스를 올리면 뜨는 ×로 삭제합니다.</p>
         <h2 style="margin-top:22px">투명도</h2>
         <div class="ang">
           <input type="range" id="alpha" min="0" max="90" step="5" value="0">
           <input type="number" id="alphanum" min="0" max="90" step="5" value="0">
         </div>
-        <p class="hint" style="margin:2px 0 0">0%면 불투명입니다. 높일수록 앞면이 비쳐 뒷면 스티커가 보이고, 보조면은 자동으로 꺼집니다.</p>
-        <h2 style="margin-top:22px">보조면</h2>
+        <h2 style="margin-top:22px">보조면 거리</h2>
         <div class="ang">
           <input type="range" id="gap" min="0" max="4" step="0.05" value="1.95">
           <input type="number" id="gapnum" min="0" max="4" step="0.05" value="1.95">
         </div>
-        <p class="hint" style="margin:2px 0 6px">보조면이 큐브에서 떨어지는 거리입니다(스티커 한 칸 = 1). 0이면 큐브에 붙어 가려집니다.</p>
         <div id="auxbox"></div>
       </div>
       <div id="onlyTop" style="display:none">
@@ -165,10 +154,22 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
           <button class="btn gh" id="arrowUndo">마지막 지우기</button>
           <button class="btn gh" id="arrowClear">전체 지우기</button>
         </div>
-        <p class="hint" style="margin:8px 0 0">모드를 켜고 시작 스티커 → 끝 스티커를 차례로 누르면 화살표가 그려집니다. PLL의 조각 교환 표시에 씁니다. 모드를 끄면 다시 색칠이 됩니다.</p>
+        <p class="hint" style="margin:8px 0 0">시작 스티커 → 끝 스티커를 차례로 누르세요.</p>
       </div>
       </div>
     </div></div>
+    <div class="card">
+      <h2>시뮬레이터</h2>
+      <input class="alginput" id="applyAlg" spellcheck="false" placeholder="예: R U R' U'">
+      <label class="chk" style="margin-top:8px"><input type="checkbox" id="viewRel" checked> 화면에 보이는 방향 기준 (앞=F, 위=U)</label>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="applyBtn">적용</button>
+        <button class="btn" id="applyInvBtn">역으로 적용</button>
+        <button class="btn pri" id="playBtn">▶ 재생</button>
+        <button class="btn gh" id="stopBtn">정지</button>
+      </div>
+      <p class="hint" style="margin:8px 0 0">역으로 적용: 완성 상태에서 누르면 그 공식이 풀리는 케이스가 됩니다.</p>
+    </div>
   </div>
   <div class="card"><div class="stage" id="stage1"></div></div>
 </div></section>
@@ -195,14 +196,14 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <button class="btn pri" id="save2">PNG 저장</button>
         <button class="btn" id="copy2">복사</button>
       </div>
-      <p class="hint">뒤에 <kbd>'</kbd>는 반대 방향, <kbd>2</kbd>는 180도입니다. <kbd>U'2</kbd>처럼 겹쳐 쓸 수 있고, <kbd>U' U'</kbd>는 <kbd>U'2</kbd>로 자동 정리됩니다. 움직이는 층만 흰색으로 남고 나머지는 회색으로 깔립니다. 뒤나 안쪽이라 실제로는 보이지 않는 <kbd>B</kbd>·<kbd>S</kbd>는 점선 화살표로 그립니다.</p>
+      <p class="hint"><kbd>'</kbd>는 반대 방향, <kbd>2</kbd>는 180도. 보이지 않는 <kbd>B</kbd>·<kbd>S</kbd>는 점선 화살표로 그립니다.</p>
     </div>
   </div>
   <div class="card"><div class="stage" id="stage2"></div></div>
 </div></section>
 </main>
 
-<div class="foot">두 도구가 같은 투시각(요 −33°, 피치 20°, 카메라 거리 9)을 씁니다. 교본 안에서 그림들의 각도가 어긋나지 않습니다. 작업 내용은 이 브라우저에 자동 저장되어 새로고침해도 유지됩니다.</div>
+<div class="foot">모든 그림이 같은 투시각을 씁니다. 작업 내용은 이 브라우저에 자동 저장됩니다.</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -239,8 +240,9 @@ function arcPts(c,u,v,R,start,span){
 
 /* ========== 색 / 면 ========== */
 const COLORS={W:['#FDFDFD','하양'],Y:['#FFD500','노랑'],R:['#D42B23','빨강'],O:['#FF6D1F','주황'],
-              B:['#1B5CD9','파랑'],G:['#12A544','초록'],P:['#FF6FB5','핑크'],X:['#BFC4C9','회색']};
-const ORDER=['B','G','O','R','W','Y','P','X'];
+              B:['#1B5CD9','파랑'],G:['#12A544','초록'],P:['#E5007E','핑크'],X:['#BFC4C9','회색'],
+              C:['#8A2BE2','자유']};
+const ORDER=['B','G','O','R','W','Y','P','X','C'];
 const CENTER={U:'W',D:'Y',F:'G',B:'B',R:'R',L:'O'};
 const FACES={
   U:{n:[0,1,0], u:[1,0,0], v:[0,0,1]},   D:{n:[0,-1,0],u:[1,0,0], v:[0,0,-1]},
@@ -304,15 +306,16 @@ function moveGeom(mv){
   return {ax,axIdx,range:rot?[-2,2]:SPAN[raw],
           dir:-sgn*(mv.prime?-1:1)};   /* 바깥 법선 기준 시계방향 = -90° */
 }
-function applyMoveTo(st,mv){
-  const g=moveGeom(mv), times=mv.dbl?2:1;
+function applyTurn(st,ax,axIdx,range,q){   /* q = +축 기준 90° 단위 회전 횟수(부호 있음) */
   let cur=st;
-  for(let k=0;k<times;k++){
+  const cnt=Math.abs(q)%4;
+  if(!cnt) return cur;
+  const Rm=rotM(ax,(q>0?1:-1)*90*RAD);
+  for(let k=0;k<cnt;k++){
     const out={};FKEYS.forEach(f=>out[f]=cur[f].map(row=>row.slice()));
-    const Rm=rotM(g.ax,g.dir*90*RAD);
     FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
       const p=stickerPos(f,r,c);
-      if(p[g.axIdx]<g.range[0]-1e-6||p[g.axIdx]>g.range[1]+1e-6) continue;
+      if(p[axIdx]<range[0]-1e-6||p[axIdx]>range[1]+1e-6) continue;
       const p2=applyM(Rm,p), n2=applyM(Rm,FACES[f].n);
       const f2=FKEYS.find(k2=>dot3(FACES[k2].n,n2)>0.9);
       const F2=FACES[f2];
@@ -322,7 +325,42 @@ function applyMoveTo(st,mv){
   }
   return cur;
 }
+function applyMoveTo(st,mv){
+  const g=moveGeom(mv);
+  return applyTurn(st,g.ax,g.axIdx,g.range,g.dir*(mv.dbl?2:1));
+}
 const invMoves=list=>list.slice().reverse().map(m=>({...m,prime:m.dbl?m.prime:!m.prime}));
+
+/* 화면 기준 적용: 지금 카메라에서 앞으로 보이는 면=F, 위=U 로 문자 재해석 */
+const AXIS_OF={R:'x',L:'x',U:'y',D:'y',F:'z',B:'z'};
+const POSFACE={x:'R',y:'U',z:'F'};
+const SLICE_OF={x:'M',y:'E',z:'S'}, SLICE_REF={M:'L',E:'D',S:'F'};
+const WIDE_OF={R:'r',L:'l',U:'u',D:'d',F:'f',B:'b'};
+function roleMap(){
+  const o=isAligned(orient)?orient:snapOrient(orient), map={};
+  FKEYS.forEach(f=>{
+    const nc=camPt(applyM(o,FACES[f].n));
+    const a=[Math.abs(nc[0]),Math.abs(nc[1]),Math.abs(nc[2])];
+    const i=a[0]>a[1]?(a[0]>a[2]?0:2):(a[1]>a[2]?1:2);
+    map[i===0?(nc[0]>0?'R':'L'):i===1?(nc[1]>0?'U':'D'):(nc[2]>0?'F':'B')]=f;
+  });
+  return map;
+}
+function remapMove(mv,map){
+  const raw=mv.letter, out={...mv};
+  if('RLUDFB'.includes(raw)) out.letter=map[raw];
+  else if('rludfb'.includes(raw)) out.letter=WIDE_OF[map[raw.toUpperCase()]];
+  else if('MES'.includes(raw)){
+    const A=map[SLICE_REF[raw]], ax=AXIS_OF[A];
+    out.letter=SLICE_OF[ax];
+    if(A!==SLICE_REF[out.letter]) out.prime=!out.prime;
+  }else{                                   /* x, y, z */
+    const A=map[POSFACE[raw]], ax=AXIS_OF[A];
+    out.letter=ax;
+    if(A!==POSFACE[ax]) out.prime=!out.prime;
+  }
+  return out;
+}
 
 /* ========== 큐브 그리기 (입체) ========== */
 const INSET=0.90, INSET_AUX=0.865;
@@ -364,37 +402,40 @@ function screenT(tight,draw){
   const s=Math.min((W-24)/(2*fx),(H-24)/(2*fx)), cx=W/2, cy=H/2;
   return q=>{const r=projPt(q);return [r[0]*s+cx,r[1]*s+cy];};
 }
-function buildCubeSVG(tight,anim){
+/* 층이 도는 중의 렌더링: 스티커별 뒤판+색을 함께 그려서 평소 모양·투명도가 유지된다 */
+function buildCubeAnimSVG(geo,ang){
+  const W=680,H=620, T=screenT(false,[]);
+  const Am=rotM(geo.ax,ang), items=[];
+  FKEYS.forEach(face=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const p0=stickerPos(face,r,c);
+    const moving=p0[geo.axIdx]>=geo.range[0]-1e-6&&p0[geo.axIdx]<=geo.range[1]+1e-6;
+    let pts=quad(face,r,c,0), n=FACES[face].n, ctr=p0;
+    if(moving){pts=pts.map(q=>applyM(Am,q));n=applyM(Am,n);ctr=applyM(Am,ctr);}
+    const vis=faceVisible(applyM(orient,n),applyM(orient,ctr));
+    if(!vis&&cubeAlpha===0) continue;
+    const scrBack=pts.map(q=>T(applyM(orient,q)));
+    const scr=shrink(pts,INSET).map(q=>T(applyM(orient,q)));
+    const op=(cubeAlpha>0&&vis)?` opacity="${(1-cubeAlpha).toFixed(2)}"`:'';
+    const backSvg=cubeAlpha===0?`<path d="${path(scrBack,true)}" fill="#16202b" stroke="#16202b" stroke-width="1" stroke-linejoin="round"/>`:'';
+    items.push([camPt(applyM(orient,ctr))[2],
+      `<g${op}>${backSvg}<path d="${path(scr,true)}" fill="${COLORS[state[face][r][c]][0]}"/></g>`]);
+  }});
+  items.sort((a,b)=>a[0]-b[0]);
+  return `<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`
+    +items.map(i=>i[1]).join('')+'</svg>';
+}
+function renderAnim(geo,ang){document.getElementById('stage1').innerHTML=buildCubeAnimSVG(geo,ang);}
+
+function buildCubeSVG(tight){
   const W=680,H=620, draw=[];
   FKEYS.forEach(f=>{
     const vis=faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5)));
-    if(anim){ if(vis) draw.push([f,0,false,true]); }     /* 재생 중엔 스티커 단위로 그림 */
-    else if(cubeAlpha>0) draw.push([f,0,false,vis]);     /* 투명 모드: 6면 전부, 보조면 없이 */
+    if(cubeAlpha>0) draw.push([f,0,false,vis]);          /* 투명 모드: 6면 전부, 보조면 없이 */
     else if(vis) draw.push([f,0,false,true]);
     else if(auxOn[f]) draw.push([f,auxGap,true,false]);
   });
   const T=screenT(tight,draw);
   const open=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
-
-  if(anim){                        /* 한 층이 도는 중: 스티커별로 회전·정렬해서 그림 */
-    const g=moveGeom(anim.mv);
-    const Am=rotM(g.ax,g.dir*90*(anim.mv.dbl?2:1)*anim.frac*RAD);
-    const items=[];
-    FKEYS.forEach(face=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
-      const p0=stickerPos(face,r,c);
-      const moving=p0[g.axIdx]>=g.range[0]-1e-6&&p0[g.axIdx]<=g.range[1]+1e-6;
-      let pts=quad(face,r,c,0), n=FACES[face].n, ctr=p0;
-      if(moving){pts=pts.map(q=>applyM(Am,q));n=applyM(Am,n);ctr=applyM(Am,ctr);}
-      if(!faceVisible(applyM(orient,n),applyM(orient,ctr))) continue;
-      const scr=shrink(pts,INSET).map(q=>T(applyM(orient,q)));
-      items.push([camPt(applyM(orient,ctr))[2],
-        `<path d="${path(scr,true)}" fill="${COLORS[state[face][r][c]][0]}"
-          stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"/>`]);
-    }});
-    items.sort((a,b)=>a[0]-b[0]);
-    return open+items.map(i=>i[1]).join('')+'</svg>';
-  }
-
   const groups=[];
   draw.forEach(([face,off,isAux,vis])=>{
     const depth=camPt(applyM(orient,mul(FACES[face].n,1.5+off)))[2];
@@ -463,31 +504,80 @@ function drawCube(){
   if(view==='3d') renderAux();
 }
 
-/* 칠하기: 같은 색을 다시 누르면 회색으로 */
-let down=false, dragCol=null;
-addEventListener('pointerup',()=>{down=false;dragCol=null;});
+/* 칠하기(클릭)와 층 돌리기(스티커 드래그) */
 function put(el,col){
   curState()[el.dataset.f][+el.dataset.r][+el.dataset.c]=col;
   el.setAttribute('fill',COLORS[col][0]);
   persist();
 }
+function paintEl(el,rightBtn){
+  const cur=curState()[el.dataset.f][+el.dataset.r][+el.dataset.c];
+  put(el,(rightBtn||cur===pick)?'X':pick);
+}
+let grab=null;   /* {f,r,c,x,y,el,btn, geo?, tan?, ang} — 입체에서 스티커를 잡은 상태 */
 function bindStickers(){
   document.querySelectorAll('#stage1 .st').forEach(el=>{
     el.addEventListener('pointerdown',e=>{
       if(playing) return;
       e.preventDefault();
-      if(view==='top'&&document.getElementById('arrowMode').checked){
-        arrowClick(el.dataset.f,+el.dataset.r,+el.dataset.c); return;
+      if(view==='top'){
+        if(document.getElementById('arrowMode').checked)
+          arrowClick(el.dataset.f,+el.dataset.r,+el.dataset.c);
+        else paintEl(el,e.button===2);
+        return;
       }
-      down=true;
-      const cur=curState()[el.dataset.f][+el.dataset.r][+el.dataset.c];
-      dragCol=(e.button===2||cur===pick)?'X':pick;
-      put(el,dragCol);
+      grab={f:el.dataset.f,r:+el.dataset.r,c:+el.dataset.c,
+            x:e.clientX,y:e.clientY,el,btn:e.button,ang:0};
     });
-    el.addEventListener('pointerenter',()=>{if(down&&dragCol)put(el,dragCol);});
   });
   document.getElementById('stage1').oncontextmenu=e=>e.preventDefault();
 }
+/* 잡은 스티커에서 두 후보 축의 화면 접선(1라디안당 픽셀)을 구한다 */
+function grabTangents(f,r,c){
+  const T=screenT(false,[]);
+  const p0=stickerPos(f,r,c);
+  const faceAx=FACES[f].n[0]?0:(FACES[f].n[1]?1:2);
+  const scr0=T(applyM(orient,p0)), out=[];
+  [0,1,2].filter(i=>i!==faceAx).forEach(i=>{
+    const e=[0,0,0]; e[i]=1;
+    const v=cross(e,p0), h=0.05;
+    const scr1=T(applyM(orient,add(p0,mul(v,h))));
+    out.push({axIdx:i, ax:'xyz'[i],
+      range:[Math.round(p0[i])-0.5,Math.round(p0[i])+0.5],
+      tan:[(scr1[0]-scr0[0])/h,(scr1[1]-scr0[1])/h]});
+  });
+  return out;
+}
+addEventListener('pointermove',e=>{
+  if(!grab||view!=='3d'||playing) return;
+  const dx=e.clientX-grab.x, dy=e.clientY-grab.y;
+  if(!grab.geo){
+    if(dx*dx+dy*dy<49) return;                       /* 7px부터 드래그로 인정 */
+    if(grab.btn===2) return;
+    const cands=grabTangents(grab.f,grab.r,grab.c);
+    const score=t=>Math.abs((dx*t.tan[0]+dy*t.tan[1])/Math.hypot(t.tan[0],t.tan[1]));
+    grab.geo=score(cands[0])>=score(cands[1])?cands[0]:cands[1];
+  }
+  const t=grab.geo.tan, L2=t[0]*t[0]+t[1]*t[1];
+  grab.ang=(dx*t[0]+dy*t[1])/L2;                     /* 커서를 그대로 따라오는 각도 */
+  renderAnim(grab.geo,grab.ang);
+});
+addEventListener('pointerup',e=>{
+  if(!grab) return;
+  const g=grab; grab=null;
+  if(view!=='3d'){return;}
+  if(!g.geo){ paintEl(g.el,g.btn===2); return; }     /* 안 끌었으면 = 클릭 색칠 */
+  const q=Math.round(g.ang/(Math.PI/2));
+  const finish=()=>{state=applyTurn(state,g.geo.ax,g.geo.axIdx,g.geo.range,q);drawCube();persist();};
+  if(document.hidden){finish();return;}
+  const target=q*Math.PI/2, from=g.ang;
+  const t0=performance.now(), dur=110;               /* 놓으면 가까운 90°에 착 걸림 */
+  (function settle(t){
+    const k=Math.min(1,(t-t0)/dur);
+    renderAnim(g.geo,from+(target-from)*k);
+    if(k<1) requestAnimationFrame(settle); else finish();
+  })(t0);
+});
 function arrowClick(f,r,c){
   const cur=[f,r,c];
   if(arrowPending&&arrowPending.join('')===cur.join('')) arrowPending=null;       /* 같은 칸 = 취소 */
@@ -548,16 +638,31 @@ function setView(v){
 }
 document.querySelectorAll('#views .btn').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 
-/* 팔레트 */
+/* 팔레트 (C = 자유 색: 다시 누르면 색 고르기 창) */
 const pal=document.getElementById('pal');
 ORDER.forEach(k=>{
   const b=document.createElement('button');
   b.className='chip'; b.dataset.col=k; b.setAttribute('aria-pressed',k===pick); b.title=COLORS[k][1];
-  b.innerHTML=`<i style="background:${COLORS[k][0]}"></i><span>${COLORS[k][1]}</span>`;
-  b.onclick=()=>{pick=k;[...pal.children].forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');persist();};
+  b.innerHTML=`<i style="background:${COLORS[k][0]}"></i><span>${COLORS[k][1]}</span>`
+    +(k==='C'?`<input type="color" id="customCol" value="${COLORS.C[0]}" style="position:absolute;inset:0;opacity:0;pointer-events:none">`:'');
+  b.onclick=()=>{
+    if(k==='C'&&pick==='C'){document.getElementById('customCol').click();return;}
+    pick=k;[...pal.children].forEach(x=>x.setAttribute('aria-pressed','false'));b.setAttribute('aria-pressed','true');persist();};
   pal.appendChild(b);
 });
+document.getElementById('customCol').addEventListener('input',e=>{
+  COLORS.C[0]=e.target.value;
+  pal.querySelector('[data-col="C"] i').style.background=e.target.value;
+  drawCube();persist();
+});
 function reflectPick(){[...pal.children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.col===pick));}
+
+/* 배경색 */
+let bgCol='#DFE6EC';
+const bgInput=document.getElementById('bgcol');
+function applyBg(){document.querySelectorAll('.stage').forEach(s=>s.style.background=bgCol);}
+bgInput.addEventListener('input',()=>{bgCol=bgInput.value;applyBg();persist();});
+applyBg();
 
 /* 돌리기 버튼: 회전축을 타원 화살표로 */
 function icon(kind,rev){
@@ -626,6 +731,10 @@ function getApplyMoves(){
   const {moves,bad}=parseAlg(applyInput.value);
   if(bad.length){toast(`모르는 기호: ${bad.join(', ')}`);return null;}
   if(!moves.length){toast('회전기호를 입력하세요');return null;}
+  if(view==='3d'&&document.getElementById('viewRel').checked){
+    const map=roleMap();
+    return moves.map(m=>remapMove(m,map));
+  }
   return moves;
 }
 function runMoves(moves){
@@ -637,26 +746,26 @@ document.getElementById('applyBtn').onclick=()=>{if(playing)return;const m=getAp
 document.getElementById('applyInvBtn').onclick=()=>{if(playing)return;const m=getApplyMoves();if(m){runMoves(invMoves(m));toast('역으로 적용했습니다');}};
 document.getElementById('playBtn').onclick=async()=>{
   if(playing)return;
-  const m=getApplyMoves(); if(!m)return;
   if(view!=='3d') setView('3d');
+  const m=getApplyMoves(); if(!m)return;
   playing=true;
   for(const mv of m){
     if(!playing) break;
-    await animateMove(mv);
+    await animateMove(mv);                 /* 프레임 사이에 일반 렌더를 끼우지 않아 끊김이 없다 */
     state=applyMoveTo(state,mv);
-    drawCube();
   }
   playing=false; drawCube(); persist();
 };
 document.getElementById('stopBtn').onclick=()=>{playing=false;};
 function animateMove(mv){
   return new Promise(res=>{
+    const g=moveGeom(mv), full=g.dir*90*(mv.dbl?2:1)*RAD;
     const dur=mv.dbl?540:380, t0=performance.now();
     function frame(t){
       if(!playing){res();return;}
       let k=Math.min(1,(t-t0)/dur);
       k=k<.5?2*k*k:1-2*(1-k)*(1-k);                 /* ease in-out */
-      document.getElementById('stage1').innerHTML=buildCubeSVG(false,{mv,frac:k});
+      renderAnim(g,full*k);
       if(k<1) requestAnimationFrame(frame); else res();
     }
     requestAnimationFrame(frame);
@@ -899,7 +1008,7 @@ function toPNG(svg,tr,scale){
       const cv=document.createElement('canvas');
       cv.width=Math.round(w*scale); cv.height=Math.round(h*scale);
       const g=cv.getContext('2d');
-      if(!tr){g.fillStyle='#fff';g.fillRect(0,0,cv.width,cv.height);}
+      if(!tr){g.fillStyle=bgCol;g.fillRect(0,0,cv.width,cv.height);}
       g.drawImage(img,0,0,cv.width,cv.height);
       cv.toBlob(b=>b?res(b):rej(new Error()),'image/png');
     };
@@ -929,6 +1038,7 @@ document.getElementById('trans').onchange=persist;
 document.getElementById('trans2').onchange=persist;
 document.getElementById('snap').onchange=persist;
 document.getElementById('lock').onchange=persist;
+document.getElementById('viewRel').onchange=persist;
 
 /* 탭 */
 const t1=document.getElementById('t1'),t2=document.getElementById('t2');
@@ -946,6 +1056,7 @@ function persistNow(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
       state,stateTop,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
+      custom:COLORS.C[0],bg:bgCol,viewRel:document.getElementById('viewRel').checked,
       alg:ta.value,
       snap:document.getElementById('snap').checked,
       lock:document.getElementById('lock').checked,
@@ -982,6 +1093,11 @@ function loadLocal(){
       alRg.value=Math.round(cubeAlpha*100);alNum.value=Math.round(cubeAlpha*100);}
     if(typeof d.gap==='number'){auxGap=Math.max(0,Math.min(4,d.gap));
       gapRg.value=auxGap;gapNum.value=auxGap;}
+    if(/^#[0-9a-fA-F]{6}$/.test(d.custom||'')){COLORS.C[0]=d.custom;
+      pal.querySelector('[data-col="C"] i').style.background=d.custom;
+      document.getElementById('customCol').value=d.custom;}
+    if(/^#[0-9a-fA-F]{6}$/.test(d.bg||'')){bgCol=d.bg;bgInput.value=d.bg;applyBg();}
+    if(typeof d.viewRel==='boolean') document.getElementById('viewRel').checked=d.viewRel;
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
