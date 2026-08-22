@@ -12,7 +12,7 @@ body{background:var(--navy);color:var(--ink);
   background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
   background-size:29px 29px}
 header{padding:26px 24px 18px;border-bottom:1px solid var(--line)}
-.wrap{max-width:1240px;margin:0 auto}
+.wrap{max-width:1520px;margin:0 auto}
 h1{font-family:'Paperlogy',Pretendard,sans-serif;font-weight:900;font-size:30px;margin:0;letter-spacing:-1px}
 h1 .a{color:#fff}h1 .b{color:var(--teal)}
 .sub{color:var(--muted);font-size:14px;margin-top:6px}
@@ -20,10 +20,12 @@ nav{display:flex;gap:8px;margin-top:18px}
 nav button{background:transparent;border:1.5px solid var(--line);color:var(--muted);
   padding:9px 18px;border-radius:9px;font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
 nav button[aria-selected=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
-main{max-width:1240px;margin:0 auto;padding:24px}
+main{max-width:1520px;margin:0 auto;padding:24px}
 .panel{display:none}.panel.on{display:block}
-.grid{display:grid;grid-template-columns:308px 1fr;gap:22px;align-items:start}
-@media(max-width:900px){.grid{grid-template-columns:1fr}}
+.grid{display:grid;grid-template-columns:600px 1fr;gap:22px;align-items:start}
+.cols{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
+@media(max-width:1150px){.grid{grid-template-columns:1fr}}
+@media(max-width:640px){.cols{grid-template-columns:1fr}}
 .card{background:var(--navy-2);border:1px solid var(--line);border-radius:14px;padding:18px}
 .card+.card{margin-top:14px}
 .card h2{font-size:12px;letter-spacing:1.4px;text-transform:uppercase;color:var(--muted);margin:0 0 12px;font-weight:700}
@@ -55,7 +57,14 @@ svg.out{max-width:100%;height:auto;display:block}
 .ang input[type=range]{flex:1;accent-color:var(--teal);min-width:0}
 .ang input[type=number]{width:64px;background:#0c1e35;border:1px solid var(--line);color:var(--ink);border-radius:6px;padding:5px 6px;font:inherit;font-size:13px}
 .btn.slot{min-width:44px}
-.btn.slot.empty{border-style:dashed;color:var(--muted);background:transparent}
+.alginput{width:100%;background:#0c1e35;border:1px solid var(--line);color:var(--ink);border-radius:8px;
+  padding:9px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px}
+.alginput:focus{outline:2px solid var(--teal);outline-offset:1px}
+.slotwrap{position:relative;display:inline-block}
+.slotwrap .del{position:absolute;top:-7px;right:-7px;display:none;width:18px;height:18px;
+  border-radius:50%;background:#ff6b5e;color:#fff;border:none;font-size:12px;line-height:1;
+  cursor:pointer;padding:0;font-weight:700}
+.slotwrap:hover .del{display:block}
 .grp{margin-bottom:11px}
 .grp b{display:block;font-size:11px;color:var(--muted);font-weight:600;margin-bottom:6px;letter-spacing:.4px}
 label.chk{display:flex;align-items:center;gap:8px;font-size:13.5px;color:var(--muted);cursor:pointer;padding:3px 0}
@@ -69,7 +78,7 @@ textarea:focus{outline:2px solid var(--teal);outline-offset:1px}
 .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(70px);
   background:var(--teal);color:#08243a;padding:11px 20px;border-radius:999px;font-weight:700;font-size:14px;opacity:0;transition:.25s;pointer-events:none}
 .toast.on{opacity:1;transform:translateX(-50%)}
-.foot{color:var(--muted);font-size:12.5px;padding:8px 24px 40px;max-width:1240px;margin:0 auto}
+.foot{color:var(--muted);font-size:12.5px;padding:8px 24px 40px;max-width:1520px;margin:0 auto}
 kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:ui-monospace,monospace}
 </style>
 
@@ -85,14 +94,42 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <main>
 <section class="panel on" id="p1"><div class="grid">
   <div>
-    <div class="card">
-      <h2>보기</h2>
-      <div class="row" id="views" style="margin-bottom:14px">
-        <button class="btn" data-view="3d" aria-pressed="true">입체</button>
-        <button class="btn" data-view="top" aria-pressed="false">탑다운 (OLL·PLL)</button>
+    <div class="card"><div class="cols">
+      <div>
+        <h2>보기</h2>
+        <div class="row" id="views" style="margin-bottom:14px">
+          <button class="btn" data-view="3d" aria-pressed="true">입체</button>
+          <button class="btn" data-view="top" aria-pressed="false">탑다운 (OLL·PLL)</button>
+        </div>
+        <h2>색</h2>
+        <div class="pal" id="pal"></div>
+        <h2>회전기호 적용</h2>
+        <input class="alginput" id="applyAlg" spellcheck="false" placeholder="예: R U R' U'">
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="applyBtn">적용</button>
+          <button class="btn" id="applyInvBtn">역으로 적용</button>
+          <button class="btn" id="playBtn">▶ 재생</button>
+          <button class="btn gh" id="stopBtn">정지</button>
+        </div>
+        <p class="hint" style="margin:8px 0 0">지금 색칠된 큐브에 회전기호를 실행합니다. <b>역으로 적용</b>을 완성 상태에서 쓰면 그 알고리즘이 풀리는 케이스가 만들어집니다. 재생은 입체 보기에서 한 수씩 움직여 보여주고, 끝나면 적용과 같은 상태가 됩니다.</p>
+        <h2 style="margin-top:22px">단계 프리셋</h2>
+        <div class="row">
+          <button class="btn" data-preset="full">완성</button>
+          <button class="btn" data-preset="cross">크로스</button>
+          <button class="btn" data-preset="f1">1층</button>
+          <button class="btn" data-preset="f2">2층까지</button>
+        </div>
+        <p class="hint" style="margin:8px 0 0">해당 단계까지 완성 색으로 칠하고 나머지는 회색으로 둡니다. 지금 보이는 보기에 적용됩니다. 첫 층은 흰 센터(U) 기준이고, 케이스 그림은 완성을 누른 뒤 역으로 적용을 쓰면 편합니다.</p>
+        <h2 style="margin-top:22px">저장 설정</h2>
+        <label class="chk"><input type="checkbox" id="trans"> 배경 투명하게</label>
+        <div class="row" style="margin-top:14px">
+          <button class="btn pri" id="save1">PNG 저장</button>
+          <button class="btn" id="copy1">복사</button>
+          <button class="btn gh" id="reset">초기화</button>
+        </div>
+        <p class="hint">스티커를 눌러 칠합니다. 끌면 이어서 칠해지고, <b>이미 그 색인 칸을 누르면 회색으로 돌아갑니다.</b> 센터 6칸은 배색 기준이라 초기화해도 남습니다. 입체 보기에서 큐브 바깥 빈 곳을 끌면 큐브가 자유롭게 돌아갑니다. 탑다운 보기는 윗면과 옆면 윗줄을 위에서 내려다본 그림이라 OLL·PLL 도해에 쓰고, <b>입체 보기와는 별개의 큐브</b>라 서로 색이 섞이지 않습니다. 초기화는 지금 보이는 쪽만 초기화합니다.</p>
       </div>
-      <h2>색</h2>
-      <div class="pal" id="pal"></div>
+      <div>
       <div id="only3d">
         <h2>돌리기</h2>
         <div class="row" id="rots"></div>
@@ -101,8 +138,11 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <h2 style="margin-top:22px">각도 (°)</h2>
         <div id="angles"></div>
         <h2 style="margin-top:22px">각도 슬롯</h2>
-        <div class="row" id="slots"></div>
-        <p class="hint" style="margin:8px 0 0">빈 슬롯을 누르면 지금 각도가 저장되고, 채워진 슬롯을 누르면 그 각도로 돌아갑니다. 채워진 슬롯에 우클릭하면 지금 각도로 덮어씁니다.</p>
+        <div class="row">
+          <button class="btn" id="slotSave">+ 지금 각도 저장</button>
+          <span id="slots" class="row"></span>
+        </div>
+        <p class="hint" style="margin:8px 0 0">저장을 누르면 지금 각도가 슬롯으로 추가됩니다(최대 5개). 슬롯을 누르면 그 각도로 이동하고, 마우스를 올리면 뜨는 ×로 삭제합니다.</p>
         <h2 style="margin-top:22px">투명도</h2>
         <div class="ang">
           <input type="range" id="alpha" min="0" max="90" step="5" value="0">
@@ -110,17 +150,25 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         </div>
         <p class="hint" style="margin:2px 0 0">0%면 불투명입니다. 높일수록 앞면이 비쳐 뒷면 스티커가 보이고, 보조면은 자동으로 꺼집니다.</p>
         <h2 style="margin-top:22px">보조면</h2>
+        <div class="ang">
+          <input type="range" id="gap" min="0" max="4" step="0.05" value="1.95">
+          <input type="number" id="gapnum" min="0" max="4" step="0.05" value="1.95">
+        </div>
+        <p class="hint" style="margin:2px 0 6px">보조면이 큐브에서 떨어지는 거리입니다(스티커 한 칸 = 1). 0이면 큐브에 붙어 가려집니다.</p>
         <div id="auxbox"></div>
       </div>
-      <h2>저장 설정</h2>
-      <label class="chk"><input type="checkbox" id="trans"> 배경 투명하게</label>
-      <div class="row" style="margin-top:14px">
-        <button class="btn pri" id="save1">PNG 저장</button>
-        <button class="btn" id="copy1">복사</button>
-        <button class="btn gh" id="reset">초기화</button>
+      <div id="onlyTop" style="display:none">
+        <h2>화살표</h2>
+        <label class="chk"><input type="checkbox" id="arrowMode"> 화살표 그리기 모드</label>
+        <label class="chk"><input type="checkbox" id="arrowDbl"> 양방향 화살표</label>
+        <div class="row" style="margin-top:8px">
+          <button class="btn gh" id="arrowUndo">마지막 지우기</button>
+          <button class="btn gh" id="arrowClear">전체 지우기</button>
+        </div>
+        <p class="hint" style="margin:8px 0 0">모드를 켜고 시작 스티커 → 끝 스티커를 차례로 누르면 화살표가 그려집니다. PLL의 조각 교환 표시에 씁니다. 모드를 끄면 다시 색칠이 됩니다.</p>
       </div>
-      <p class="hint">스티커를 눌러 칠합니다. 끌면 이어서 칠해지고, <b>이미 그 색인 칸을 누르면 회색으로 돌아갑니다.</b> 센터 6칸은 배색 기준이라 초기화해도 남습니다. 입체 보기에서 큐브 바깥 빈 곳을 끌면 큐브가 자유롭게 돌아갑니다. 탑다운 보기는 윗면과 옆면 윗줄을 위에서 내려다본 그림이라 OLL·PLL 도해에 씁니다. 두 보기는 같은 큐브를 공유합니다.</p>
-    </div>
+      </div>
+    </div></div>
   </div>
   <div class="card"><div class="stage" id="stage1"></div></div>
 </div></section>
@@ -202,11 +250,13 @@ const FACES={
 const FKEYS=['U','D','F','B','R','L'];
 
 /* ========== 상태 ========== */
-let state={}, orient=[[1,0,0],[0,1,0],[0,0,1]], pick='B', view='3d', cubeAlpha=0;
+function mkState(gray){const s={};FKEYS.forEach(f=>{
+  s[f]=[0,1,2].map(r=>[0,1,2].map(c=>(!gray&&r===1&&c===1)?CENTER[f]:'X'));});return s;}
+let state=mkState(), stateTop=mkState(true);      /* 입체와 탑다운은 서로 독립. 탑다운은 전부 회색으로 시작 */
+let orient=[[1,0,0],[0,1,0],[0,0,1]], pick='B', view='3d', cubeAlpha=0, auxGap=1.95;
 let auxOn={U:true,D:true,F:true,B:true,R:true,L:true};
-function resetState(){state={};FKEYS.forEach(f=>{
-  state[f]=[0,1,2].map(r=>[0,1,2].map(c=>(r===1&&c===1)?CENTER[f]:'X'));});}
-resetState();
+let topArrows=[], arrowPending=null, playing=false;
+const curState=()=>view==='top'?stateTop:state;
 const applyM=(M,p)=>[M[0][0]*p[0]+M[0][1]*p[1]+M[0][2]*p[2],
                      M[1][0]*p[0]+M[1][1]*p[1]+M[1][2]*p[2],
                      M[2][0]*p[0]+M[2][1]*p[1]+M[2][2]*p[2]];
@@ -241,8 +291,41 @@ function orthonormalize(M){                /* 드래그 누적 오차 정리 */
   return [r0,r1,cross(r0,r1)];
 }
 
+/* ========== 무브 엔진: 회전기호를 스티커 상태에 적용 ========== */
+const dot3=(a,b)=>a[0]*b[0]+a[1]*b[1]+a[2]*b[2];
+function stickerPos(f,r,c){const F=FACES[f];
+  return add(mul(F.n,1.5),add(mul(F.u,c-1),mul(F.v,r-1)));}
+function moveGeom(mv){
+  const raw=mv.letter, rot='xyz'.includes(raw);
+  const ref=rot?{x:'R',y:'U',z:'F'}[raw]:(BASE[raw]||raw);   /* 회전 방향의 기준 면 */
+  const n=FACES[ref].n;
+  const ax=n[0]?'x':(n[1]?'y':'z'), axIdx=n[0]?0:(n[1]?1:2);
+  const sgn=n[0]+n[1]+n[2];
+  return {ax,axIdx,range:rot?[-2,2]:SPAN[raw],
+          dir:-sgn*(mv.prime?-1:1)};   /* 바깥 법선 기준 시계방향 = -90° */
+}
+function applyMoveTo(st,mv){
+  const g=moveGeom(mv), times=mv.dbl?2:1;
+  let cur=st;
+  for(let k=0;k<times;k++){
+    const out={};FKEYS.forEach(f=>out[f]=cur[f].map(row=>row.slice()));
+    const Rm=rotM(g.ax,g.dir*90*RAD);
+    FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+      const p=stickerPos(f,r,c);
+      if(p[g.axIdx]<g.range[0]-1e-6||p[g.axIdx]>g.range[1]+1e-6) continue;
+      const p2=applyM(Rm,p), n2=applyM(Rm,FACES[f].n);
+      const f2=FKEYS.find(k2=>dot3(FACES[k2].n,n2)>0.9);
+      const F2=FACES[f2];
+      out[f2][Math.round(dot3(p2,F2.v))+1][Math.round(dot3(p2,F2.u))+1]=cur[f][r][c];
+    }});
+    cur=out;
+  }
+  return cur;
+}
+const invMoves=list=>list.slice().reverse().map(m=>({...m,prime:m.dbl?m.prime:!m.prime}));
+
 /* ========== 큐브 그리기 (입체) ========== */
-const AUXGAP=1.95, INSET=0.90, INSET_AUX=0.865;
+const INSET=0.90, INSET_AUX=0.865;
 let dragging3d=false;
 function quad(face,r,c,off){
   const F=FACES[face], base=mul(F.n,1.5+(off||0)), o=[];
@@ -264,46 +347,71 @@ function hiddenFaces(){
   return FKEYS.filter(f=>!faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5))));
 }
 function auxSide(f){                       /* 보조면이 화면 어디로 나가는지 */
-  const p=projPt(applyM(orient,mul(FACES[f].n,1.5+AUXGAP)));
+  const p=projPt(applyM(orient,mul(FACES[f].n,1.5+auxGap)));
   if(p[1]>Math.abs(p[0])*0.6) return '아래쪽';
   return p[0]>0 ? '뒤쪽' : '왼쪽';
 }
-function buildCubeSVG(tight){
-  const W=680,H=620, draw=[];
-  FKEYS.forEach(f=>{
-    const vis=faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5)));
-    if(cubeAlpha>0) draw.push([f,0,false,vis]);          /* 투명 모드: 6면 전부, 보조면 없이 */
-    else if(vis) draw.push([f,0,false,true]);
-    else if(auxOn[f]) draw.push([f,AUXGAP,true,false]);
-  });
-  let T;
+function screenT(tight,draw){
+  const W=680,H=620;
   if(tight){                       /* 내보내기: 내용에 딱 맞게 */
     let bounds=[];
     draw.forEach(([f,o])=>{bounds=bounds.concat(faceOutline(f,o).map(p=>applyM(orient,p)));});
     if(!bounds.length) bounds=faceOutline('U',0).map(p=>applyM(orient,p));
-    T=fit(bounds,W,H,12);
-  }else{                           /* 화면: 어떤 각도·보조면에도 흔들리지 않는 고정 프레임 */
-    const R3=Math.hypot(1.5+AUXGAP,1.5,1.5), fx=R3/Math.sqrt(DIST*DIST-R3*R3);
-    const s=Math.min((W-24)/(2*fx),(H-24)/(2*fx)), cx=W/2, cy=H/2;
-    T=q=>{const r=projPt(q);return [r[0]*s+cx,r[1]*s+cy];};
+    return fit(bounds,W,H,12);
   }
+  /* 화면: 어떤 각도·보조면에도 흔들리지 않는 고정 프레임 */
+  const R3=Math.hypot(1.5+auxGap,1.5,1.5), fx=R3/Math.sqrt(DIST*DIST-R3*R3);
+  const s=Math.min((W-24)/(2*fx),(H-24)/(2*fx)), cx=W/2, cy=H/2;
+  return q=>{const r=projPt(q);return [r[0]*s+cx,r[1]*s+cy];};
+}
+function buildCubeSVG(tight,anim){
+  const W=680,H=620, draw=[];
+  FKEYS.forEach(f=>{
+    const vis=faceVisible(applyM(orient,FACES[f].n),applyM(orient,mul(FACES[f].n,1.5)));
+    if(anim){ if(vis) draw.push([f,0,false,true]); }     /* 재생 중엔 스티커 단위로 그림 */
+    else if(cubeAlpha>0) draw.push([f,0,false,vis]);     /* 투명 모드: 6면 전부, 보조면 없이 */
+    else if(vis) draw.push([f,0,false,true]);
+    else if(auxOn[f]) draw.push([f,auxGap,true,false]);
+  });
+  const T=screenT(tight,draw);
+  const open=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
+
+  if(anim){                        /* 한 층이 도는 중: 스티커별로 회전·정렬해서 그림 */
+    const g=moveGeom(anim.mv);
+    const Am=rotM(g.ax,g.dir*90*(anim.mv.dbl?2:1)*anim.frac*RAD);
+    const items=[];
+    FKEYS.forEach(face=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+      const p0=stickerPos(face,r,c);
+      const moving=p0[g.axIdx]>=g.range[0]-1e-6&&p0[g.axIdx]<=g.range[1]+1e-6;
+      let pts=quad(face,r,c,0), n=FACES[face].n, ctr=p0;
+      if(moving){pts=pts.map(q=>applyM(Am,q));n=applyM(Am,n);ctr=applyM(Am,ctr);}
+      if(!faceVisible(applyM(orient,n),applyM(orient,ctr))) continue;
+      const scr=shrink(pts,INSET).map(q=>T(applyM(orient,q)));
+      items.push([camPt(applyM(orient,ctr))[2],
+        `<path d="${path(scr,true)}" fill="${COLORS[state[face][r][c]][0]}"
+          stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"/>`]);
+    }});
+    items.sort((a,b)=>a[0]-b[0]);
+    return open+items.map(i=>i[1]).join('')+'</svg>';
+  }
+
   const groups=[];
   draw.forEach(([face,off,isAux,vis])=>{
     const depth=camPt(applyM(orient,mul(FACES[face].n,1.5+off)))[2];
     /* 투명 모드에서 카메라를 향한 면만 반투명하게: 뒷면이 그 사이로 비쳐 보인다 */
     let s=(cubeAlpha>0&&vis)?`<g opacity="${(1-cubeAlpha).toFixed(2)}">`:'<g>';
-    if(!isAux) s+=`<path d="${path(faceOutline(face,off).map(p=>T(applyM(orient,p))),true)}" fill="#16202b"/>`;
+    /* 투명 모드에서는 검은 뒤판·윤곽선을 아예 그리지 않는다 */
+    if(!isAux&&cubeAlpha===0) s+=`<path d="${path(faceOutline(face,off).map(p=>T(applyM(orient,p))),true)}" fill="#16202b"/>`;
     for(let r=0;r<3;r++)for(let c=0;c<3;c++){
       const pts=shrink(quad(face,r,c,off),isAux?INSET_AUX:INSET).map(p=>T(applyM(orient,p)));
-      const st=isAux?'':' stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"';
+      const st=(isAux||cubeAlpha>0)?'':' stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"';
       s+=`<path class="st" data-f="${face}" data-r="${r}" data-c="${c}" d="${path(pts,true)}"
            fill="${COLORS[state[face][r][c]][0]}"${st} style="cursor:pointer"/>`;
     }
     groups.push([depth,s+'</g>']);
   });
   groups.sort((a,b)=>a[0]-b[0]);
-  return `<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`
-       +groups.map(g=>g[1]).join('')+'</svg>';
+  return open+groups.map(g=>g[1]).join('')+'</svg>';
 }
 
 /* ========== 큐브 그리기 (탑다운, OLL·PLL 도해) ========== */
@@ -313,8 +421,14 @@ function buildTopSVG(){
   const x0=P+D+G, W=x0+Sf+G+D+P;
   const rr=(x,y,w,h,col,rx,attrs)=>
     `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="${rx}" fill="${col}"${attrs||''}/>`;
-  const cell=(f,r,c,x,y,w,h,rx)=>rr(x,y,w,h,COLORS[state[f][r][c]][0],rx,
-    ` class="st" data-f="${f}" data-r="${r}" data-c="${c}" style="cursor:pointer"`);
+  const centers={};                                  /* 화살표용 스티커 중심 좌표 */
+  const cell=(f,r,c,x,y,w,h,rx)=>{
+    centers[f+r+c]=[x+w/2,y+h/2];
+    const pend=arrowPending&&arrowPending[0]===f&&arrowPending[1]===r&&arrowPending[2]===c;
+    return rr(x,y,w,h,COLORS[stateTop[f][r][c]][0],rx,
+      ` class="st" data-f="${f}" data-r="${r}" data-c="${c}" style="cursor:pointer"`
+      +(pend?' stroke="#4dd8cf" stroke-width="5"':''));
+  };
   const back=(x,y,w,h,rx)=>rr(x-t,y-t,w+2*t,h+2*t,'#111',rx);
   let s=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${W}" width="${Math.round(W*1.1)}" height="${Math.round(W*1.1)}">`;
   s+=rr(x0,x0,Sf,Sf,'#111',14);                      /* 윗면 뒤판 */
@@ -328,6 +442,18 @@ function buildTopSVG(){
     s+=back(P,p,D,cw,8) +cell('L',0,c,  P,p,D,cw,5);       /* 왼쪽 = L */
     s+=back(y1,p,D,cw,8)+cell('R',0,2-c,y1,p,D,cw,5);      /* 오른쪽 = R */
   }
+  const bigHead=(a,b)=>{const an=Math.atan2(b[1]-a[1],b[0]-a[0]),L=24,w=.5;
+    return `<polygon points="${b[0].toFixed(1)},${b[1].toFixed(1)} ${(b[0]-L*Math.cos(an-w)).toFixed(1)},${(b[1]-L*Math.sin(an-w)).toFixed(1)} ${(b[0]-L*Math.cos(an+w)).toFixed(1)},${(b[1]-L*Math.sin(an+w)).toFixed(1)}" fill="#111"/>`;};
+  topArrows.forEach(a=>{                             /* PLL 교환 화살표 */
+    const A=centers[a.a.join('')], B=centers[a.b.join('')];
+    if(!A||!B) return;
+    const an=Math.atan2(B[1]-A[1],B[0]-A[0]), k=14;
+    const A2=[A[0]+k*Math.cos(an),A[1]+k*Math.sin(an)], B2=[B[0]-k*Math.cos(an),B[1]-k*Math.sin(an)];
+    const sh=p=>[p[0]-10*Math.cos(an),p[1]-10*Math.sin(an)];   /* 촉 안쪽까지만 선 */
+    s+=`<path d="${path([a.dbl?[A2[0]+10*Math.cos(an),A2[1]+10*Math.sin(an)]:A2,sh(B2)])}" stroke="#111" stroke-width="7" stroke-linecap="round" fill="none"/>`;
+    s+=bigHead(A2,B2);
+    if(a.dbl) s+=bigHead(B2,A2);
+  });
   return s+'</svg>';
 }
 
@@ -341,21 +467,35 @@ function drawCube(){
 let down=false, dragCol=null;
 addEventListener('pointerup',()=>{down=false;dragCol=null;});
 function put(el,col){
-  state[el.dataset.f][+el.dataset.r][+el.dataset.c]=col;
+  curState()[el.dataset.f][+el.dataset.r][+el.dataset.c]=col;
   el.setAttribute('fill',COLORS[col][0]);
   persist();
 }
 function bindStickers(){
   document.querySelectorAll('#stage1 .st').forEach(el=>{
     el.addEventListener('pointerdown',e=>{
-      e.preventDefault(); down=true;
-      const cur=state[el.dataset.f][+el.dataset.r][+el.dataset.c];
+      if(playing) return;
+      e.preventDefault();
+      if(view==='top'&&document.getElementById('arrowMode').checked){
+        arrowClick(el.dataset.f,+el.dataset.r,+el.dataset.c); return;
+      }
+      down=true;
+      const cur=curState()[el.dataset.f][+el.dataset.r][+el.dataset.c];
       dragCol=(e.button===2||cur===pick)?'X':pick;
       put(el,dragCol);
     });
     el.addEventListener('pointerenter',()=>{if(down&&dragCol)put(el,dragCol);});
   });
   document.getElementById('stage1').oncontextmenu=e=>e.preventDefault();
+}
+function arrowClick(f,r,c){
+  const cur=[f,r,c];
+  if(arrowPending&&arrowPending.join('')===cur.join('')) arrowPending=null;       /* 같은 칸 = 취소 */
+  else if(arrowPending){
+    topArrows.push({a:arrowPending,b:cur,dbl:document.getElementById('arrowDbl').checked});
+    arrowPending=null; persist();
+  }else arrowPending=cur;
+  drawCube();
 }
 function renderAux(){
   const box=document.getElementById('auxbox'), hid=hiddenFaces();
@@ -372,7 +512,7 @@ function renderAux(){
 let drag3=null;
 const stage1El=document.getElementById('stage1');
 stage1El.addEventListener('pointerdown',e=>{
-  if(view!=='3d') return;
+  if(view!=='3d'||playing) return;
   if(document.getElementById('lock').checked) return;
   if(e.target.classList&&e.target.classList.contains('st')) return;
   e.preventDefault();
@@ -403,6 +543,7 @@ function setView(v){
   view=v;
   document.querySelectorAll('#views .btn').forEach(b=>b.setAttribute('aria-pressed',b.dataset.view===v));
   document.getElementById('only3d').style.display=v==='3d'?'':'none';
+  document.getElementById('onlyTop').style.display=v==='top'?'':'none';
   drawCube(); persist();
 }
 document.querySelectorAll('#views .btn').forEach(b=>b.onclick=()=>setView(b.dataset.view));
@@ -436,8 +577,10 @@ const ROTBTN=[['x','',"앞면이 위로 (x)"],['x',"'","앞면이 아래로 (x')
 document.getElementById('rots').innerHTML=ROTBTN.map(([k,p,t])=>
   `<button class="btn ico" title="${t}" data-rot="${k}${p}">${icon(k,!!p)}</button>`).join('');
 document.querySelectorAll('[data-rot]').forEach(b=>b.onclick=()=>rotate(b.dataset.rot));
-document.getElementById('reset').onclick=()=>{resetState();orient=[[1,0,0],[0,1,0],[0,0,1]];
-  FKEYS.forEach(f=>auxOn[f]=true);drawCube();updateAngleUI();persist();};
+document.getElementById('reset').onclick=()=>{
+  if(view==='top'){stateTop=mkState(true);topArrows=[];arrowPending=null;}
+  else{state=mkState();orient=[[1,0,0],[0,1,0],[0,0,1]];FKEYS.forEach(f=>auxOn[f]=true);updateAngleUI();}
+  drawCube();persist();};
 
 /* 각도 슬라이더: orient = Rx(X)·Ry(Y)·Rz(Z) */
 const AXES=['x','y','z'];
@@ -477,23 +620,102 @@ function setAlpha(v){
 alRg.addEventListener('input',()=>setAlpha(alRg.value));
 alNum.addEventListener('input',()=>setAlpha(alNum.value));
 
-/* 각도 슬롯 */
-let slots=[null,null,null];
+/* 회전기호 적용 · 재생 */
+const applyInput=document.getElementById('applyAlg');
+function getApplyMoves(){
+  const {moves,bad}=parseAlg(applyInput.value);
+  if(bad.length){toast(`모르는 기호: ${bad.join(', ')}`);return null;}
+  if(!moves.length){toast('회전기호를 입력하세요');return null;}
+  return moves;
+}
+function runMoves(moves){
+  if(view==='top') stateTop=moves.reduce(applyMoveTo,stateTop);
+  else state=moves.reduce(applyMoveTo,state);
+  drawCube();persist();
+}
+document.getElementById('applyBtn').onclick=()=>{if(playing)return;const m=getApplyMoves();if(m){runMoves(m);toast('적용했습니다');}};
+document.getElementById('applyInvBtn').onclick=()=>{if(playing)return;const m=getApplyMoves();if(m){runMoves(invMoves(m));toast('역으로 적용했습니다');}};
+document.getElementById('playBtn').onclick=async()=>{
+  if(playing)return;
+  const m=getApplyMoves(); if(!m)return;
+  if(view!=='3d') setView('3d');
+  playing=true;
+  for(const mv of m){
+    if(!playing) break;
+    await animateMove(mv);
+    state=applyMoveTo(state,mv);
+    drawCube();
+  }
+  playing=false; drawCube(); persist();
+};
+document.getElementById('stopBtn').onclick=()=>{playing=false;};
+function animateMove(mv){
+  return new Promise(res=>{
+    const dur=mv.dbl?540:380, t0=performance.now();
+    function frame(t){
+      if(!playing){res();return;}
+      let k=Math.min(1,(t-t0)/dur);
+      k=k<.5?2*k*k:1-2*(1-k)*(1-k);                 /* ease in-out */
+      document.getElementById('stage1').innerHTML=buildCubeSVG(false,{mv,frac:k});
+      if(k<1) requestAnimationFrame(frame); else res();
+    }
+    requestAnimationFrame(frame);
+  });
+}
+
+/* 단계 프리셋 */
+const PRESETKEEP={
+  full :(f,r,c)=>true,
+  cross:(f,r,c)=>(f==='U'&&(r===1||c===1))||('FBRL'.includes(f)&&r===0&&c===1),
+  f1   :(f,r,c)=>f==='U'||('FBRL'.includes(f)&&r===0),
+  f2   :(f,r,c)=>f==='U'||('FBRL'.includes(f)&&r<=1)
+};
+document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
+  if(playing)return;
+  const keep=PRESETKEEP[b.dataset.preset], st=curState();
+  FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++)
+    st[f][r][c]=(keep(f,r,c)||(view!=='top'&&r===1&&c===1))?CENTER[f]:'X';});
+  drawCube();persist();
+});
+
+/* 탑다운 화살표 버튼 */
+document.getElementById('arrowUndo').onclick=()=>{topArrows.pop();arrowPending=null;drawCube();persist();};
+document.getElementById('arrowClear').onclick=()=>{topArrows=[];arrowPending=null;drawCube();persist();};
+document.getElementById('arrowMode').onchange=()=>{arrowPending=null;drawCube();};
+
+/* 보조면 거리 */
+const gapRg=document.getElementById('gap'), gapNum=document.getElementById('gapnum');
+function setGap(v){
+  v=Math.max(0,Math.min(4,+v||0));
+  auxGap=v; gapRg.value=v; gapNum.value=v;
+  drawCube(); persist();
+}
+gapRg.addEventListener('input',()=>setGap(gapRg.value));
+gapNum.addEventListener('input',()=>setGap(gapNum.value));
+
+/* 각도 슬롯: 저장할 때마다 추가, 최대 5개, 호버 ×로 삭제 */
+const MAXSLOTS=5;
+let slots=[];
 const okMat=m=>Array.isArray(m)&&m.length===3&&m.every(r=>Array.isArray(r)&&r.length===3&&r.every(x=>typeof x==='number'));
 function renderSlots(){
   const el=document.getElementById('slots');
   el.innerHTML=slots.map((s,i)=>
-    `<button class="btn slot${s?'':' empty'}" data-slot="${i}" title="${s?'클릭: 불러오기 / 우클릭: 지금 각도로 덮어쓰기':'클릭: 지금 각도 저장'}">${i+1}</button>`).join('');
-  el.querySelectorAll('[data-slot]').forEach(b=>{
-    const i=+b.dataset.slot;
-    const save=msg=>{slots[i]=orient.map(r=>r.slice());renderSlots();persist();toast(msg);};
-    b.onclick=()=>{
-      if(slots[i]){orient=slots[i].map(r=>r.slice());drawCube();updateAngleUI();persist();toast(`슬롯 ${i+1} 각도로 이동했습니다`);}
-      else save(`슬롯 ${i+1}에 저장했습니다`);
-    };
-    b.oncontextmenu=e=>{e.preventDefault();save(`슬롯 ${i+1}에 덮어썼습니다`);};
+    `<span class="slotwrap"><button class="btn slot" data-slot="${i}" title="이 각도로 이동">${i+1}</button>
+     <button class="del" data-del="${i}" title="삭제">×</button></span>`).join('');
+  el.querySelectorAll('[data-slot]').forEach(b=>b.onclick=()=>{
+    orient=slots[+b.dataset.slot].map(r=>r.slice());
+    drawCube();updateAngleUI();persist();toast(`슬롯 ${+b.dataset.slot+1} 각도로 이동했습니다`);
+  });
+  el.querySelectorAll('[data-del]').forEach(b=>b.onclick=()=>{
+    slots.splice(+b.dataset.del,1);
+    renderSlots();persist();toast('슬롯을 삭제했습니다');
   });
 }
+document.getElementById('slotSave').onclick=()=>{
+  if(slots.length>=MAXSLOTS){toast(`슬롯은 최대 ${MAXSLOTS}개입니다. 안 쓰는 슬롯을 지워주세요`);return;}
+  slots.push(orient.map(r=>r.slice()));
+  renderSlots();persist();toast(`슬롯 ${slots.length}에 저장했습니다`);
+};
 renderSlots();
 
 /* ========== 회전기호 도해 ========== */
@@ -723,7 +945,7 @@ let saveTimer=null;
 function persistNow(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
-      state,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,
+      state,stateTop,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
       alg:ta.value,
       snap:document.getElementById('snap').checked,
       lock:document.getElementById('lock').checked,
@@ -739,12 +961,17 @@ function loadLocal(){
   try{d=JSON.parse(localStorage.getItem(LSKEY)||'null');}catch(e){}
   if(!d) return;
   try{
-    if(d.state&&FKEYS.every(f=>Array.isArray(d.state[f])&&d.state[f].length===3))
-      FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
-        const v=d.state[f][r]&&d.state[f][r][c];
-        state[f][r][c]=COLORS[v]?v:'X';}});
+    const loadFaces=(src,dst)=>{
+      if(src&&FKEYS.every(f=>Array.isArray(src[f])&&src[f].length===3))
+        FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+          const v=src[f][r]&&src[f][r][c];
+          dst[f][r][c]=COLORS[v]?v:'X';}});
+    };
+    loadFaces(d.state,state);
+    loadFaces(d.stateTop,stateTop);
     if(okMat(d.orient)) orient=d.orient;
-    if(Array.isArray(d.slots)&&d.slots.length===3){slots=d.slots.map(s=>okMat(s)?s:null);renderSlots();}
+    if(Array.isArray(d.slots)){slots=d.slots.filter(okMat).slice(0,MAXSLOTS);renderSlots();}
+    if(Array.isArray(d.arrows)) topArrows=d.arrows.filter(a=>a&&Array.isArray(a.a)&&Array.isArray(a.b));
     if(d.auxOn) FKEYS.forEach(f=>{if(typeof d.auxOn[f]==='boolean')auxOn[f]=d.auxOn[f];});
     if(COLORS[d.pick]){pick=d.pick;reflectPick();}
     if(typeof d.alg==='string') ta.value=d.alg;
@@ -753,6 +980,8 @@ function loadLocal(){
     if(typeof d.lock==='boolean') document.getElementById('lock').checked=d.lock;
     if(typeof d.alpha==='number'){cubeAlpha=Math.max(0,Math.min(.9,d.alpha));
       alRg.value=Math.round(cubeAlpha*100);alNum.value=Math.round(cubeAlpha*100);}
+    if(typeof d.gap==='number'){auxGap=Math.max(0,Math.min(4,d.gap));
+      gapRg.value=auxGap;gapNum.value=auxGap;}
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
