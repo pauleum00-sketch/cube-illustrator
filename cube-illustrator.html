@@ -87,7 +87,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.5.0</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.5.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -932,6 +932,7 @@ function moveDiagram(mv,W,H){
 function parseAlg(txt){
   const toks=txt.trim().split(/[\s,]+/).filter(Boolean), out=[], bad=[];
   toks.forEach(t=>{
+    t=t.replace(/^([RLUDFB])w/,(_,l)=>l.toLowerCase());   /* Rw = r */
     const m=t.match(/^([RLUDFBrludfbMESxyz])((?:['’]|2)*)$/);
     if(!m){bad.push(t);return;}
     out.push({letter:m[1],prime:/['’]/.test(m[2]),dbl:/2/.test(m[2])});
@@ -985,7 +986,8 @@ document.querySelectorAll('#keys [data-k]').forEach(b=>b.onclick=()=>{
   const v=ta.value.trim(); setVal((v?v+' ':'')+b.dataset.k);});
 document.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{
   const t=ta.value.trim().split(/\s+/).filter(Boolean); if(!t.length)return;
-  const m=t.pop().match(/^([RLUDFBrludfbMESxyz])((?:['’]|2)*)$/); if(!m){t.push(m);return;}
+  const m=t.pop().replace(/^([RLUDFB])w/,(_,l)=>l.toLowerCase())
+    .match(/^([RLUDFBrludfbMESxyz])((?:['’]|2)*)$/); if(!m)return;
   let pr=/['’]/.test(m[2]), db=/2/.test(m[2]);
   if(b.dataset.mod==="'") pr=!pr; else db=!db;
   t.push(m[1]+(pr?"'":'')+(db?'2':'')); setVal(t.join(' '));});
