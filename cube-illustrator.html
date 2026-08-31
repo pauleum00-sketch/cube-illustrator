@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.3</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.4</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -1203,20 +1203,13 @@ function buildCaseSVG(st,M){
   groups.sort((a,b)=>a[0]-b[0]);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`+groups.map(g=>g[1]).join('')+'</svg>';
 }
-/* Front Left = 왼손용 미러: 케이스를 좌우 거울 반사(빨강↔주황 교환)하고,
-   공식은 R↔L 교환 + 모든 방향 반전 (U R U' R' → U' L' U L) */
-function mirrorState(st){
-  const out={};FKEYS.forEach(f=>out[f]=st[f].map(r=>r.slice()));
-  const CMAP={G:'B',B:'G'};   /* 좌우 반사 후 초록↔파랑을 바꾸면 같은 실제 배색이 유지된다 */
-  FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
-    const p=stickerPos(f,r,c), n=FACES[f].n;
-    const f2=FKEYS.find(k=>dot3(FACES[k].n,[-n[0],n[1],n[2]])>0.9);
-    const F2=FACES[f2], pm=[-p[0],p[1],p[2]];
-    const col=st[f][r][c];
-    out[f2][Math.round(dot3(pm,F2.v))+1][Math.round(dot3(pm,F2.u))+1]=CMAP[col]||col;
-  }});
-  return out;
-}
+/* Front Left = 같은 케이스를 y 회전만 해서 왼손 각도로 본 것 (모양·색 그대로).
+   이 그림을 왼손(미러) 공식으로 풀면, 그 공식·셋업은 거울짝 케이스의 것을 미러한 것이다.
+   짝 매핑은 "미러 공식이 y 회전된 그림을 실제로 푸는가"로 41케이스 전수 계산해 확정함 */
+const YMOVE={letter:'y',prime:false,dbl:false};
+const FLPARTNER={1:2,2:1,3:4,4:3,5:6,6:5,7:8,8:7,9:10,10:9,11:12,12:11,13:14,14:13,
+  15:16,16:15,17:18,18:17,19:20,20:19,21:22,22:21,23:24,24:23,25:26,26:25,27:28,28:27,
+  29:30,30:29,31:31,32:32,33:34,34:33,35:36,36:35,37:37,38:39,39:38,40:41,41:40};
 function mirrorAlg(txt){
   const {moves,bad}=parseAlg(txt);
   if(bad.length) return txt;
@@ -1293,7 +1286,7 @@ const SVGS={}, SVGSL={}, YROT=rotM('y',66*RAD);
 DATA.forEach(([n,,setup])=>{
   const st=caseState(setup);
   SVGS[n]=buildCaseSVG(st);
-  SVGSL[n]=buildCaseSVG(mirrorState(st),YROT);
+  SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),YROT);   /* y 회전만, 모양·색 불변 */
 });
 
 const LSKEY2='f2lWorkbook.v1';
@@ -1306,6 +1299,8 @@ try{
 const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({sel:[...sel],algIdx,diag,order,slotSide}));}catch(e){}};
 const svgFor=n=>slotSide==='fl'?SVGSL[n]:SVGS[n];
 const algText=a=>slotSide==='fl'?mirrorAlg(a):a;
+/* FL에서는 공식·셋업을 거울짝 케이스에서 가져와 미러한다 (그림과 일치) */
+const dispData=n=>DATA.find(x=>x[0]===(slotSide==='fl'?FLPARTNER[n]:n));
 
 function renderGroups(){
   const box=document.getElementById('groups');
@@ -1314,12 +1309,12 @@ function renderGroups(){
     return `<div class="cat">
       <label class="cat-head"><input type="checkbox" data-cat="${cat}"> ${cat}
         <span class="cnt" data-catcnt="${cat}"></span></label>
-      <div class="cases">`+items.map(([n,,,algs])=>`
+      <div class="cases">`+items.map(([n])=>`
         <div class="case" data-case="${n}">
           <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}</div>
           <div class="img">${svgFor(n)}</div>
           <select data-alg="${n}" title="표에 실을 공식">`+
-            algs.map((a,i)=>`<option value="${i}">${esc(algText(a))}</option>`).join('')+
+            dispData(n)[3].map((a,i)=>`<option value="${i}">${esc(algText(a))}</option>`).join('')+
           `</select>
         </div>`).join('')+`</div></div>`;
   }).join('');
@@ -1363,7 +1358,8 @@ function renderTable(){
   const rows=DATA.filter(([n])=>sel.has(n));
   document.getElementById('meta').textContent=
     rows.length?`${rows.length}개 케이스 · 공식·분류 출처: speedcubedb.com`:'';
-  const row=([n,,setup,algs])=>{
+  const row=([n])=>{
+    const [,,setup,algs]=dispData(n);
     const a=algText(algs[algIdx[n]||0]);
     return `<tr>
       <td class="idx">F2L ${n}</td>
