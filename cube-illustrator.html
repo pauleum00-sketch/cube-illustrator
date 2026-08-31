@@ -84,14 +84,51 @@ textarea:focus{outline:2px solid var(--teal);outline-offset:1px}
 .toast.on{opacity:1;transform:translateX(-50%)}
 .foot{color:var(--muted);font-size:12.5px;padding:8px 24px 40px;max-width:1520px;margin:0 auto}
 kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1px 6px;font-size:11.5px;font-family:ui-monospace,monospace}
+
+/* ===== F2L 교본 ===== */
+.cat{margin-top:18px}
+.cat-head{display:flex;align-items:center;gap:9px;font-size:14.5px;font-weight:700;margin-bottom:10px}
+.cat-head .cnt{color:var(--muted);font-weight:400;font-size:12.5px}
+.cases{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.case{background:#0c1e35;border:1.5px solid var(--line);border-radius:10px;padding:10px;cursor:pointer}
+.case.on{border-color:var(--teal);background:rgba(77,216,207,.07)}
+.case .top{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:6px}
+.case .img{background:#fff;border-radius:8px;padding:6px;display:flex;justify-content:center}
+.case .img svg{width:100%;max-width:120px;height:auto;display:block}
+.case select{width:100%;margin-top:8px;background:#0c1e35;border:1px solid var(--line);color:var(--ink);
+  border-radius:6px;padding:5px 4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
+#sheet{background:#fff;color:#111;border-radius:14px;padding:28px 30px;margin-top:18px}
+#sheet h1{font-size:22px;color:#111;margin:0 0 4px;font-family:inherit;letter-spacing:0}
+#sheet .meta{font-size:12.5px;color:#666;margin-bottom:14px}
+#sheet table{width:100%;border-collapse:collapse}
+#sheet th{font-size:12px;letter-spacing:.6px;text-align:left;color:#555;border-bottom:2px solid #111;padding:6px 8px}
+#sheet td{border-bottom:1px solid #d5d9de;padding:7px 8px;vertical-align:middle}
+#sheet tr{page-break-inside:avoid;break-inside:avoid}
+#sheet .idx{font-weight:700;white-space:nowrap;width:70px}
+#sheet .pic{width:104px}
+#sheet .pic svg{width:96px;height:auto;display:block}
+#sheet .alg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px}
+#sheet .alg svg{max-width:100%;height:auto;display:block}
+#sheet tr.cathead td{border-bottom:1.5px solid #111;background:#f0f2f4;
+  font-weight:800;font-size:13.5px;letter-spacing:.4px;padding:9px 8px}
+#sheet .setup{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#444}
+#sheet .empty{color:#888;font-size:14px;padding:26px 0;text-align:center}
+@media print{
+  header,.foot,.no-print{display:none !important}
+  body{background:#fff}
+  main{padding:0;max-width:none}
+  #sheet{border-radius:0;padding:0;margin:0}
+  @page{margin:14mm 12mm}
+}
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.5.1</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.6.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
     <button id="t2" aria-selected="false">회전기호 도해</button>
+    <button id="t3" aria-selected="false">F2L 교본</button>
   </nav>
 </div></header>
 
@@ -204,6 +241,32 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   </div>
   <div class="card"><div class="stage" id="stage2"></div></div>
 </div></section>
+
+<section class="panel" id="p3">
+<div class="card no-print">
+  <h2>케이스 선택</h2>
+  <div class="row">
+    <button class="btn" id="selAll">전체 선택</button>
+    <button class="btn" id="selNone">전체 해제</button>
+    <label class="chk" style="margin-left:8px"><input type="checkbox" id="diagMode"> 공식을 회전기호 도해로 표시</label>
+    <span class="chk" style="margin-left:8px;gap:10px">정렬:
+      <label class="chk"><input type="radio" name="ord" value="num"> 숫자 순서대로</label>
+      <label class="chk"><input type="radio" name="ord" value="cat"> 케이스 분류대로</label>
+    </span>
+    <span style="flex:1"></span>
+    <button class="btn pri" id="printBtn">🖨 프린트</button>
+    <button class="btn pri" id="pdfBtn">PDF 내보내기</button>
+  </div>
+  <p class="hint">카드를 누르면 선택되고, 카드 아래 목록에서 표에 실을 공식을 고릅니다.
+    PDF는 프린트 창에서 <b>대상 → PDF로 저장</b>. 공식·분류는 SpeedCubeDB 기준.</p>
+  <div id="groups"></div>
+</div>
+<div id="sheet">
+  <h1 contenteditable="true" spellcheck="false">F2L 복습 교본</h1>
+  <div class="meta" id="meta"></div>
+  <div id="tablebox"></div>
+</div>
+</section>
 </main>
 
 <div class="foot">모든 그림이 같은 투시각을 씁니다. 작업 내용은 이 브라우저에 자동 저장됩니다.</div>
@@ -1046,13 +1109,13 @@ document.getElementById('lock').onchange=persist;
 document.getElementById('viewRel').onchange=persist;
 
 /* 탭 */
-const t1=document.getElementById('t1'),t2=document.getElementById('t2');
-function tab(n){t1.setAttribute('aria-selected',n===1);t2.setAttribute('aria-selected',n===2);
-  document.getElementById('p1').classList.toggle('on',n===1);
-  document.getElementById('p2').classList.toggle('on',n===2);
+const TABS=[1,2,3].map(i=>document.getElementById('t'+i));
+function tab(n){
+  TABS.forEach((b,i)=>{b.setAttribute('aria-selected',i===n-1);
+    document.getElementById('p'+(i+1)).classList.toggle('on',i===n-1);});
   activeTab=n;persist();}
 let activeTab=1;
-t1.onclick=()=>tab(1); t2.onclick=()=>tab(2);
+TABS.forEach((b,i)=>b.onclick=()=>tab(i+1));
 
 /* ========== 로컬 자동 저장 ========== */
 const LSKEY='cubeIllustrator.v1';
@@ -1106,9 +1169,196 @@ function loadLocal(){
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
-    if(d.tab===2) tab(2);
+    if(d.tab===2||d.tab===3) tab(d.tab);
   }catch(e){}
 }
+
+/* ========== F2L 교본 (f2l-workbook 이식 — 엔진은 위의 것을 그대로 씀) ========== */
+const F2LCENTER={U:'Y',D:'W',F:'G',B:'B',R:'R',L:'O'};   /* 흰 크로스가 아래 */
+function caseState(setup){
+  /* 2층까지 완성 + 탑레이어 전부 회색에서 셋업을 적용 → 페어 조각만 색이 있는 케이스 그림 */
+  const s={};
+  FKEYS.forEach(f=>{s[f]=[0,1,2].map(r=>[0,1,2].map(c=>
+    (f==='U'||('FBRL'.includes(f)&&r===0))?'X':F2LCENTER[f]));});
+  return parseAlg(setup).moves.reduce(applyMoveTo,s);
+}
+function buildCaseSVG(st){
+  const W=240,H=220;
+  const vis=FKEYS.filter(f=>faceVisible(FACES[f].n,mul(FACES[f].n,1.5)));   /* U·F·R */
+  let bounds=[];
+  vis.forEach(f=>bounds=bounds.concat(faceOutline(f)));
+  const T=fit(bounds,W,H,6);
+  const groups=vis.map(face=>{
+    let s=`<path d="${path(faceOutline(face).map(T),true)}" fill="#16202b"/>`;
+    for(let r=0;r<3;r++)for(let c=0;c<3;c++)
+      s+=`<path d="${path(shrink(quad(face,r,c),0.90).map(T),true)}" fill="${COLORS[st[face][r][c]][0]}" stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"/>`;
+    return [camPt(mul(FACES[face].n,1.5))[2],s];
+  });
+  groups.sort((a,b)=>a[0]-b[0]);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`+groups.map(g=>g[1]).join('')+'</svg>';
+}
+function algSVG(txt){
+  const {moves,bad}=parseAlg(txt);
+  if(bad.length||!moves.length) return esc(txt);
+  /* 도해 탭 원본 크기로 그린 뒤 절반으로 축소 표시 → 선 굵기 비율 동일 */
+  const CW=124, CH=132, LBL=40;
+  const PER=Math.min(moves.length,8);
+  const rows=Math.ceil(moves.length/PER);
+  const W=PER*CW, H=rows*(CH+LBL);
+  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W/2}" height="${H/2}">`;
+  moves.forEach((mv,i)=>{
+    const x=(i%PER)*CW, y=Math.floor(i/PER)*(CH+LBL);
+    s+=`<g transform="translate(${x},${y})">${moveDiagram(mv,CW,CH)}`
+      +`<text x="${CW/2}" y="${CH+27}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"`
+      +` font-size="25" font-weight="700" fill="#111">${esc(lab(mv))}</text></g>`;
+  });
+  return s+'</svg>';
+}
+
+/* 데이터 (SpeedCubeDB 기준): [번호, 분류, 셋업, 공식들] */
+const CATS=['Free Pairs','Connected Pairs','Disconnected Pairs','Corner In Slot','Edge In Slot','Pieces In Slot'];
+const DATA=[
+ [1,'Free Pairs',"F R' F' R",["U R U' R'","R' F R F'","y' r' U' R U M'","y U F' L F L2 U L"]],
+ [2,'Free Pairs',"R' F R F'",["F R' F' R","y' U' R' U R","U' F' U F","y U' L' U L"]],
+ [3,'Free Pairs',"F' U F",["F' U' F","y' R' U' R","y L' U' L","S U R U' R' S'"]],
+ [4,'Free Pairs',"R U' R'",["R U R'","y' f R f'","y F U F'","y2 L U L'"]],
+ [5,'Disconnected Pairs',"R U R' U2' R U' R' U",["U' R U R' U2 R U' R'","F2 L' U' L U F2","U' R U R' U' R U2 R'","U' R U R' U R' F R F'"]],
+ [6,'Disconnected Pairs',"F' U' F U2' F' U F U'",["U' r U' R' U R U r'","y' U R' U' R U2 R' U R","d R' U' R U2 R' U R","U F' U' F U2 F' U F"]],
+ [7,'Disconnected Pairs',"R U R' U2' R U2' R' U",["U' R U2 R' U' R U2 R'","M' U' M U2 r U' r'","U' R U2 R' U2 R U' R'","U' R U2 R' U R' F R F'"]],
+ [8,'Disconnected Pairs',"r' U' R2 U' R2' U2' r",["r' U2 R2 U R2 U r","d R' U2 R U R' U2 R","y' U R' U2 R U2 R' U R","y U L' U2 L U2 L' U L"]],
+ [9,'Disconnected Pairs',"F' U F U' R U R' U",["U' R U' R' U F' U' F","F R U R' U' F' R U' R'","U' R U' R' d R' U' R","d R' U' R U' R' U' R"]],
+ [10,'Disconnected Pairs',"R U' R' U' R U' R' U",["U' R U R' U R U R'","U2 R U' R' U' R U R'","d R' U R d' R U R'","y' U R' U R U' f R f'"]],
+ [11,'Connected Pairs',"F' U F U' R U2' R' U",["U' R U2 R' U F' U' F","y' R U2 R2 U' R2 U' R'","U' R U2 R' d R' U' R","F' U L' U2 L U2 F"]],
+ [12,'Connected Pairs',"R U R' U2' R U R' U' R U R'",["R U' R' U R U' R' U2 R U' R'","R' U2 R2 U R2 U R","U F' U2 F U' R U R'","U R U' R' U' R U R' U' R U R'"]],
+ [13,'Connected Pairs',"r U2' R' U R U' R' U M",["y' U R' U R U' R' U' R","M' U' R U R' U2 R U' r'","R U' R' U R' F R F' R U' R'","d R' U R U' R' U' R"]],
+ [14,'Connected Pairs',"R U' R' U' R U R' U",["U' R U' R' U R U R'","R U2 R' U2 R U R' U2 R U' R'","U' R2 D R' U R D' R2","U2 R2 U R' U R U2 R2"]],
+ [15,'Connected Pairs',"R U R' U' R U R' U2' R U' R'",["M U r U' r' U' M'","R' D' R U' R' D R U R U' R'","R U R' U2 R U' R' U R U' R'","F' U F U2 R U R'"]],
+ [16,'Connected Pairs',"F' U F U2' R U R'",["R U' R' U2 F' U' F","R U' R' U2 y' R' U' R","U M' U R U' r' U' R U R'","U F U R U' R' F' R U R'"]],
+ [17,'Connected Pairs',"R U' R' U R U2' R'",["R U2 R' U' R U R'","y2 L U2 L' U' L U L'","R U R' U' R U2 R' U2 R U R'","y L F' L' F L' U L U' L' U L"]],
+ [18,'Connected Pairs',"R U R' U' R U R' F R' F' R",["y' R' U2 R U R' U' R","y L' U2 L U L' U' L","F' U2 F U F' U' F","R' F R F' R U' R' U R U' R'"]],
+ [19,'Disconnected Pairs',"R U R' U' R U2' R' U'",["U R U2 R' U R U' R'","U R U2 R2 F R F'","d f R2 f' U f R' f'","R U' R' U R U' R' U R U R'"]],
+ [20,'Disconnected Pairs',"R U R' F R' F' R2' U R' U",["y' U' R' U2 R U' R' U R","U' R U' R2 F R F' R U' R'","y U' L' U2 L U' L' U L","U' F' U2 F U' F' U F"]],
+ [21,'Disconnected Pairs',"R U' R' U2' R U R'",["U2 R U R' U R U' R'","R U' R' U2 R U R'","R B U2 B' R'","y' f R' f' U2 f R f'"]],
+ [22,'Disconnected Pairs',"F' L' U2' L F",["r U' r' U2 r U r'","F' L' U2 L F","y' U2 R' U' R U' R' U R","y U2 L' U' L U' L' U L"]],
+ [23,'Connected Pairs',"R U' R' U R U' R' U2' R U' R'",["U R U' R' U' R U' R' U R U' R'","R U R' U2 R U R' U' R U R'","U2 R2 U2 R' U' R U' R2","R U' R2 D' R U2 R' D R"]],
+ [24,'Connected Pairs',"R U R' F R U R' U' F'",["F U R U' R' F' R U' R'","U' R U R2 F R F' R U' R'","y' R' U' R U2 R' U' R U R' U' R","U F' L' U L F R U R'"]],
+ [25,'Corner In Slot',"F' R U R' U' R' F R",["U' R' F R F' R U R'","R' F' R U R U' R' F","U' F' U F U R U' R'","l' U' l U l F' l' F"]],
+ [26,'Corner In Slot',"F' U' F U R U R' U'",["U R U' R' F R' F' R","R S' R' U R S R'","U R U R' U' y L' U' L","U R U' R' U' F' U F"]],
+ [27,'Corner In Slot',"R U R' U' R U R'",["R U' R' U R U' R'","F' U' F U2 R U' R'","y' f R' f' U f R' f'","y' f R' f' r' U' R U M'"]],
+ [28,'Corner In Slot',"R' F R F' U R U' R'",["R U R' U' F R' F' R","y L' U L U' L' U L","F' U F U' F' U F","y' R' U R U' R' U R"]],
+ [29,'Corner In Slot',"F R' F' R F R' F' R",["R' F R F' U R U' R'","y L' U' L U L' U' L","y' R' U' R U R' U' R","R' F R F' R' F R F'"]],
+ [30,'Corner In Slot',"R U' R' U R U' R'",["R U R' U' R U R'","U' R U2 R' U2 R U R'","U' F R' F' R2 U R'","U2 F' U F R U R'"]],
+ [31,'Edge In Slot',"R U R' F R' F' R U",["U' R' F R F' R U' R'","R U' R' U y' R' U R","F' U F R U2 R'","R U' R' U y L' U L"]],
+ [32,'Edge In Slot',"R U' R' U R U' R' U R U' R'",["U R U' R' U R U' R' U R U' R'","R U R' U' R U R' U' R U R'","R2 U R2 U R2 U2 R2","U' F R' F' R U' R U R'"]],
+ [33,'Edge In Slot',"R U R' U2' R U R' U",["U' R U' R' U2 R U' R'","y R' D R U' R' D' R","R U R' U' R U' R' U R U' R'","U' R U' R' U' R U2 R'"]],
+ [34,'Edge In Slot',"R U' R' U2' R U' R' U'",["U R U R' U2 R U R'","U' R U2 R' U R U R'","U R' D' R U' R' D R","y U L' U L U2 L' U L"]],
+ [35,'Edge In Slot',"F' U F U' R U' R' U",["U' R U R' U F' U' F","U' R U R' d R' U' R","U2 R U R' F R' F' R","U' R U R' U y' R' U' R"]],
+ [36,'Edge In Slot',"R U' R' U2' F R' F' R U2'",["U F' U' F U' R U R'","U2 R' F R F' U2 R U R'","R2 u R U R' U' u' R' U R'","R2 D r' U r D' R' U R'"]],
+ [37,'Pieces In Slot',"R U' R U2' F R2' F' U2' R2'",["R2 U2 F R2 F' U2 R' U R'","R' F R F' R U' R' U R U' R' U2 R U' R'","R U2 R' U R U2 R' U F' U' F","R U R' U2 R U2 R' U y' R' U' R"]],
+ [38,'Pieces In Slot',"R U' R' U R U2' R' U R U' R'",["R U' R' U' R U R' U2 R U' R'","R U R' U' R U2 R' U' R U R'","R2 U2 R' U' R U' R' U2 R'","R U' R' U' R U R' U' R U2 R'"]],
+ [39,'Pieces In Slot',"R U' R' U' R U R' U2' R U' R'",["R U' R' U R U2 R' U R U' R'","R U2 R U R' U R U2 R2","R U R' U2 R U' R' U R U R'","R U2 R' U R U' R' U R U R'"]],
+ [40,'Pieces In Slot',"R U R' F U R U' R' F' R U R'",["r U' r' U2 r U r' R U R'","F' L' U2 L F R U R'","R U' R' F R U R' U' F' R U' R'","R U' R' U' R U' R' U y' R' U' R"]],
+ [41,'Pieces In Slot',"R F U R U' R' F' U' R'",["R U' R' r U' r' U2 r U r'","R U' R' F' L' U2 L F","R U R' U' y M U' R' F R U M'","R U R' U' R U' R' U2 y' R' U' R"]]
+];
+DATA.forEach(([n,,setup])=>console.assert(!parseAlg(setup).bad.length,`F2L ${n} 셋업 파싱 실패`));
+const SVGS={};
+DATA.forEach(([n,,setup])=>SVGS[n]=buildCaseSVG(caseState(setup)));
+
+const LSKEY2='f2lWorkbook.v1';
+let sel=new Set(), algIdx={}, diag=false, order='num';
+try{
+  const d=JSON.parse(localStorage.getItem(LSKEY2)||'null');
+  if(d){sel=new Set(d.sel||[]); algIdx=d.algIdx||{}; diag=!!d.diag; if(d.order==='cat')order='cat';}
+}catch(e){}
+const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({sel:[...sel],algIdx,diag,order}));}catch(e){}};
+
+function renderGroups(){
+  const box=document.getElementById('groups');
+  box.innerHTML=CATS.map(cat=>{
+    const items=DATA.filter(d=>d[1]===cat);
+    return `<div class="cat">
+      <label class="cat-head"><input type="checkbox" data-cat="${cat}"> ${cat}
+        <span class="cnt" data-catcnt="${cat}"></span></label>
+      <div class="cases">`+items.map(([n,,,algs])=>`
+        <div class="case" data-case="${n}">
+          <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}</div>
+          <div class="img">${SVGS[n]}</div>
+          <select data-alg="${n}" title="표에 실을 공식">`+
+            algs.map((a,i)=>`<option value="${i}">${esc(a)}</option>`).join('')+
+          `</select>
+        </div>`).join('')+`</div></div>`;
+  }).join('');
+  box.querySelectorAll('.case').forEach(el=>{
+    el.addEventListener('click',e=>{
+      if(['SELECT','OPTION','INPUT'].includes(e.target.tagName)) return;
+      toggleCase(+el.dataset.case);
+    });
+  });
+  box.querySelectorAll('[data-chk]').forEach(cb=>cb.addEventListener('change',()=>toggleCase(+cb.dataset.chk,cb.checked)));
+  box.querySelectorAll('[data-alg]').forEach(s=>{
+    s.value=algIdx[s.dataset.alg]||0;
+    s.addEventListener('change',()=>{algIdx[s.dataset.alg]=+s.value;persistF2l();renderTable();});
+  });
+  box.querySelectorAll('[data-cat]').forEach(cb=>cb.addEventListener('change',()=>{
+    DATA.filter(d=>d[1]===cb.dataset.cat).forEach(([n])=>cb.checked?sel.add(n):sel.delete(n));
+    persistF2l();refreshF2l();
+  }));
+}
+function toggleCase(n,on){
+  if(on===undefined) on=!sel.has(n);
+  on?sel.add(n):sel.delete(n);
+  persistF2l();refreshF2l();
+}
+function refreshF2l(){
+  document.querySelectorAll('[data-case]').forEach(el=>{
+    const n=+el.dataset.case, on=sel.has(n);
+    el.classList.toggle('on',on);
+    el.querySelector('[data-chk]').checked=on;
+  });
+  CATS.forEach(cat=>{
+    const items=DATA.filter(d=>d[1]===cat), k=items.filter(([n])=>sel.has(n)).length;
+    const cb=document.querySelector(`[data-cat="${CSS.escape(cat)}"]`);
+    cb.checked=k===items.length; cb.indeterminate=k>0&&k<items.length;
+    document.querySelector(`[data-catcnt="${CSS.escape(cat)}"]`).textContent=`${k}/${items.length}`;
+  });
+  renderTable();
+}
+const CATORDER=['Free Pairs','Corner In Slot','Edge In Slot','Connected Pairs','Disconnected Pairs','Pieces In Slot'];
+function renderTable(){
+  const rows=DATA.filter(([n])=>sel.has(n));
+  document.getElementById('meta').textContent=
+    rows.length?`${rows.length}개 케이스 · 공식·분류 출처: speedcubedb.com`:'';
+  const row=([n,,setup,algs])=>{
+    const a=algs[algIdx[n]||0];
+    return `<tr>
+      <td class="idx">F2L ${n}</td>
+      <td class="pic">${SVGS[n]}</td>
+      <td class="alg">${diag?algSVG(a):esc(a)}</td>
+      <td class="setup">${esc(setup)}</td>
+    </tr>`;};
+  const body = order==='cat'
+    ? CATORDER.map(cat=>{
+        const g=rows.filter(d=>d[1]===cat);
+        return g.length?`<tr class="cathead"><td colspan="4">${cat}</td></tr>`+g.map(row).join(''):'';
+      }).join('')
+    : rows.map(row).join('');
+  document.getElementById('tablebox').innerHTML = !rows.length
+    ? '<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>'
+    : `<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th></tr></thead><tbody>${body}</tbody></table>`;
+}
+const diagCb=document.getElementById('diagMode');
+diagCb.checked=diag;
+diagCb.addEventListener('change',()=>{diag=diagCb.checked;persistF2l();renderTable();});
+document.querySelectorAll('[name=ord]').forEach(r=>{
+  r.checked=r.value===order;
+  r.addEventListener('change',()=>{order=r.value;persistF2l();renderTable();});
+});
+document.getElementById('selAll').onclick=()=>{DATA.forEach(([n])=>sel.add(n));persistF2l();refreshF2l();};
+document.getElementById('selNone').onclick=()=>{sel.clear();persistF2l();refreshF2l();};
+document.getElementById('printBtn').onclick=()=>window.print();
+document.getElementById('pdfBtn').onclick=()=>window.print();
+renderGroups();
+refreshF2l();
 
 loadLocal();
 updateAngleUI();
