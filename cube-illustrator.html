@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.2</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.3</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -1178,7 +1178,7 @@ function loadLocal(){
 }
 
 /* ========== F2L 교본 (f2l-workbook 이식 — 엔진은 위의 것을 그대로 씀) ========== */
-const F2LCENTER={U:'Y',D:'W',F:'G',B:'B',R:'O',L:'R'};   /* 흰 크로스 아래: 노랑 위·초록 앞이면 왼쪽 빨강·오른쪽 주황 */
+const F2LCENTER={U:'Y',D:'W',F:'R',B:'O',R:'G',L:'B'};   /* SpeedCubeDB 그림을 y 회전한 기준: 노랑 위·빨강 앞·초록 오른쪽 */
 function caseState(setup){
   /* 2층까지 완성 + 탑레이어 전부 회색에서 셋업을 적용 → 페어 조각만 색이 있는 케이스 그림 */
   const s={};
@@ -1207,7 +1207,7 @@ function buildCaseSVG(st,M){
    공식은 R↔L 교환 + 모든 방향 반전 (U R U' R' → U' L' U L) */
 function mirrorState(st){
   const out={};FKEYS.forEach(f=>out[f]=st[f].map(r=>r.slice()));
-  const CMAP={R:'O',O:'R'};
+  const CMAP={G:'B',B:'G'};   /* 좌우 반사 후 초록↔파랑을 바꾸면 같은 실제 배색이 유지된다 */
   FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
     const p=stickerPos(f,r,c), n=FACES[f].n;
     const f2=FKEYS.find(k=>dot3(FACES[k].n,[-n[0],n[1],n[2]])>0.9);
