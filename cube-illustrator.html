@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.1</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.2</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -1178,7 +1178,7 @@ function loadLocal(){
 }
 
 /* ========== F2L 교본 (f2l-workbook 이식 — 엔진은 위의 것을 그대로 씀) ========== */
-const F2LCENTER={U:'Y',D:'W',F:'G',B:'B',R:'R',L:'O'};   /* 흰 크로스가 아래 */
+const F2LCENTER={U:'Y',D:'W',F:'G',B:'B',R:'O',L:'R'};   /* 흰 크로스 아래: 노랑 위·초록 앞이면 왼쪽 빨강·오른쪽 주황 */
 function caseState(setup){
   /* 2층까지 완성 + 탑레이어 전부 회색에서 셋업을 적용 → 페어 조각만 색이 있는 케이스 그림 */
   const s={};
