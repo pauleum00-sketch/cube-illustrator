@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.6.0</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.6.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -274,7 +274,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 
 <script>
 /* ========== 투영 ========== */
-const RAD=Math.PI/180, TH=-33*RAD, PH=20*RAD, DIST=9;
+const RAD=Math.PI/180, TH=-33*RAD, PH=30*RAD, DIST=9;
 function camPt(p){
   const [x,y,z]=p;
   const x1= x*Math.cos(TH)+z*Math.sin(TH);
