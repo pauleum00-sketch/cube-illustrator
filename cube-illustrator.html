@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.6.1</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -252,6 +252,10 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <span class="chk" style="margin-left:8px;gap:10px">정렬:
       <label class="chk"><input type="radio" name="ord" value="num"> 숫자 순서대로</label>
       <label class="chk"><input type="radio" name="ord" value="cat"> 케이스 분류대로</label>
+    </span>
+    <span class="chk" style="margin-left:8px;gap:10px">기준 슬롯:
+      <label class="chk"><input type="radio" name="slotside" value="fr"> Front Right</label>
+      <label class="chk"><input type="radio" name="slotside" value="fl"> Front Left</label>
     </span>
     <span style="flex:1"></span>
     <button class="btn pri" id="printBtn">🖨 프린트</button>
@@ -1182,20 +1186,29 @@ function caseState(setup){
     (f==='U'||('FBRL'.includes(f)&&r===0))?'X':F2LCENTER[f]));});
   return parseAlg(setup).moves.reduce(applyMoveTo,s);
 }
-function buildCaseSVG(st){
+function buildCaseSVG(st,M){
+  /* M: 그리기 전에 큐브에 적용하는 회전. FL은 y축 +66° = 카메라 요를 좌우 반전한 것과 동일 */
+  const A=M||[[1,0,0],[0,1,0],[0,0,1]];
   const W=240,H=220;
-  const vis=FKEYS.filter(f=>faceVisible(FACES[f].n,mul(FACES[f].n,1.5)));   /* U·F·R */
+  const vis=FKEYS.filter(f=>faceVisible(applyM(A,FACES[f].n),applyM(A,mul(FACES[f].n,1.5))));
   let bounds=[];
-  vis.forEach(f=>bounds=bounds.concat(faceOutline(f)));
+  vis.forEach(f=>bounds=bounds.concat(faceOutline(f).map(p=>applyM(A,p))));
   const T=fit(bounds,W,H,6);
   const groups=vis.map(face=>{
-    let s=`<path d="${path(faceOutline(face).map(T),true)}" fill="#16202b"/>`;
+    let s=`<path d="${path(faceOutline(face).map(p=>T(applyM(A,p))),true)}" fill="#16202b"/>`;
     for(let r=0;r<3;r++)for(let c=0;c<3;c++)
-      s+=`<path d="${path(shrink(quad(face,r,c),0.90).map(T),true)}" fill="${COLORS[st[face][r][c]][0]}" stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"/>`;
-    return [camPt(mul(FACES[face].n,1.5))[2],s];
+      s+=`<path d="${path(shrink(quad(face,r,c),0.90).map(p=>T(applyM(A,p))),true)}" fill="${COLORS[st[face][r][c]][0]}" stroke="#16202b" stroke-width="1.5" stroke-linejoin="round"/>`;
+    return [camPt(applyM(A,mul(FACES[face].n,1.5)))[2],s];
   });
   groups.sort((a,b)=>a[0]-b[0]);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`+groups.map(g=>g[1]).join('')+'</svg>';
+}
+/* Front Left: 케이스에 y를 한 번 적용하고, 왼쪽 면이 보이는 각도로 그림 */
+const YMOVE={letter:'y',prime:false,dbl:false};
+const YMAP={R:'F',F:'L',L:'B',B:'R',U:'U',D:'D'};   /* y 기준 문자 변환 */
+function remapAlgY(txt){
+  const {moves,bad}=parseAlg(txt);
+  return bad.length?txt:moves.map(m=>lab(remapMove(m,YMAP))).join(' ');
 }
 function algSVG(txt){
   const {moves,bad}=parseAlg(txt);
@@ -1261,16 +1274,23 @@ const DATA=[
  [41,'Pieces In Slot',"R F U R U' R' F' U' R'",["R U' R' r U' r' U2 r U r'","R U' R' F' L' U2 L F","R U R' U' y M U' R' F R U M'","R U R' U' R U' R' U2 y' R' U' R"]]
 ];
 DATA.forEach(([n,,setup])=>console.assert(!parseAlg(setup).bad.length,`F2L ${n} 셋업 파싱 실패`));
-const SVGS={};
-DATA.forEach(([n,,setup])=>SVGS[n]=buildCaseSVG(caseState(setup)));
+const SVGS={}, SVGSL={}, YROT=rotM('y',66*RAD);
+DATA.forEach(([n,,setup])=>{
+  const st=caseState(setup);
+  SVGS[n]=buildCaseSVG(st);
+  SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),YROT);
+});
 
 const LSKEY2='f2lWorkbook.v1';
-let sel=new Set(), algIdx={}, diag=false, order='num';
+let sel=new Set(), algIdx={}, diag=false, order='num', slotSide='fr';
 try{
   const d=JSON.parse(localStorage.getItem(LSKEY2)||'null');
-  if(d){sel=new Set(d.sel||[]); algIdx=d.algIdx||{}; diag=!!d.diag; if(d.order==='cat')order='cat';}
+  if(d){sel=new Set(d.sel||[]); algIdx=d.algIdx||{}; diag=!!d.diag; if(d.order==='cat')order='cat';
+    if(d.slotSide==='fl')slotSide='fl';}
 }catch(e){}
-const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({sel:[...sel],algIdx,diag,order}));}catch(e){}};
+const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({sel:[...sel],algIdx,diag,order,slotSide}));}catch(e){}};
+const svgFor=n=>slotSide==='fl'?SVGSL[n]:SVGS[n];
+const algText=a=>slotSide==='fl'?remapAlgY(a):a;
 
 function renderGroups(){
   const box=document.getElementById('groups');
@@ -1282,9 +1302,9 @@ function renderGroups(){
       <div class="cases">`+items.map(([n,,,algs])=>`
         <div class="case" data-case="${n}">
           <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}</div>
-          <div class="img">${SVGS[n]}</div>
+          <div class="img">${svgFor(n)}</div>
           <select data-alg="${n}" title="표에 실을 공식">`+
-            algs.map((a,i)=>`<option value="${i}">${esc(a)}</option>`).join('')+
+            algs.map((a,i)=>`<option value="${i}">${esc(algText(a))}</option>`).join('')+
           `</select>
         </div>`).join('')+`</div></div>`;
   }).join('');
@@ -1329,12 +1349,12 @@ function renderTable(){
   document.getElementById('meta').textContent=
     rows.length?`${rows.length}개 케이스 · 공식·분류 출처: speedcubedb.com`:'';
   const row=([n,,setup,algs])=>{
-    const a=algs[algIdx[n]||0];
+    const a=algText(algs[algIdx[n]||0]);
     return `<tr>
       <td class="idx">F2L ${n}</td>
-      <td class="pic">${SVGS[n]}</td>
+      <td class="pic">${svgFor(n)}</td>
       <td class="alg">${diag?algSVG(a):esc(a)}</td>
-      <td class="setup">${esc(setup)}</td>
+      <td class="setup">${esc(algText(setup))}</td>
     </tr>`;};
   const body = order==='cat'
     ? CATORDER.map(cat=>{
@@ -1352,6 +1372,10 @@ diagCb.addEventListener('change',()=>{diag=diagCb.checked;persistF2l();renderTab
 document.querySelectorAll('[name=ord]').forEach(r=>{
   r.checked=r.value===order;
   r.addEventListener('change',()=>{order=r.value;persistF2l();renderTable();});
+});
+document.querySelectorAll('[name=slotside]').forEach(r=>{
+  r.checked=r.value===slotSide;
+  r.addEventListener('change',()=>{slotSide=r.value;persistF2l();renderGroups();refreshF2l();});
 });
 document.getElementById('selAll').onclick=()=>{DATA.forEach(([n])=>sel.add(n));persistF2l();refreshF2l();};
 document.getElementById('selNone').onclick=()=>{sel.clear();persistF2l();refreshF2l();};
