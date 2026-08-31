@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.0</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -1203,12 +1203,27 @@ function buildCaseSVG(st,M){
   groups.sort((a,b)=>a[0]-b[0]);
   return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}">`+groups.map(g=>g[1]).join('')+'</svg>';
 }
-/* Front Left: 케이스에 y를 한 번 적용하고, 왼쪽 면이 보이는 각도로 그림 */
-const YMOVE={letter:'y',prime:false,dbl:false};
-const YMAP={R:'F',F:'L',L:'B',B:'R',U:'U',D:'D'};   /* y 기준 문자 변환 */
-function remapAlgY(txt){
+/* Front Left = 왼손용 미러: 케이스를 좌우 거울 반사(빨강↔주황 교환)하고,
+   공식은 R↔L 교환 + 모든 방향 반전 (U R U' R' → U' L' U L) */
+function mirrorState(st){
+  const out={};FKEYS.forEach(f=>out[f]=st[f].map(r=>r.slice()));
+  const CMAP={R:'O',O:'R'};
+  FKEYS.forEach(f=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const p=stickerPos(f,r,c), n=FACES[f].n;
+    const f2=FKEYS.find(k=>dot3(FACES[k].n,[-n[0],n[1],n[2]])>0.9);
+    const F2=FACES[f2], pm=[-p[0],p[1],p[2]];
+    const col=st[f][r][c];
+    out[f2][Math.round(dot3(pm,F2.v))+1][Math.round(dot3(pm,F2.u))+1]=CMAP[col]||col;
+  }});
+  return out;
+}
+function mirrorAlg(txt){
   const {moves,bad}=parseAlg(txt);
-  return bad.length?txt:moves.map(m=>lab(remapMove(m,YMAP))).join(' ');
+  if(bad.length) return txt;
+  const LM={R:'L',L:'R',r:'l',l:'r'};
+  /* M·x는 x축 회전이라 거울에서도 방향이 그대로. 나머지는 방향 반전 */
+  return moves.map(m=>lab({letter:LM[m.letter]||m.letter,
+    prime:(m.dbl||'Mx'.includes(m.letter))?m.prime:!m.prime, dbl:m.dbl})).join(' ');
 }
 function algSVG(txt){
   const {moves,bad}=parseAlg(txt);
@@ -1278,7 +1293,7 @@ const SVGS={}, SVGSL={}, YROT=rotM('y',66*RAD);
 DATA.forEach(([n,,setup])=>{
   const st=caseState(setup);
   SVGS[n]=buildCaseSVG(st);
-  SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),YROT);
+  SVGSL[n]=buildCaseSVG(mirrorState(st),YROT);
 });
 
 const LSKEY2='f2lWorkbook.v1';
@@ -1290,7 +1305,7 @@ try{
 }catch(e){}
 const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({sel:[...sel],algIdx,diag,order,slotSide}));}catch(e){}};
 const svgFor=n=>slotSide==='fl'?SVGSL[n]:SVGS[n];
-const algText=a=>slotSide==='fl'?remapAlgY(a):a;
+const algText=a=>slotSide==='fl'?mirrorAlg(a):a;
 
 function renderGroups(){
   const box=document.getElementById('groups');
