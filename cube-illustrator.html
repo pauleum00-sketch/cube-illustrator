@@ -123,7 +123,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.4</span></h1>
+  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.5</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -325,7 +325,9 @@ const FKEYS=['U','D','F','B','R','L'];
 function mkState(gray){const s={};FKEYS.forEach(f=>{
   s[f]=[0,1,2].map(r=>[0,1,2].map(c=>(!gray&&r===1&&c===1)?CENTER[f]:'X'));});return s;}
 let state=mkState(), stateTop=mkState(true);      /* 입체와 탑다운은 서로 독립. 탑다운은 전부 회색으로 시작 */
-let orient=[[1,0,0],[0,1,0],[0,0,1]], pick='B', view='3d', cubeAlpha=0, auxGap=1.95;
+/* 기본 각도 = F2L Front Right 기준: 노랑 위·빨강 앞·초록 오른쪽 (D→위, R→앞, F→오른쪽) */
+const HOME_ORIENT=[[0,0,1],[0,-1,0],[1,0,0]];
+let orient=HOME_ORIENT.map(r=>r.slice()), pick='B', view='3d', cubeAlpha=0, auxGap=1.95;
 let auxOn={U:true,D:true,F:true,B:true,R:true,L:true};
 let topArrows=[], arrowPending=null, playing=false;
 const curState=()=>view==='top'?stateTop:state;
@@ -754,7 +756,7 @@ document.getElementById('rots').innerHTML=ROTBTN.map(([k,p,t])=>
 document.querySelectorAll('[data-rot]').forEach(b=>b.onclick=()=>rotate(b.dataset.rot));
 document.getElementById('reset').onclick=()=>{
   if(view==='top'){stateTop=mkState(true);topArrows=[];arrowPending=null;}
-  else{state=mkState();orient=[[1,0,0],[0,1,0],[0,0,1]];FKEYS.forEach(f=>auxOn[f]=true);updateAngleUI();}
+  else{state=mkState();orient=HOME_ORIENT.map(r=>r.slice());FKEYS.forEach(f=>auxOn[f]=true);updateAngleUI();}
   drawCube();persist();};
 
 /* 각도 슬라이더: orient = Rx(X)·Ry(Y)·Rz(Z) */
