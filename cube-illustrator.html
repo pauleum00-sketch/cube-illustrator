@@ -113,7 +113,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   font-weight:800;font-size:13.5px;letter-spacing:.4px;padding:9px 8px}
 #sheet .setup{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#444}
 #sheet .empty{color:#888;font-size:14px;padding:26px 0;text-align:center}
-#sheet .rv{display:flex;flex-wrap:wrap;gap:3px;max-width:230px}
+#sheet .rv{display:grid;grid-template-columns:repeat(5,14px);gap:3px}   /* 한 줄 5칸 고정 */
 #sheet .rv span{width:14px;height:14px;border:1.5px solid #333;border-radius:2px;display:inline-block}
 .case .cust{margin-top:6px;padding:5px 6px;font-size:11.5px}
 @media print{
@@ -126,7 +126,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D CUBE</span><span class="b"> simulator</span><span class="ver">v1.8.1</span></h1>
+  <h1><span class="a">3D CUBE</span><span class="b"> simulator</span><span class="ver">v1.8.2</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
