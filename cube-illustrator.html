@@ -1,6 +1,6 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>큐브 일러스트 제작소 · 큐마길</title>
+<title>3D CUBE simulator</title>
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css">
 <style>
 @font-face{font-family:'Paperlogy';src:url('https://cdn.jsdelivr.net/gh/fonts-archive/Paperlogy/Paperlogy-9Black.woff2') format('woff2');font-weight:900;font-display:swap}
@@ -113,6 +113,9 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   font-weight:800;font-size:13.5px;letter-spacing:.4px;padding:9px 8px}
 #sheet .setup{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#444}
 #sheet .empty{color:#888;font-size:14px;padding:26px 0;text-align:center}
+#sheet .rv{display:flex;flex-wrap:wrap;gap:3px;max-width:230px}
+#sheet .rv span{width:14px;height:14px;border:1.5px solid #333;border-radius:2px;display:inline-block}
+.case .cust{margin-top:6px;padding:5px 6px;font-size:11.5px}
 @media print{
   header,.foot,.no-print{display:none !important}
   body{background:#fff}
@@ -123,7 +126,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">큐브</span><span class="b"> 일러스트 제작소</span><span class="ver">v1.7.5</span></h1>
+  <h1><span class="a">3D CUBE</span><span class="b"> simulator</span><span class="ver">v1.8.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -244,11 +247,21 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 
 <section class="panel" id="p3">
 <div class="card no-print">
+  <h2>과외생</h2>
+  <div class="row" style="margin-bottom:16px">
+    <select id="profSel" class="alginput" style="width:auto;min-width:160px;padding:7px 10px;font-family:inherit"></select>
+    <button class="btn" id="profAdd">+ 추가</button>
+    <button class="btn gh" id="profRename">이름 바꾸기</button>
+    <button class="btn gh" id="profDel">삭제</button>
+    <span class="hint" style="margin:0 0 0 8px">과외생마다 선택한 케이스와 공식이 따로 저장됩니다.</span>
+  </div>
   <h2>케이스 선택</h2>
   <div class="row">
     <button class="btn" id="selAll">전체 선택</button>
     <button class="btn" id="selNone">전체 해제</button>
     <label class="chk" style="margin-left:8px"><input type="checkbox" id="diagMode"> 공식을 회전기호 도해로 표시</label>
+    <label class="chk" style="margin-left:8px"><input type="checkbox" id="reviewOn"> 복습 칸 만들기</label>
+    <input type="number" id="reviewN" min="1" max="60" value="10" class="alginput" style="width:64px;padding:5px 6px" title="복습 횟수">
     <span class="chk" style="margin-left:8px;gap:10px">정렬:
       <label class="chk"><input type="radio" name="ord" value="num"> 숫자 순서대로</label>
       <label class="chk"><input type="radio" name="ord" value="cat"> 케이스 분류대로</label>
@@ -261,8 +274,8 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <button class="btn pri" id="printBtn">🖨 프린트</button>
     <button class="btn pri" id="pdfBtn">PDF 내보내기</button>
   </div>
-  <p class="hint">카드를 누르면 선택되고, 카드 아래 목록에서 표에 실을 공식을 고릅니다.
-    PDF는 프린트 창에서 <b>대상 → PDF로 저장</b>. 공식·분류는 SpeedCubeDB 기준.</p>
+  <p class="hint">카드를 누르면 선택되고, 카드 아래 목록에서 표에 실을 공식을 고릅니다(직접 입력 가능).
+    그림 각도는 큐브 색칠 탭의 큐브 각도를 따릅니다. PDF는 프린트 창에서 <b>대상 → PDF로 저장</b>. 공식·분류는 SpeedCubeDB 기준.</p>
   <div id="groups"></div>
 </div>
 <div id="sheet">
@@ -1119,7 +1132,9 @@ const TABS=[1,2,3].map(i=>document.getElementById('t'+i));
 function tab(n){
   TABS.forEach((b,i)=>{b.setAttribute('aria-selected',i===n-1);
     document.getElementById('p'+(i+1)).classList.toggle('on',i===n-1);});
-  activeTab=n;persist();}
+  activeTab=n;persist();
+  if(n===3){rebuildCaseSVGs();renderGroups();refreshF2l();}   /* 색칠 탭 각도를 그림에 반영 */
+}
 let activeTab=1;
 TABS.forEach((b,i)=>b.onclick=()=>tab(i+1));
 
@@ -1285,41 +1300,87 @@ const DATA=[
 ];
 DATA.forEach(([n,,setup])=>console.assert(!parseAlg(setup).bad.length,`F2L ${n} 셋업 파싱 실패`));
 const SVGS={}, SVGSL={}, YROT=rotM('y',66*RAD);
-DATA.forEach(([n,,setup])=>{
-  const st=caseState(setup);
-  SVGS[n]=buildCaseSVG(st);
-  SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),YROT);   /* y 회전만, 모양·색 불변 */
-});
+/* 그림 각도 = 큐브 색칠 탭 큐브의 현재 각도 (기본 각도에서 얼마나 돌렸는지를 그대로 적용) */
+function rebuildCaseSVGs(){
+  const delta=matMul(orient,inv(HOME_ORIENT));
+  DATA.forEach(([n,,setup])=>{
+    const st=caseState(setup);
+    SVGS[n]=buildCaseSVG(st,delta);
+    SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),matMul(delta,YROT));   /* y 회전만, 모양·색 불변 */
+  });
+}
+rebuildCaseSVGs();
 
-const LSKEY2='f2lWorkbook.v1';
-let sel=new Set(), algIdx={}, diag=false, order='num', slotSide='fr';
+/* ---- 저장: 과외생 프로필별 선택·공식, 나머지 설정은 공통 ---- */
+const LSKEY2='f2lWorkbook.v2';
+const newProfile=name=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,sel:[],algIdx:{},custom:{}});
+let profiles=[], P=null, diag=false, order='num', slotSide='fr', reviewOn=false, reviewN=10;
 try{
   const d=JSON.parse(localStorage.getItem(LSKEY2)||'null');
-  if(d){sel=new Set(d.sel||[]); algIdx=d.algIdx||{}; diag=!!d.diag; if(d.order==='cat')order='cat';
-    if(d.slotSide==='fl')slotSide='fl';}
+  if(d&&Array.isArray(d.profiles)&&d.profiles.length){
+    profiles=d.profiles; diag=!!d.diag; if(d.order==='cat')order='cat'; if(d.slotSide==='fl')slotSide='fl';
+    reviewOn=!!d.reviewOn; if(d.reviewN>0)reviewN=Math.min(60,+d.reviewN);
+    P=profiles.find(x=>x.id===d.current)||profiles[0];
+  }else{
+    const v1=JSON.parse(localStorage.getItem('f2lWorkbook.v1')||'null');   /* 예전 저장분 이어받기 */
+    const pr=newProfile('기본');
+    if(v1){pr.sel=v1.sel||[];pr.algIdx=v1.algIdx||{};diag=!!v1.diag;if(v1.order==='cat')order='cat';if(v1.slotSide==='fl')slotSide='fl';}
+    profiles=[pr]; P=pr;
+  }
 }catch(e){}
-const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({sel:[...sel],algIdx,diag,order,slotSide}));}catch(e){}};
+if(!P){P=newProfile('기본');profiles=[P];}
+profiles.forEach(pr=>{pr.sel=new Set(pr.sel||[]);pr.algIdx=pr.algIdx||{};pr.custom=pr.custom||{};});
+const persistF2l=()=>{try{localStorage.setItem(LSKEY2,JSON.stringify({
+  profiles:profiles.map(pr=>({...pr,sel:[...pr.sel]})),current:P.id,diag,order,slotSide,reviewOn,reviewN}));}catch(e){}};
 const svgFor=n=>slotSide==='fl'?SVGSL[n]:SVGS[n];
 const algText=a=>slotSide==='fl'?mirrorAlg(a):a;
 /* FL에서는 공식·셋업을 거울짝 케이스에서 가져와 미러한다 (그림과 일치) */
 const dispData=n=>DATA.find(x=>x[0]===(slotSide==='fl'?FLPARTNER[n]:n));
+/* 표에 실을 공식: 'c'면 직접 입력한 것 */
+const chosenAlg=n=>P.algIdx[n]==='c'?(P.custom[n]||''):algText(dispData(n)[3][P.algIdx[n]||0]);
 
+/* ---- 과외생 프로필 UI ---- */
+const profSel=document.getElementById('profSel');
+function renderProfiles(){
+  profSel.innerHTML=profiles.map(pr=>`<option value="${pr.id}"${pr===P?' selected':''}>${esc(pr.name)}</option>`).join('');
+}
+profSel.onchange=()=>{P=profiles.find(x=>x.id===profSel.value)||P;persistF2l();renderGroups();refreshF2l();};
+document.getElementById('profAdd').onclick=()=>{
+  const name=prompt('과외생 이름','새 과외생'); if(!name) return;
+  P=newProfile(name.trim()); P.sel=new Set(); profiles.push(P);
+  persistF2l();renderProfiles();renderGroups();refreshF2l();
+};
+document.getElementById('profRename').onclick=()=>{
+  const name=prompt('새 이름',P.name); if(!name) return;
+  P.name=name.trim(); persistF2l(); renderProfiles();
+};
+document.getElementById('profDel').onclick=()=>{
+  if(profiles.length<=1){toast('마지막 과외생은 지울 수 없습니다');return;}
+  if(!confirm(`"${P.name}" 기록을 지울까요?`)) return;
+  profiles=profiles.filter(x=>x!==P); P=profiles[0];
+  persistF2l();renderProfiles();renderGroups();refreshF2l();
+};
+
+/* ---- 케이스 선택 창 ---- */
+function caseCard([n,,,algs]){
+  const idx=P.algIdx[n], cust=P.custom[n]||'';
+  return `<div class="case" data-case="${n}">
+    <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}</div>
+    <div class="img">${svgFor(n)}</div>
+    <select data-alg="${n}" title="표에 실을 공식">`+
+      dispData(n)[3].map((a,i)=>`<option value="${i}">${esc(algText(a))}</option>`).join('')+
+      `<option value="c">${cust?'✎ '+esc(cust):'직접 입력…'}</option></select>
+    <input class="alginput cust" data-custom="${n}" placeholder="공식 직접 입력" value="${esc(cust)}"${idx==='c'?'':' hidden'}>
+  </div>`;
+}
 function renderGroups(){
   const box=document.getElementById('groups');
-  box.innerHTML=CATS.map(cat=>{
-    const items=DATA.filter(d=>d[1]===cat);
-    return `<div class="cat">
-      <label class="cat-head"><input type="checkbox" data-cat="${cat}"> ${cat}
-        <span class="cnt" data-catcnt="${cat}"></span></label>
-      <div class="cases">`+items.map(([n])=>`
-        <div class="case" data-case="${n}">
-          <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}</div>
-          <div class="img">${svgFor(n)}</div>
-          <select data-alg="${n}" title="표에 실을 공식">`+
-            dispData(n)[3].map((a,i)=>`<option value="${i}">${esc(algText(a))}</option>`).join('')+
-          `</select>
-        </div>`).join('')+`</div></div>`;
-  }).join('');
+  box.innerHTML = order==='num'
+    ? `<div class="cat"><div class="cases">${DATA.map(caseCard).join('')}</div></div>`
+    : CATS.map(cat=>`<div class="cat">
+        <label class="cat-head"><input type="checkbox" data-cat="${cat}"> ${cat}
+          <span class="cnt" data-catcnt="${cat}"></span></label>
+        <div class="cases">${DATA.filter(d=>d[1]===cat).map(caseCard).join('')}</div></div>`).join('');
   box.querySelectorAll('.case').forEach(el=>{
     el.addEventListener('click',e=>{
       if(['SELECT','OPTION','INPUT'].includes(e.target.tagName)) return;
@@ -1328,72 +1389,91 @@ function renderGroups(){
   });
   box.querySelectorAll('[data-chk]').forEach(cb=>cb.addEventListener('change',()=>toggleCase(+cb.dataset.chk,cb.checked)));
   box.querySelectorAll('[data-alg]').forEach(s=>{
-    s.value=algIdx[s.dataset.alg]||0;
-    s.addEventListener('change',()=>{algIdx[s.dataset.alg]=+s.value;persistF2l();renderTable();});
+    const n=s.dataset.alg;
+    s.value=P.algIdx[n]===undefined?0:P.algIdx[n];
+    s.addEventListener('change',()=>{
+      P.algIdx[n]=s.value==='c'?'c':+s.value;
+      s.parentElement.querySelector('[data-custom]').hidden=s.value!=='c';
+      persistF2l();renderTable();});
+  });
+  box.querySelectorAll('[data-custom]').forEach(inp=>{
+    inp.addEventListener('input',()=>{
+      const n=inp.dataset.custom; P.custom[n]=inp.value;
+      const opt=inp.parentElement.querySelector('[data-alg] option[value="c"]');
+      opt.textContent=inp.value?'✎ '+inp.value:'직접 입력…';
+      persistF2l();renderTable();});
   });
   box.querySelectorAll('[data-cat]').forEach(cb=>cb.addEventListener('change',()=>{
-    DATA.filter(d=>d[1]===cb.dataset.cat).forEach(([n])=>cb.checked?sel.add(n):sel.delete(n));
+    DATA.filter(d=>d[1]===cb.dataset.cat).forEach(([n])=>cb.checked?P.sel.add(n):P.sel.delete(n));
     persistF2l();refreshF2l();
   }));
 }
 function toggleCase(n,on){
-  if(on===undefined) on=!sel.has(n);
-  on?sel.add(n):sel.delete(n);
+  if(on===undefined) on=!P.sel.has(n);
+  on?P.sel.add(n):P.sel.delete(n);
   persistF2l();refreshF2l();
 }
 function refreshF2l(){
   document.querySelectorAll('[data-case]').forEach(el=>{
-    const n=+el.dataset.case, on=sel.has(n);
+    const n=+el.dataset.case, on=P.sel.has(n);
     el.classList.toggle('on',on);
     el.querySelector('[data-chk]').checked=on;
   });
   CATS.forEach(cat=>{
-    const items=DATA.filter(d=>d[1]===cat), k=items.filter(([n])=>sel.has(n)).length;
-    const cb=document.querySelector(`[data-cat="${CSS.escape(cat)}"]`);
+    const cb=document.querySelector(`[data-cat="${CSS.escape(cat)}"]`); if(!cb) return;
+    const items=DATA.filter(d=>d[1]===cat), k=items.filter(([n])=>P.sel.has(n)).length;
     cb.checked=k===items.length; cb.indeterminate=k>0&&k<items.length;
     document.querySelector(`[data-catcnt="${CSS.escape(cat)}"]`).textContent=`${k}/${items.length}`;
   });
   renderTable();
 }
+
+/* ---- 표 ---- */
 const CATORDER=['Free Pairs','Corner In Slot','Edge In Slot','Connected Pairs','Disconnected Pairs','Pieces In Slot'];
 function renderTable(){
-  const rows=DATA.filter(([n])=>sel.has(n));
+  const rows=DATA.filter(([n])=>P.sel.has(n));
   document.getElementById('meta').textContent=
-    rows.length?`${rows.length}개 케이스 · 공식·분류 출처: speedcubedb.com`:'';
+    rows.length?`${P.name} · ${rows.length}개 케이스 · 공식·분류 출처: speedcubedb.com`:'';
+  const boxes=reviewOn?`<td><div class="rv">${'<span></span>'.repeat(reviewN)}</div></td>`:'';
   const row=([n])=>{
-    const [,,setup,algs]=dispData(n);
-    const a=algText(algs[algIdx[n]||0]);
+    const [,,setup]=dispData(n), a=chosenAlg(n);
     return `<tr>
       <td class="idx">F2L ${n}</td>
       <td class="pic">${svgFor(n)}</td>
       <td class="alg">${diag?algSVG(a):esc(a)}</td>
-      <td class="setup">${esc(algText(setup))}</td>
+      <td class="setup">${esc(algText(setup))}</td>${boxes}
     </tr>`;};
+  const cols=reviewOn?5:4;
   const body = order==='cat'
     ? CATORDER.map(cat=>{
         const g=rows.filter(d=>d[1]===cat);
-        return g.length?`<tr class="cathead"><td colspan="4">${cat}</td></tr>`+g.map(row).join(''):'';
+        return g.length?`<tr class="cathead"><td colspan="${cols}">${cat}</td></tr>`+g.map(row).join(''):'';
       }).join('')
     : rows.map(row).join('');
   document.getElementById('tablebox').innerHTML = !rows.length
     ? '<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>'
-    : `<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th></tr></thead><tbody>${body}</tbody></table>`;
+    : `<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th>${reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`;
 }
 const diagCb=document.getElementById('diagMode');
 diagCb.checked=diag;
 diagCb.addEventListener('change',()=>{diag=diagCb.checked;persistF2l();renderTable();});
+const rvCb=document.getElementById('reviewOn'), rvN=document.getElementById('reviewN');
+rvCb.checked=reviewOn; rvN.value=reviewN;
+rvCb.addEventListener('change',()=>{reviewOn=rvCb.checked;persistF2l();renderTable();});
+rvN.addEventListener('input',()=>{reviewN=Math.max(1,Math.min(60,+rvN.value||1));persistF2l();renderTable();});
 document.querySelectorAll('[name=ord]').forEach(r=>{
   r.checked=r.value===order;
-  r.addEventListener('change',()=>{order=r.value;persistF2l();renderTable();});
+  r.addEventListener('change',()=>{order=r.value;persistF2l();renderGroups();refreshF2l();});
 });
 document.querySelectorAll('[name=slotside]').forEach(r=>{
   r.checked=r.value===slotSide;
   r.addEventListener('change',()=>{slotSide=r.value;persistF2l();renderGroups();refreshF2l();});
 });
-document.getElementById('selAll').onclick=()=>{DATA.forEach(([n])=>sel.add(n));persistF2l();refreshF2l();};
-document.getElementById('selNone').onclick=()=>{sel.clear();persistF2l();refreshF2l();};
+document.getElementById('selAll').onclick=()=>{DATA.forEach(([n])=>P.sel.add(n));persistF2l();refreshF2l();};
+document.getElementById('selNone').onclick=()=>{P.sel.clear();persistF2l();refreshF2l();};
 document.getElementById('printBtn').onclick=()=>window.print();
 document.getElementById('pdfBtn').onclick=()=>window.print();
+renderProfiles();
 renderGroups();
 refreshF2l();
 
