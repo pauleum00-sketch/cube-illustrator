@@ -126,7 +126,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D CUBE</span><span class="b"> simulator</span><span class="ver">v1.8.0</span></h1>
+  <h1><span class="a">3D CUBE</span><span class="b"> simulator</span><span class="ver">v1.8.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -275,7 +275,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <button class="btn pri" id="pdfBtn">PDF 내보내기</button>
   </div>
   <p class="hint">카드를 누르면 선택되고, 카드 아래 목록에서 표에 실을 공식을 고릅니다(직접 입력 가능).
-    그림 각도는 큐브 색칠 탭의 큐브 각도를 따릅니다. PDF는 프린트 창에서 <b>대상 → PDF로 저장</b>. 공식·분류는 SpeedCubeDB 기준.</p>
+    PDF는 프린트 창에서 <b>대상 → PDF로 저장</b>. 공식·분류는 SpeedCubeDB 기준.</p>
   <div id="groups"></div>
 </div>
 <div id="sheet">
@@ -1132,9 +1132,7 @@ const TABS=[1,2,3].map(i=>document.getElementById('t'+i));
 function tab(n){
   TABS.forEach((b,i)=>{b.setAttribute('aria-selected',i===n-1);
     document.getElementById('p'+(i+1)).classList.toggle('on',i===n-1);});
-  activeTab=n;persist();
-  if(n===3){rebuildCaseSVGs();renderGroups();refreshF2l();}   /* 색칠 탭 각도를 그림에 반영 */
-}
+  activeTab=n;persist();}
 let activeTab=1;
 TABS.forEach((b,i)=>b.onclick=()=>tab(i+1));
 
@@ -1300,16 +1298,11 @@ const DATA=[
 ];
 DATA.forEach(([n,,setup])=>console.assert(!parseAlg(setup).bad.length,`F2L ${n} 셋업 파싱 실패`));
 const SVGS={}, SVGSL={}, YROT=rotM('y',66*RAD);
-/* 그림 각도 = 큐브 색칠 탭 큐브의 현재 각도 (기본 각도에서 얼마나 돌렸는지를 그대로 적용) */
-function rebuildCaseSVGs(){
-  const delta=matMul(orient,inv(HOME_ORIENT));
-  DATA.forEach(([n,,setup])=>{
-    const st=caseState(setup);
-    SVGS[n]=buildCaseSVG(st,delta);
-    SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),matMul(delta,YROT));   /* y 회전만, 모양·색 불변 */
-  });
-}
-rebuildCaseSVGs();
+DATA.forEach(([n,,setup])=>{
+  const st=caseState(setup);
+  SVGS[n]=buildCaseSVG(st);
+  SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),YROT);   /* y 회전만, 모양·색 불변 */
+});
 
 /* ---- 저장: 과외생 프로필별 선택·공식, 나머지 설정은 공통 ---- */
 const LSKEY2='f2lWorkbook.v2';
