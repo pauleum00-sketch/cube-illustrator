@@ -116,6 +116,22 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 #sheet .rv{display:grid;grid-template-columns:repeat(5,14px);gap:3px}   /* 한 줄 5칸 고정 */
 #sheet .rv span{width:14px;height:14px;border:1.5px solid #333;border-radius:2px;display:inline-block}
 .case .cust{margin-top:6px;padding:5px 6px;font-size:11.5px}
+.case .top .play{margin-left:auto;padding:3px 9px;font-size:12px;line-height:1.3}
+.modal{position:fixed;inset:0;background:rgba(6,16,30,.72);display:flex;align-items:center;
+  justify-content:center;z-index:50;padding:20px}
+.pbox{background:var(--navy-2);border:1px solid var(--line);border-radius:16px;padding:18px;
+  width:min(560px,100%);max-height:92vh;overflow:auto}
+.phead{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.phead b{font-size:16px}
+.pstage{background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center}
+.pstage svg{width:100%;max-width:380px;height:auto;display:block}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.chip2{background:#0c1e35;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;
+  padding:6px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;
+  font-weight:700;cursor:pointer;line-height:1}
+.chip2:hover{border-color:var(--teal)}
+.chip2.done{color:var(--ink);background:#17365c}
+.chip2.now{border-color:var(--teal);color:#08243a;background:var(--teal)}
 @media print{
   header,.foot,.no-print{display:none !important}
   body{background:#fff}
@@ -126,7 +142,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.8.3</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -274,7 +290,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <button class="btn pri" id="printBtn">🖨 프린트</button>
     <button class="btn pri" id="pdfBtn">PDF 내보내기</button>
   </div>
-  <p class="hint">카드를 누르면 선택되고, 카드 아래 목록에서 표에 실을 공식을 고릅니다(직접 입력 가능).
+  <p class="hint">카드를 누르면 선택되고, 카드 아래 목록에서 표에 실을 공식을 고릅니다(직접 입력 가능). 카드의 <b>▶</b>를 누르면 그 공식이 도는 것을 볼 수 있습니다.
     PDF는 프린트 창에서 <b>대상 → PDF로 저장</b>. 공식·분류는 SpeedCubeDB 기준.</p>
   <div id="groups"></div>
 </div>
@@ -286,6 +302,31 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </section>
 </main>
 
+<div class="modal no-print" id="player" hidden>
+  <div class="pbox">
+    <div class="phead">
+      <b id="plTitle">F2L</b>
+      <span style="flex:1"></span>
+      <button class="btn gh" id="plClose">닫기 ✕</button>
+    </div>
+    <div class="pstage" id="plStage"></div>
+    <div class="chips" id="plChips"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn" id="plFirst" title="처음으로">⏮</button>
+      <button class="btn" id="plPrev" title="이전 수">◀</button>
+      <button class="btn pri" id="plToggle" style="min-width:104px">▶ 재생</button>
+      <button class="btn" id="plNext" title="다음 수">▶</button>
+      <span class="chk" style="margin-left:auto;gap:6px">배속
+        <select id="plSpeed" class="alginput" style="width:auto;padding:6px 8px;font-family:inherit">
+          <option value="0.25">0.25×</option><option value="0.5">0.5×</option>
+          <option value="0.75">0.75×</option><option value="1">1×</option>
+          <option value="1.5">1.5×</option><option value="2">2×</option>
+        </select>
+      </span>
+    </div>
+    <p class="hint" id="plSub" style="margin-top:10px"></p>
+  </div>
+</div>
 <div class="foot">모든 그림이 같은 투시각을 씁니다. 작업 내용은 이 브라우저에 자동 저장됩니다.</div>
 <div class="toast" id="toast"></div>
 
@@ -1358,7 +1399,7 @@ document.getElementById('profDel').onclick=()=>{
 function caseCard([n,,,algs]){
   const idx=P.algIdx[n], cust=P.custom[n]||'';
   return `<div class="case" data-case="${n}">
-    <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}</div>
+    <div class="top"><input type="checkbox" data-chk="${n}"> F2L ${n}<button class="btn play" data-play="${n}" title="이 공식 재생">▶</button></div>
     <div class="img">${svgFor(n)}</div>
     <select data-alg="${n}" title="표에 실을 공식">`+
       dispData(n)[3].map((a,i)=>`<option value="${i}">${esc(algText(a))}</option>`).join('')+
@@ -1376,7 +1417,7 @@ function renderGroups(){
         <div class="cases">${DATA.filter(d=>d[1]===cat).map(caseCard).join('')}</div></div>`).join('');
   box.querySelectorAll('.case').forEach(el=>{
     el.addEventListener('click',e=>{
-      if(['SELECT','OPTION','INPUT'].includes(e.target.tagName)) return;
+      if(['SELECT','OPTION','INPUT','BUTTON'].includes(e.target.tagName)) return;
       toggleCase(+el.dataset.case);
     });
   });
@@ -1396,6 +1437,8 @@ function renderGroups(){
       opt.textContent=inp.value?'✎ '+inp.value:'직접 입력…';
       persistF2l();renderTable();});
   });
+  box.querySelectorAll('[data-play]').forEach(b=>b.addEventListener('click',e=>{
+    e.stopPropagation(); openPlayer(+b.dataset.play);}));
   box.querySelectorAll('[data-cat]').forEach(cb=>cb.addEventListener('change',()=>{
     DATA.filter(d=>d[1]===cb.dataset.cat).forEach(([n])=>cb.checked?P.sel.add(n):P.sel.delete(n));
     persistF2l();refreshF2l();
@@ -1466,6 +1509,111 @@ document.getElementById('selAll').onclick=()=>{DATA.forEach(([n])=>P.sel.add(n))
 document.getElementById('selNone').onclick=()=>{P.sel.clear();persistF2l();refreshF2l();};
 document.getElementById('printBtn').onclick=()=>window.print();
 document.getElementById('pdfBtn').onclick=()=>window.print();
+/* ========== 공식 재생 플레이어 ========== */
+const PLW=420, PLH=380, PLEYE=[[1,0,0],[0,1,0],[0,0,1]];
+let PL=null, plLastSpeed=1;
+function playT(view){                    /* 층이 45° 돌아도 안 잘리는 고정 프레임 */
+  const c=[];
+  for(const x of [-1.5,1.5])for(const y of [-1.5,1.5])for(const z of [-1.5,1.5]) c.push([x,y,z]);
+  let pts=c.slice();
+  ['x','y','z'].forEach(ax=>{const M=rotM(ax,45*RAD); c.forEach(q=>pts.push(applyM(M,q)));});
+  return fit(pts.map(q=>applyM(view,q)),PLW,PLH,8);
+}
+function playSVG(st,view,T,geo,ang){
+  const Am=geo?rotM(geo.ax,ang):null, items=[];
+  FKEYS.forEach(face=>{for(let r=0;r<3;r++)for(let c=0;c<3;c++){
+    const p0=stickerPos(face,r,c);
+    const moving=geo&&p0[geo.axIdx]>=geo.range[0]-1e-6&&p0[geo.axIdx]<=geo.range[1]+1e-6;
+    let pts=quad(face,r,c,0), n=FACES[face].n, ctr=p0;
+    if(moving){pts=pts.map(q=>applyM(Am,q));n=applyM(Am,n);ctr=applyM(Am,ctr);}
+    if(!faceVisible(applyM(view,n),applyM(view,ctr))) continue;
+    const back=pts.map(q=>T(applyM(view,q)));
+    const sc=shrink(pts,INSET).map(q=>T(applyM(view,q)));
+    items.push([camPt(applyM(view,ctr))[2],
+      `<path d="${path(back,true)}" fill="#16202b" stroke="#16202b" stroke-width="1" stroke-linejoin="round"/>`
+      +`<path d="${path(sc,true)}" fill="${COLORS[st[face][r][c]][0]}"/>`]);
+  }});
+  items.sort((a,b)=>a[0]-b[0]);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${PLW} ${PLH}">`+items.map(i=>i[1]).join('')+'</svg>';
+}
+const plEase=p=>p<.5?2*p*p:1-2*(1-p)*(1-p);
+/* 탭이 숨겨지면 requestAnimationFrame이 멈춰 재생이 얼어붙는다. 그때는 타이머로 돌린다 */
+const plFrame=cb=>document.hidden?setTimeout(()=>cb(performance.now()),16):requestAnimationFrame(cb);
+function plRender(geo,ang){
+  document.getElementById('plStage').innerHTML=playSVG(PL.st,PL.view,PL.T,geo,ang);
+}
+function plBtn(){
+  const b=document.getElementById('plToggle');
+  b.textContent=PL.playing?'⏸ 일시정지':(PL.i>=PL.moves.length?'↺ 다시 재생':'▶ 재생');
+}
+function plChips(){
+  document.getElementById('plChips').innerHTML=PL.moves.map((m,k)=>
+    `<button class="chip2${k<PL.i?' done':''}${k===PL.i?' now':''}" data-mv="${k}" title="이 기호부터 재생">${esc(lab(m))}</button>`).join('');
+  document.querySelectorAll('#plChips [data-mv]').forEach(b=>b.onclick=()=>{
+    plPause(); plSeek(+b.dataset.mv); plPlay();});
+}
+function plSeek(i){
+  PL.i=Math.max(0,Math.min(PL.moves.length,i)); PL.k=0;
+  PL.st=PL.moves.slice(0,PL.i).reduce(applyMoveTo,PL.base);
+  plChips(); plRender(null,0); plBtn();
+}
+function plPause(){ if(!PL) return; PL.playing=false; PL.gen++; plBtn(); }
+function plRun(){
+  if(!PL||!PL.playing) return;
+  if(PL.i>=PL.moves.length||(PL.stopAt!==null&&PL.i>=PL.stopAt)){PL.playing=false;PL.stopAt=null;plBtn();return;}
+  const mv=PL.moves[PL.i], geo=moveGeom(mv);
+  const full=geo.dir*90*(mv.dbl?2:1)*RAD;
+  const dur=(mv.dbl?540:380)/PL.speed, startK=PL.k||0, t0=performance.now(), gen=PL.gen;
+  (function frame(t){
+    if(!PL||!PL.playing||gen!==PL.gen) return;
+    const p=Math.min(1,startK+(t-t0)/Math.max(1,dur*(1-startK)));
+    PL.k=p; plRender(geo,full*plEase(p));
+    if(p<1){plFrame(frame);return;}
+    PL.st=applyMoveTo(PL.st,mv); PL.i++; PL.k=0;
+    if(PL.i>=PL.moves.length||(PL.stopAt!==null&&PL.i>=PL.stopAt)){PL.playing=false;PL.stopAt=null;}
+    plChips(); plRender(null,0); plBtn();
+    if(PL.playing) plFrame(()=>plRun());
+  })(t0);
+}
+function plPlay(){
+  if(!PL) return;
+  if(PL.i>=PL.moves.length) plSeek(0);
+  PL.playing=true; PL.stopAt=null; plBtn(); plRun();
+}
+function openPlayer(n){
+  const alg=(chosenAlg(n)||'').trim();
+  const {moves,bad}=parseAlg(alg);
+  if(bad.length){toast(`모르는 기호: ${bad.join(', ')}`);return;}
+  if(!moves.length){toast('공식이 비어 있습니다');return;}
+  const st0=caseState(DATA.find(d=>d[0]===n)[2]);
+  const base=slotSide==='fl'?applyMoveTo(st0,YMOVE):st0;
+  const view=slotSide==='fl'?YROT:PLEYE;
+  PL={n,alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0};
+  document.getElementById('plTitle').textContent=`F2L ${n} 재생`;
+  document.getElementById('plSub').textContent=
+    `${alg}  ·  ${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 기호를 누르면 그 수부터 재생됩니다`;
+  document.getElementById('plSpeed').value=String(PL.speed);
+  plChips(); plRender(null,0); plBtn();
+  document.getElementById('player').hidden=false;
+}
+function closePlayer(){ plPause(); PL=null; document.getElementById('player').hidden=true; }
+document.getElementById('plClose').onclick=closePlayer;
+document.getElementById('player').onclick=e=>{if(e.target.id==='player')closePlayer();};
+document.getElementById('plToggle').onclick=()=>{PL&&(PL.playing?plPause():plPlay());};
+document.getElementById('plFirst').onclick=()=>{plPause();plSeek(0);};
+document.getElementById('plPrev').onclick=()=>{const i=PL.i;plPause();plSeek(PL.k>0?i:i-1);};
+document.getElementById('plNext').onclick=()=>{
+  if(!PL||PL.i>=PL.moves.length) return;
+  PL.playing=true; PL.stopAt=PL.i+1; plBtn(); plRun();};
+document.getElementById('plSpeed').onchange=e=>{plLastSpeed=+e.target.value; if(PL)PL.speed=plLastSpeed;};
+addEventListener('keydown',e=>{
+  if(!PL||document.getElementById('player').hidden) return;
+  if(e.key==='Escape'){closePlayer();e.preventDefault();}
+  else if(e.key===' '){PL.playing?plPause():plPlay();e.preventDefault();}
+  else if(e.key==='ArrowRight'){document.getElementById('plNext').click();e.preventDefault();}
+  else if(e.key==='ArrowLeft'){document.getElementById('plPrev').click();e.preventDefault();}
+});
+
 renderProfiles();
 renderGroups();
 refreshF2l();
