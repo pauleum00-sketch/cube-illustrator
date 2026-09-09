@@ -143,7 +143,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.1</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.2</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -1554,11 +1554,42 @@ function plChips(){
     plPause(); plSeek(+b.dataset.mv); plPlay();});
 }
 function plSeek(i){
+  plCancel();
   PL.i=Math.max(0,Math.min(PL.moves.length,i)); PL.k=0;
   PL.st=PL.moves.slice(0,PL.i).reduce(applyMoveTo,PL.base);
   plChips(); plRender(null,0); plBtn();
 }
-function plPause(){ if(!PL) return; PL.playing=false; PL.gen++; plBtn(); }
+function plCancel(){ if(PL){PL.gen++; PL.tweening=false;} }
+function plPause(){ if(!PL) return; PL.playing=false; plCancel(); plBtn(); }
+/* 한 수를 지정한 각도 구간으로 굴리는 공용 애니메이션 (되감기에 씀) */
+function plTween(geo,a0,a1,dur,done){
+  const gen=(PL.gen++,PL.gen), t0=performance.now();
+  PL.tweening=true;
+  (function frame(t){
+    if(!PL||gen!==PL.gen) return;
+    const p=Math.min(1,(t-t0)/Math.max(1,dur));
+    plRender(geo,a0+(a1-a0)*plEase(p));
+    if(p<1){plFrame(frame);return;}
+    PL.tweening=false; done&&done();
+  })(t0);
+}
+/* 이전 수: 상태는 먼저 되돌리고, 그 수를 거꾸로 굴려 보여준다 */
+function plStepBack(){
+  if(!PL) return;
+  PL.playing=false; plCancel(); plBtn();
+  const mvAng=m=>{const g=moveGeom(m);return [g,g.dir*90*(m.dbl?2:1)*RAD];};
+  if(PL.k>0){                                   /* 수 중간이면 그 수 시작점으로 */
+    const [geo,full]=mvAng(PL.moves[PL.i]), from=full*plEase(PL.k), k=PL.k;
+    PL.k=0;
+    plTween(geo,from,0,Math.max(90,(PL.moves[PL.i].dbl?540:380)/PL.speed*k),()=>plRender(null,0));
+    return;
+  }
+  if(PL.i<=0) return;
+  const j=PL.i-1, mv=PL.moves[j], [geo,full]=mvAng(mv);
+  PL.st=PL.moves.slice(0,j).reduce(applyMoveTo,PL.base);   /* 그 수 직전 상태 */
+  PL.i=j; PL.k=0; plChips(); plBtn();
+  plTween(geo,full,0,(mv.dbl?540:380)/PL.speed,()=>plRender(null,0));
+}
 function plRun(){
   if(!PL||!PL.playing) return;
   if(PL.i>=PL.moves.length||(PL.stopAt!==null&&PL.i>=PL.stopAt)){PL.playing=false;PL.stopAt=null;plBtn();return;}
@@ -1579,6 +1610,7 @@ function plRun(){
 function plPlay(){
   if(!PL) return;
   if(PL.i>=PL.moves.length) plSeek(0);
+  plCancel();
   PL.playing=true; PL.stopAt=null; plBtn(); plRun();
 }
 function openPlayer(n){
@@ -1602,9 +1634,10 @@ document.getElementById('plClose').onclick=closePlayer;
 document.getElementById('player').onclick=e=>{if(e.target.id==='player')closePlayer();};
 document.getElementById('plToggle').onclick=()=>{PL&&(PL.playing?plPause():plPlay());};
 document.getElementById('plFirst').onclick=()=>{plPause();plSeek(0);};
-document.getElementById('plPrev').onclick=()=>{const i=PL.i;plPause();plSeek(PL.k>0?i:i-1);};
+document.getElementById('plPrev').onclick=()=>plStepBack();
 document.getElementById('plNext').onclick=()=>{
   if(!PL||PL.i>=PL.moves.length) return;
+  plCancel();
   PL.playing=true; PL.stopAt=PL.i+1; plBtn(); plRun();};
 document.getElementById('plSpeed').onchange=e=>{plLastSpeed=+e.target.value; if(PL)PL.speed=plLastSpeed;};
 addEventListener('keydown',e=>{
