@@ -117,6 +117,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 #sheet .rv span{width:14px;height:14px;border:1.5px solid #333;border-radius:2px;display:inline-block}
 .case .cust{margin-top:6px;padding:5px 6px;font-size:11.5px}
 .case .top .play{margin-left:auto;padding:3px 9px;font-size:12px;line-height:1.3}
+.modal[hidden]{display:none}   /* display:flex가 hidden 속성을 덮어쓰지 않도록 */
 .modal{position:fixed;inset:0;background:rgba(6,16,30,.72);display:flex;align-items:center;
   justify-content:center;z-index:50;padding:20px}
 .pbox{background:var(--navy-2);border:1px solid var(--line);border-radius:16px;padding:18px;
@@ -142,7 +143,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.0</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
