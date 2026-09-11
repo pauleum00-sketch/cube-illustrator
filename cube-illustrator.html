@@ -55,8 +55,10 @@ svg.out{max-width:100%;height:auto;display:block}
 .btn.mv{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;min-width:38px;padding:8px 6px}
 .btn.mod{border-color:var(--teal);color:var(--teal)}
 .btn[aria-pressed=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
-.rst{background:none;border:none;padding:0 0 0 7px;margin:0;color:var(--muted);
-  cursor:pointer;vertical-align:-3px;line-height:0}
+.rst{display:inline-flex;align-items:center;gap:4px;background:#17365c;border:1px solid var(--line);
+  border-radius:6px;padding:3px 7px;margin-left:8px;color:var(--muted);cursor:pointer;
+  font:inherit;font-size:10.5px;font-weight:600;letter-spacing:0;text-transform:none;vertical-align:middle}
+.rst:hover{border-color:var(--teal)}
 .rst[hidden]{display:none}
 .rst:hover{color:var(--teal)}
 .ang{display:flex;align-items:center;gap:8px;margin-bottom:7px;color:var(--muted);font-size:12px}
@@ -147,7 +149,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.10.1</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.11.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -171,6 +173,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <h2>단계 프리셋</h2>
         <div class="row">
           <button class="btn" data-preset="full">완성</button>
+          <button class="btn" data-preset="blank">전부 회색</button>
           <button class="btn" data-preset="cross">크로스</button>
           <button class="btn" data-preset="f1">1층</button>
           <button class="btn" data-preset="f2">2층까지</button>
@@ -183,7 +186,6 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
           <button class="btn gh" id="reset">초기화</button>
           <label class="chk" style="margin-left:4px"><input type="checkbox" id="trans"> 배경 투명하게</label>
         </div>
-        <p class="hint">스티커를 누르면 칠해지고, 같은 색을 다시 누르면 회색이 됩니다. 스티커를 끌면 그 층이 돌아가고, 큐브 바깥을 끌면 큐브 전체가 돌아갑니다. 두 손가락으로 끌면 천천히·세밀하게 돌아갑니다. 입체와 탑다운은 별개의 큐브입니다.</p>
       </div>
       <div>
       <div id="only3d">
@@ -191,6 +193,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <div class="row" id="rots"></div>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="snap" checked> 드래그를 놓으면 반듯하게 정렬</label>
         <label class="chk"><input type="checkbox" id="lock"> 드래그 잠그기 (지금 각도 보호)</label>
+        <label class="chk"><input type="checkbox" id="lefty"> 왼손잡이용 각도</label>
         <h2 style="margin-top:22px">각도 (°)<button class="rst" id="rstAngle" title="기본 각도로 되돌리기" aria-label="기본 각도로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
         <div id="angles"></div>
         <h2 style="margin-top:22px">각도 슬롯 <span style="text-transform:none;letter-spacing:0">(최대 5개)</span></h2>
@@ -225,7 +228,10 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <div class="card">
       <h2>시뮬레이터</h2>
       <input class="alginput" id="applyAlg" spellcheck="false" placeholder="예: R U R' U'">
-      <label class="chk" style="margin-top:8px"><input type="checkbox" id="viewRel" checked> 화면에 보이는 방향 기준 (앞=F, 위=U)</label>
+      <div class="row" style="margin-top:8px">
+        <button class="btn" id="setFront">현재 정면을 F면으로 설정</button>
+        <button class="rst" id="rstFront" title="기본 기준면으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>기본</button>
+      </div>
       <div class="row" style="margin-top:8px">
         <button class="btn" id="applyBtn">적용</button>
         <button class="btn" id="applyInvBtn">역으로 적용</button>
@@ -372,7 +378,7 @@ const COLORS={W:['#FDFDFD','하양'],Y:['#FFD500','노랑'],R:['#D42B23','빨강
               B:['#1B5CD9','파랑'],G:['#12A544','초록'],P:['#E5007E','핑크'],X:['#BFC4C9','회색'],
               C:['#8A2BE2','자유']};
 const ORDER=['B','G','O','R','W','Y','P','X','C'];
-const CENTER={U:'W',D:'Y',F:'G',B:'B',R:'R',L:'O'};
+const CENTER={U:'Y',D:'W',F:'R',B:'O',R:'G',L:'B'};   /* 면 고정: 노랑 위·하양 아래·빨강 앞·초록 오른쪽 */
 const FACES={
   U:{n:[0,1,0], u:[1,0,0], v:[0,0,1]},   D:{n:[0,-1,0],u:[1,0,0], v:[0,0,-1]},
   F:{n:[0,0,1], u:[1,0,0], v:[0,-1,0]},  B:{n:[0,0,-1],u:[-1,0,0],v:[0,-1,0]},
@@ -382,11 +388,11 @@ const FKEYS=['U','D','F','B','R','L'];
 
 /* ========== 상태 ========== */
 function mkState(gray){const s={};FKEYS.forEach(f=>{
-  s[f]=[0,1,2].map(r=>[0,1,2].map(c=>(!gray&&r===1&&c===1)?CENTER[f]:'X'));});return s;}
+  s[f]=[0,1,2].map(r=>[0,1,2].map(c=>gray?'X':CENTER[f]));});return s;}   /* 기본은 완성된 큐브 */
 let state=mkState(), stateTop=mkState(true);      /* 입체와 탑다운은 서로 독립. 탑다운은 전부 회색으로 시작 */
-/* 기본 각도 = F2L Front Right 기준: 노랑 위·빨강 앞·초록 오른쪽 (D→위, R→앞, F→오른쪽) */
-const HOME_ORIENT=[[0,0,1],[0,-1,0],[1,0,0]];
-let orient=HOME_ORIENT.map(r=>r.slice()), pick='B', view='3d', cubeAlpha=0, auxGap=1.95;
+/* 면이 고정되어 있으므로 기본 각도는 그대로 정면(U가 위, F가 앞) */
+const IDENT=[[1,0,0],[0,1,0],[0,0,1]];
+let orient=IDENT.map(r=>r.slice()), pick='B', view='3d', cubeAlpha=0, auxGap=1.95;
 let auxOn={U:true,D:true,F:true,B:true,R:true,L:true};
 let topArrows=[], arrowPending=null, playing=false;
 const curState=()=>view==='top'?stateTop:state;
@@ -396,7 +402,8 @@ const applyM=(M,p)=>[M[0][0]*p[0]+M[0][1]*p[1]+M[0][2]*p[2],
 const matMul=(A,B)=>[0,1,2].map(i=>[0,1,2].map(j=>A[i][0]*B[0][j]+A[i][1]*B[1][j]+A[i][2]*B[2][j]));
 const ROT={x:[[1,0,0],[0,0,1],[0,-1,0]],y:[[0,0,-1],[0,1,0],[1,0,0]],z:[[0,1,0],[-1,0,0],[0,0,1]]};
 const inv=M=>[0,1,2].map(i=>[0,1,2].map(j=>M[j][i]));
-function rotate(code){const M=ROT[code[0]];orient=matMul(code.length>1?inv(M):M,orient);drawCube();updateAngleUI();persist();}
+function rotate(code){const M=ROT[code[0]], R=code.length>1?inv(M):M;
+  orient=outFrame(matMul(R,inFrame(orient)));drawCube();updateAngleUI();persist();}
 
 /* ---- 자유 회전(드래그) 도우미 ---- */
 function rotM(ax,a){const c=Math.cos(a),s=Math.sin(a);
@@ -404,6 +411,13 @@ function rotM(ax,a){const c=Math.cos(a),s=Math.sin(a);
   if(ax==='y')return[[c,0,s],[0,1,0],[-s,0,c]];
   return[[c,-s,0],[s,c,0],[0,0,1]];}
 const CM=matMul(rotM('x',PH),rotM('y',TH)), CMT=inv(CM);   /* 카메라 회전과 그 역행렬 */
+/* 왼손잡이 각도 = 큐브를 반대쪽에서 본 것. 모든 각도는 orient = 보기틀 × 큐브자세 로 다룬다 */
+const LEFT_YAW=-2*TH;
+const isLefty=()=>document.getElementById('lefty').checked;
+const viewBase=()=>isLefty()?rotM('y',LEFT_YAW):IDENT;
+const homeOrient=()=>viewBase();
+const inFrame=M=>matMul(inv(viewBase()),M);
+const outFrame=M=>matMul(viewBase(),M);
 const cross=(a,b)=>[a[1]*b[2]-a[2]*b[1],a[2]*b[0]-a[0]*b[2],a[0]*b[1]-a[1]*b[0]];
 function isAligned(M){return M.flat().every(v=>Math.abs(v)<1e-4||Math.abs(Math.abs(v)-1)<1e-4);}
 function snapOrient(M){                    /* 각 축을 가장 가까운 좌표축으로 붙인다 */
@@ -467,15 +481,21 @@ const AXIS_OF={R:'x',L:'x',U:'y',D:'y',F:'z',B:'z'};
 const POSFACE={x:'R',y:'U',z:'F'};
 const SLICE_OF={x:'M',y:'E',z:'S'}, SLICE_REF={M:'L',E:'D',S:'F'};
 const WIDE_OF={R:'r',L:'l',U:'u',D:'d',F:'f',B:'b'};
-function roleMap(){
-  const o=isAligned(orient)?orient:snapOrient(orient), map={};
-  FKEYS.forEach(f=>{
-    const nc=camPt(applyM(o,FACES[f].n));
-    const a=[Math.abs(nc[0]),Math.abs(nc[1]),Math.abs(nc[2])];
-    const i=a[0]>a[1]?(a[0]>a[2]?0:2):(a[1]>a[2]?1:2);
-    map[i===0?(nc[0]>0?'R':'L'):i===1?(nc[1]>0?'U':'D'):(nc[2]>0?'F':'B')]=f;
-  });
-  return map;
+/* 기준면: 어떤 실제 면이 F·U… 역할을 맡는지. 기본은 면 그대로(F=F) */
+let faceRole={U:'U',D:'D',F:'F',B:'B',R:'R',L:'L'};
+const roleOf=f=>FKEYS.find(k=>faceRole[k]===f)||f;
+const isDefaultRole=()=>FKEYS.every(k=>faceRole[k]===k);
+/* 지금 화면에서 위를 향한 면을 U, 그 면과 수직인 면 중 카메라를 가장 마주보는 면을 F로.
+   각이 반듯하지 않아도(왼손 각도처럼 비스듬해도) 항상 하나로 정해진다 */
+function detectRoles(){
+  const nc={}; FKEYS.forEach(f=>nc[f]=camPt(applyM(orient,FACES[f].n)));
+  let U=FKEYS[0]; FKEYS.forEach(f=>{if(nc[f][1]>nc[U][1])U=f;});
+  const perp=FKEYS.filter(f=>Math.abs(dot3(FACES[f].n,FACES[U].n))<0.5);
+  let F=perp[0]; perp.forEach(f=>{if(nc[f][2]>nc[F][2])F=f;});
+  const rn=cross(FACES[U].n,FACES[F].n);
+  const R=FKEYS.find(f=>dot3(FACES[f].n,rn)>0.9);
+  const opp=f=>FKEYS.find(g=>dot3(FACES[g].n,FACES[f].n)<-0.9);
+  return {U,F,R,D:opp(U),B:opp(F),L:opp(R)};
 }
 function remapMove(mv,map){
   const raw=mv.letter, out={...mv};
@@ -557,6 +577,17 @@ function buildCubeAnimSVG(geo,ang){
 }
 function renderAnim(geo,ang){document.getElementById('stage1').innerHTML=buildCubeAnimSVG(geo,ang);}
 
+/* 면 위에 눕힌 3D 글자 (돌리는 중에만 보인다) */
+function faceLabel(face,off,T){
+  const F=FACES[face], c=mul(F.n,1.5+(off||0)), k=0.7;
+  const P0=T(applyM(orient,c));
+  const Pu=T(applyM(orient,add(c,mul(F.u,k)))), Pv=T(applyM(orient,add(c,mul(F.v,k))));
+  const m=[(Pu[0]-P0[0])/k,(Pu[1]-P0[1])/k,(Pv[0]-P0[0])/k,(Pv[1]-P0[1])/k,P0[0],P0[1]];
+  return `<text transform="matrix(${m.map(v=>v.toFixed(3)).join(' ')})" text-anchor="middle"`
+    +` dominant-baseline="central" font-family="Arial,Helvetica,sans-serif" font-weight="700"`
+    +` font-size="1.25" fill="#0b1622" stroke="#fff" stroke-width="0.16" paint-order="stroke"`
+    +` style="pointer-events:none">${roleOf(face)}</text>`;
+}
 function buildCubeSVG(tight){
   const W=680,H=620, draw=[];
   FKEYS.forEach(f=>{
@@ -580,6 +611,7 @@ function buildCubeSVG(tight){
       s+=`<path class="st" data-f="${face}" data-r="${r}" data-c="${c}" d="${path(pts,true)}"
            fill="${COLORS[state[face][r][c]][0]}"${st} style="cursor:pointer"/>`;
     }
+    if(dragging3d&&!isAux) s+=faceLabel(face,off,T);   /* 돌리는 동안에만 면 이름 */
     groups.push([depth,s+'</g>']);
   });
   groups.sort((a,b)=>a[0]-b[0]);
@@ -771,7 +803,7 @@ function viewDragEnd(e){
   drag3=null;
   if(dragging3d){
     dragging3d=false;
-    orient=document.getElementById('snap').checked?snapOrient(orient):orthonormalize(orient);
+    orient=document.getElementById('snap').checked?outFrame(snapOrient(inFrame(orient))):orthonormalize(orient);
     drawCube(); updateAngleUI(); persist();
   }
 }
@@ -811,7 +843,7 @@ function reflectPick(){[...pal.children].forEach(x=>x.setAttribute('aria-pressed
 const DEF_BG='#D8DDE3';
 let bgCol=DEF_BG;
 const bgInput=document.getElementById('bgcol');
-function applyBg(){document.querySelectorAll('.stage').forEach(s=>s.style.background=bgCol);}
+function applyBg(){document.getElementById('stage1').style.background=bgCol;}   /* 큐브 색칠 탭 전용 */
 function setBg(v){bgCol=v;bgInput.value=v;applyBg();updateResets();persist();}
 bgInput.addEventListener('input',()=>setBg(bgInput.value));
 applyBg();
@@ -836,7 +868,7 @@ document.getElementById('rots').innerHTML=ROTBTN.map(([k,p,t])=>
 document.querySelectorAll('[data-rot]').forEach(b=>b.onclick=()=>rotate(b.dataset.rot));
 document.getElementById('reset').onclick=()=>{
   if(view==='top'){stateTop=mkState(true);topArrows=[];arrowPending=null;}
-  else{state=mkState();orient=HOME_ORIENT.map(r=>r.slice());FKEYS.forEach(f=>auxOn[f]=true);updateAngleUI();}
+  else{state=mkState();orient=homeOrient();FKEYS.forEach(f=>auxOn[f]=true);updateAngleUI();}
   drawCube();persist();};
 
 /* 각도 슬라이더: orient = Rx(X)·Ry(Y)·Rz(Z) */
@@ -858,23 +890,35 @@ const orientFromEuler=(x,y,z)=>matMul(rotM('x',x*RAD),matMul(rotM('y',y*RAD),rot
 const DEF_ALPHA=0, DEF_GAP=1.95;
 const sameMat=(A,B)=>A.every((r,i)=>r.every((v,j)=>Math.abs(v-B[i][j])<1e-3));
 function updateResets(){
-  document.getElementById('rstAngle').hidden=sameMat(orient,HOME_ORIENT);
+  document.getElementById('rstAngle').hidden=sameMat(orient,homeOrient());
   document.getElementById('rstAlpha').hidden=Math.round(cubeAlpha*100)===DEF_ALPHA;
   document.getElementById('rstGap').hidden=Math.abs(auxGap-DEF_GAP)<1e-9;
   document.getElementById('rstBg').hidden=bgCol.toLowerCase()===DEF_BG.toLowerCase();
+  document.getElementById('rstFront').hidden=isDefaultRole();
 }
 function updateAngleUI(){
-  const e=eulerFromOrient(orient);
+  const e=eulerFromOrient(inFrame(orient));
   AXES.forEach((ax,i)=>{const v=Math.round(e[i]);rg(ax).value=v;num(ax).value=v;});
   updateResets();
 }
 document.getElementById('rstAngle').onclick=()=>{
-  orient=HOME_ORIENT.map(r=>r.slice()); drawCube(); updateAngleUI(); persist();};
+  orient=homeOrient(); drawCube(); updateAngleUI(); persist();};
+document.getElementById('lefty').onchange=()=>{      /* 보던 자세는 유지한 채 반대쪽에서 보게 */
+  const Bold=isLefty()?IDENT:rotM('y',LEFT_YAW);
+  orient=matMul(viewBase(),matMul(inv(Bold),orient));
+  drawCube(); updateAngleUI(); persist();};
 document.getElementById('rstAlpha').onclick=()=>setAlpha(DEF_ALPHA);
 document.getElementById('rstGap').onclick=()=>setGap(DEF_GAP);
 document.getElementById('rstBg').onclick=()=>setBg(DEF_BG);
+document.getElementById('setFront').onclick=()=>{
+  faceRole=detectRoles();
+  toast(`${faceRole.F}면을 정면(F)으로 잡았습니다`);
+  drawCube(); updateResets(); persist();};
+document.getElementById('rstFront').onclick=()=>{
+  faceRole={U:'U',D:'D',F:'F',B:'B',R:'R',L:'L'};
+  toast('기준면을 원래대로 되돌렸습니다'); drawCube(); updateResets(); persist();};
 function applyAngles(){
-  orient=orientFromEuler(+num('x').value||0,+num('y').value||0,+num('z').value||0);
+  orient=outFrame(orientFromEuler(+num('x').value||0,+num('y').value||0,+num('z').value||0));
   drawCube();updateResets();persist();
 }
 AXES.forEach(ax=>{
@@ -898,11 +942,7 @@ function getApplyMoves(){
   const {moves,bad}=parseAlg(applyInput.value);
   if(bad.length){toast(`모르는 기호: ${bad.join(', ')}`);return null;}
   if(!moves.length){toast('회전기호를 입력하세요');return null;}
-  if(view==='3d'&&document.getElementById('viewRel').checked){
-    const map=roleMap();
-    return moves.map(m=>remapMove(m,map));
-  }
-  return moves;
+  return isDefaultRole()?moves:moves.map(m=>remapMove(m,faceRole));
 }
 function runMoves(moves){
   if(view==='top') stateTop=moves.reduce(applyMoveTo,stateTop);
@@ -940,11 +980,12 @@ function animateMove(mv){
 }
 
 /* 단계 프리셋 */
-const PRESETKEEP={
+const PRESETKEEP={                      /* 흰 면(D)이 아래인 기준 */
   full :(f,r,c)=>true,
-  cross:(f,r,c)=>(f==='U'&&(r===1||c===1))||('FBRL'.includes(f)&&r===0&&c===1),
-  f1   :(f,r,c)=>f==='U'||('FBRL'.includes(f)&&r===0),
-  f2   :(f,r,c)=>f==='U'||('FBRL'.includes(f)&&r<=1)
+  blank:(f,r,c)=>false,
+  cross:(f,r,c)=>(f==='D'&&(r===1||c===1))||('FBRL'.includes(f)&&r===2&&c===1),
+  f1   :(f,r,c)=>f==='D'||('FBRL'.includes(f)&&r===2),
+  f2   :(f,r,c)=>f==='D'||('FBRL'.includes(f)&&r>=1)
 };
 document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
   if(playing)return;
@@ -1169,7 +1210,7 @@ document.getElementById('zin').onclick=()=>setZoom(1);
 document.getElementById('zout').onclick=()=>setZoom(-1);
 
 /* ========== 내보내기 ========== */
-function toPNG(svg,tr,scale){
+function toPNG(svg,tr,scale,bg){
   return new Promise((res,rej)=>{
     const m=svg.match(/viewBox="0 0 ([\d.]+) ([\d.]+)"/), w=+m[1], h=+m[2];
     const img=new Image();
@@ -1177,7 +1218,7 @@ function toPNG(svg,tr,scale){
       const cv=document.createElement('canvas');
       cv.width=Math.round(w*scale); cv.height=Math.round(h*scale);
       const g=cv.getContext('2d');
-      if(!tr){g.fillStyle=bgCol;g.fillRect(0,0,cv.width,cv.height);}
+      if(!tr){g.fillStyle=bg||'#fff';g.fillRect(0,0,cv.width,cv.height);}
       g.drawImage(img,0,0,cv.width,cv.height);
       cv.toBlob(b=>b?res(b):rej(new Error()),'image/png');
     };
@@ -1187,27 +1228,26 @@ function toPNG(svg,tr,scale){
 }
 const toast=t=>{const e=document.getElementById('toast');e.textContent=t;e.classList.add('on');
   clearTimeout(e._t);e._t=setTimeout(()=>e.classList.remove('on'),1900);};
-async function save(svg,tr,name){
-  try{const b=await toPNG(svg,tr,3);const a=document.createElement('a');
+async function save(svg,tr,name,bg){
+  try{const b=await toPNG(svg,tr,3,bg);const a=document.createElement('a');
     a.href=URL.createObjectURL(b);a.download=name;a.click();
     setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('PNG로 저장했습니다');
   }catch(e){toast('저장하지 못했습니다');}
 }
-async function copy(svg,tr){
-  try{const b=await toPNG(svg,tr,3);
+async function copy(svg,tr,bg){
+  try{const b=await toPNG(svg,tr,3,bg);
     await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('클립보드에 복사했습니다');
   }catch(e){toast('이 브라우저에서는 복사가 막혀 있습니다. 저장을 쓰세요');}
 }
 const cubeSVG=()=>view==='top'?buildTopSVG():buildCubeSVG(true);
-document.getElementById('save1').onclick=()=>save(cubeSVG(),document.getElementById('trans').checked,view==='top'?'cube-top.png':'cube.png');
-document.getElementById('copy1').onclick=()=>copy(cubeSVG(),document.getElementById('trans').checked);
+document.getElementById('save1').onclick=()=>save(cubeSVG(),document.getElementById('trans').checked,view==='top'?'cube-top.png':'cube.png',bgCol);
+document.getElementById('copy1').onclick=()=>copy(cubeSVG(),document.getElementById('trans').checked,bgCol);
 document.getElementById('save2').onclick=()=>save(buildAlgSVG(),document.getElementById('trans2').checked,'algorithm.png');
 document.getElementById('copy2').onclick=()=>copy(buildAlgSVG(),document.getElementById('trans2').checked);
 document.getElementById('trans').onchange=persist;
 document.getElementById('trans2').onchange=persist;
 document.getElementById('snap').onchange=persist;
 document.getElementById('lock').onchange=persist;
-document.getElementById('viewRel').onchange=persist;
 
 /* 탭 */
 const TABS=[1,2,3].map(i=>document.getElementById('t'+i));
@@ -1225,7 +1265,7 @@ function persistNow(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
       state,stateTop,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
-      custom:COLORS.C[0],bg:bgCol,viewRel:document.getElementById('viewRel').checked,
+      custom:COLORS.C[0],bg:bgCol,lefty:isLefty(),faceRole,
       alg:ta.value,
       snap:document.getElementById('snap').checked,
       lock:document.getElementById('lock').checked,
@@ -1266,7 +1306,8 @@ function loadLocal(){
       pal.querySelector('[data-col="C"] i').style.background=d.custom;
       document.getElementById('customCol').value=d.custom;}
     if(/^#[0-9a-fA-F]{6}$/.test(d.bg||'')){bgCol=d.bg;bgInput.value=d.bg;applyBg();}
-    if(typeof d.viewRel==='boolean') document.getElementById('viewRel').checked=d.viewRel;
+    if(typeof d.lefty==='boolean') document.getElementById('lefty').checked=d.lefty;
+    if(d.faceRole&&FKEYS.every(k=>FKEYS.includes(d.faceRole[k]))) faceRole=d.faceRole;
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
