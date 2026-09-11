@@ -37,7 +37,7 @@ main{max-width:1520px;margin:0 auto;padding:24px}
 #stage1{touch-action:none}
 svg.out{max-width:100%;height:auto;display:block}
 
-.pal{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-bottom:8px}
+.pal{display:grid;grid-template-columns:repeat(3,1fr);gap:9px;margin-bottom:8px}
 .chip{position:relative;aspect-ratio:1;border:none;background:none;padding:0 0 15px;cursor:pointer}
 .chip i{display:block;width:100%;height:100%;border-radius:4px;border:2.5px solid #12233a;transition:transform .12s}
 .chip:hover i{transform:scale(1.07)}
@@ -149,7 +149,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.11.0</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.12.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -200,6 +200,11 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <div class="row">
           <button class="btn" id="slotSave">+ 지금 각도 저장</button>
           <span id="slots" class="row"></span>
+        </div>
+        <h2 style="margin-top:22px">크기 <span style="text-transform:none;letter-spacing:0">(%)</span><button class="rst" id="rstZoom" title="기본 크기로 되돌리기" hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
+        <div class="ang">
+          <input type="range" id="zoom3d" min="40" max="260" step="5" value="100">
+          <input type="number" id="zoom3dnum" min="40" max="260" step="5" value="100">
         </div>
         <h2 style="margin-top:22px">투명도<button class="rst" id="rstAlpha" title="기본값(0%)으로 되돌리기" aria-label="기본값(0%)으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
         <div class="ang">
@@ -377,7 +382,7 @@ function arcPts(c,u,v,R,start,span){
 const COLORS={W:['#FDFDFD','하양'],Y:['#FFD500','노랑'],R:['#D42B23','빨강'],O:['#FF6D1F','주황'],
               B:['#1B5CD9','파랑'],G:['#12A544','초록'],P:['#E5007E','핑크'],X:['#BFC4C9','회색'],
               C:['#8A2BE2','자유']};
-const ORDER=['B','G','O','R','W','Y','P','X','C'];
+const ORDER=['Y','R','G','W','O','B','P','X','C'];   /* 위 6칸은 큐브 6색(세로로 마주보는 짝), 아래 3칸은 보조색 */
 const CENTER={U:'Y',D:'W',F:'R',B:'O',R:'G',L:'B'};   /* 면 고정: 노랑 위·하양 아래·빨강 앞·초록 오른쪽 */
 const FACES={
   U:{n:[0,1,0], u:[1,0,0], v:[0,0,1]},   D:{n:[0,-1,0],u:[1,0,0], v:[0,0,-1]},
@@ -392,6 +397,7 @@ function mkState(gray){const s={};FKEYS.forEach(f=>{
 let state=mkState(), stateTop=mkState(true);      /* 입체와 탑다운은 서로 독립. 탑다운은 전부 회색으로 시작 */
 /* 면이 고정되어 있으므로 기본 각도는 그대로 정면(U가 위, F가 앞) */
 const IDENT=[[1,0,0],[0,1,0],[0,0,1]];
+let cubeZoom=1;
 let orient=IDENT.map(r=>r.slice()), pick='B', view='3d', cubeAlpha=0, auxGap=1.95;
 let auxOn={U:true,D:true,F:true,B:true,R:true,L:true};
 let topArrows=[], arrowPending=null, playing=false;
@@ -550,7 +556,7 @@ function screenT(tight,draw){
   }
   /* 화면: 어떤 각도·보조면에도 흔들리지 않는 고정 프레임 */
   const R3=Math.hypot(1.5+auxGap,1.5,1.5), fx=R3/Math.sqrt(DIST*DIST-R3*R3);
-  const s=Math.min((W-24)/(2*fx),(H-24)/(2*fx)), cx=W/2, cy=H/2;
+  const s=Math.min((W-24)/(2*fx),(H-24)/(2*fx))*cubeZoom, cx=W/2, cy=H/2;   /* 확대하면 보조면이 잘려도 큐브가 커진다 */
   return q=>{const r=projPt(q);return [r[0]*s+cx,r[1]*s+cy];};
 }
 /* 층이 도는 중의 렌더링: 스티커별 뒤판+색을 함께 그려서 평소 모양·투명도가 유지된다 */
@@ -771,10 +777,13 @@ function renderAux(){
 let drag3=null;                     /* {pts:Map(pointerId→[x,y]), cx, cy} */
 const stage1El=document.getElementById('stage1');
 const centroid=m=>{let x=0,y=0;for(const p of m.values()){x+=p[0];y+=p[1];}return [x/m.size,y/m.size];};
+const spread=m=>{if(m.size<2)return 0;const a=[...m.values()];
+  return Math.hypot(a[0][0]-a[1][0],a[0][1]-a[1][1]);};
 function viewDragAdd(e){
   if(!drag3) drag3={pts:new Map()};
   drag3.pts.set(e.pointerId,[e.clientX,e.clientY]);
   [drag3.cx,drag3.cy]=centroid(drag3.pts);      /* 손가락 수가 바뀌면 기준점을 새로 잡아 튀지 않게 */
+  drag3.sp=spread(drag3.pts);
 }
 stage1El.addEventListener('pointerdown',e=>{
   if(view!=='3d'||playing||grab) return;
@@ -786,10 +795,13 @@ stage1El.addEventListener('pointerdown',e=>{
 addEventListener('pointermove',e=>{
   if(!drag3||!drag3.pts.has(e.pointerId)) return;
   drag3.pts.set(e.pointerId,[e.clientX,e.clientY]);
+  const sp=spread(drag3.pts);
+  if(drag3.sp>20&&sp>20){setCubeZoom(cubeZoom*sp/drag3.sp,true);}   /* 두 손가락을 벌리면 확대 */
+  drag3.sp=sp;
   const [cx,cy]=centroid(drag3.pts);
   const dx=cx-drag3.cx, dy=cy-drag3.cy;
   drag3.cx=cx; drag3.cy=cy;
-  if(!dx&&!dy) return;
+  if(!dx&&!dy){if(drag3.pts.size>1)drawCube();return;}
   dragging3d=true;
   const Sp=drag3.pts.size>=2?0.0075/4:0.0075;
   const R=matMul(rotM('x',dy*Sp),rotM('y',dx*Sp));
@@ -895,6 +907,7 @@ function updateResets(){
   document.getElementById('rstGap').hidden=Math.abs(auxGap-DEF_GAP)<1e-9;
   document.getElementById('rstBg').hidden=bgCol.toLowerCase()===DEF_BG.toLowerCase();
   document.getElementById('rstFront').hidden=isDefaultRole();
+  document.getElementById('rstZoom').hidden=Math.abs(cubeZoom-DEF_ZOOM)<1e-9;
 }
 function updateAngleUI(){
   const e=eulerFromOrient(inFrame(orient));
@@ -999,6 +1012,20 @@ document.querySelectorAll('[data-preset]').forEach(b=>b.onclick=()=>{
 document.getElementById('arrowUndo').onclick=()=>{topArrows.pop();arrowPending=null;drawCube();persist();};
 document.getElementById('arrowClear').onclick=()=>{topArrows=[];arrowPending=null;drawCube();persist();};
 document.getElementById('arrowMode').onchange=()=>{arrowPending=null;drawCube();};
+
+/* 큐브 크기 */
+const DEF_ZOOM=1;
+const zRg=document.getElementById('zoom3d'), zNum=document.getElementById('zoom3dnum');
+function setCubeZoom(v,quiet){
+  v=Math.max(0.4,Math.min(2.6,v||1));
+  cubeZoom=v;
+  const pct=Math.round(v*100); zRg.value=pct; zNum.value=pct;
+  if(!quiet) drawCube();
+  updateResets(); persist();
+}
+zRg.addEventListener('input',()=>setCubeZoom(+zRg.value/100));
+zNum.addEventListener('input',()=>setCubeZoom(+zNum.value/100));
+document.getElementById('rstZoom').onclick=()=>setCubeZoom(DEF_ZOOM);
 
 /* 보조면 거리 */
 const gapRg=document.getElementById('gap'), gapNum=document.getElementById('gapnum');
@@ -1239,7 +1266,7 @@ async function copy(svg,tr,bg){
     await navigator.clipboard.write([new ClipboardItem({'image/png':b})]);toast('클립보드에 복사했습니다');
   }catch(e){toast('이 브라우저에서는 복사가 막혀 있습니다. 저장을 쓰세요');}
 }
-const cubeSVG=()=>view==='top'?buildTopSVG():buildCubeSVG(true);
+const cubeSVG=()=>view==='top'?buildTopSVG():buildCubeSVG(cubeZoom===1);   /* 확대 중이면 화면과 같은 틀로 내보낸다 */
 document.getElementById('save1').onclick=()=>save(cubeSVG(),document.getElementById('trans').checked,view==='top'?'cube-top.png':'cube.png',bgCol);
 document.getElementById('copy1').onclick=()=>copy(cubeSVG(),document.getElementById('trans').checked,bgCol);
 document.getElementById('save2').onclick=()=>save(buildAlgSVG(),document.getElementById('trans2').checked,'algorithm.png');
@@ -1265,7 +1292,7 @@ function persistNow(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
       state,stateTop,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
-      custom:COLORS.C[0],bg:bgCol,lefty:isLefty(),faceRole,
+      custom:COLORS.C[0],bg:bgCol,lefty:isLefty(),faceRole,zoom3d:cubeZoom,
       alg:ta.value,
       snap:document.getElementById('snap').checked,
       lock:document.getElementById('lock').checked,
@@ -1307,6 +1334,8 @@ function loadLocal(){
       document.getElementById('customCol').value=d.custom;}
     if(/^#[0-9a-fA-F]{6}$/.test(d.bg||'')){bgCol=d.bg;bgInput.value=d.bg;applyBg();}
     if(typeof d.lefty==='boolean') document.getElementById('lefty').checked=d.lefty;
+    if(typeof d.zoom3d==='number'&&d.zoom3d>=0.4&&d.zoom3d<=2.6){cubeZoom=d.zoom3d;
+      zRg.value=Math.round(cubeZoom*100); zNum.value=zRg.value;}
     if(d.faceRole&&FKEYS.every(k=>FKEYS.includes(d.faceRole[k]))) faceRole=d.faceRole;
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
