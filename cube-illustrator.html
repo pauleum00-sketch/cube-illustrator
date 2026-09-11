@@ -143,7 +143,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.2</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.3</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -179,7 +179,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
           <button class="btn" id="copy1">복사</button>
           <button class="btn gh" id="reset">초기화</button>
         </div>
-        <p class="hint">스티커를 누르면 칠해지고, 같은 색을 다시 누르면 회색이 됩니다. 스티커를 끌면 그 층이 돌아가고, 큐브 바깥을 끌면 큐브 전체가 돌아갑니다. 입체와 탑다운은 별개의 큐브입니다.</p>
+        <p class="hint">스티커를 누르면 칠해지고, 같은 색을 다시 누르면 회색이 됩니다. 스티커를 끌면 그 층이 돌아가고, 큐브 바깥을 끌면 큐브 전체가 돌아갑니다. 두 손가락으로 끌면 천천히·세밀하게 돌아갑니다. 입체와 탑다운은 별개의 큐브입니다.</p>
       </div>
       <div>
       <div id="only3d">
@@ -653,7 +653,9 @@ function bindStickers(){
         else paintEl(el,e.button===2);
         return;
       }
-      grab={f:el.dataset.f,r:+el.dataset.r,c:+el.dataset.c,
+      if(drag3){viewDragAdd(e);return;}          /* 한 손가락으로 돌리는 중 → 두 번째 손가락으로 합류 */
+      if(grab) return;                            /* 층을 잡는 중엔 추가 손가락 무시 */
+      grab={f:el.dataset.f,r:+el.dataset.r,c:+el.dataset.c,id:e.pointerId,
             x:e.clientX,y:e.clientY,el,btn:e.button,ang:0};
     });
   });
@@ -676,7 +678,7 @@ function grabTangents(f,r,c){
   return out;
 }
 addEventListener('pointermove',e=>{
-  if(!grab||view!=='3d'||playing) return;
+  if(!grab||e.pointerId!==grab.id||view!=='3d'||playing) return;
   const dx=e.clientX-grab.x, dy=e.clientY-grab.y;
   if(!grab.geo){
     if(dx*dx+dy*dy<49) return;                       /* 7px부터 드래그로 인정 */
@@ -689,11 +691,11 @@ addEventListener('pointermove',e=>{
   grab.ang=(dx*t[0]+dy*t[1])/L2;                     /* 커서를 그대로 따라오는 각도 */
   renderAnim(grab.geo,grab.ang);
 });
-addEventListener('pointerup',e=>{
-  if(!grab) return;
+function grabEnd(e,cancelled){
+  if(!grab||e.pointerId!==grab.id) return;
   const g=grab; grab=null;
   if(view!=='3d'){return;}
-  if(!g.geo){ paintEl(g.el,g.btn===2); return; }     /* 안 끌었으면 = 클릭 색칠 */
+  if(!g.geo){ if(!cancelled) paintEl(g.el,g.btn===2); return; }   /* 안 끌었으면 = 클릭 색칠 */
   const q=Math.round(g.ang/(Math.PI/2));
   const finish=()=>{state=applyTurn(state,g.geo.ax,g.geo.axIdx,g.geo.range,q);drawCube();persist();};
   if(document.hidden){finish();return;}
@@ -704,7 +706,9 @@ addEventListener('pointerup',e=>{
     renderAnim(g.geo,from+(target-from)*k);
     if(k<1) requestAnimationFrame(settle); else finish();
   })(t0);
-});
+}
+addEventListener('pointerup',e=>grabEnd(e,false));
+addEventListener('pointercancel',e=>grabEnd(e,true));
 function arrowClick(f,r,c){
   const cur=[f,r,c];
   if(arrowPending&&arrowPending.join('')===cur.join('')) arrowPending=null;       /* 같은 칸 = 취소 */
@@ -725,35 +729,50 @@ function renderAux(){
   box.querySelectorAll('[data-aux]').forEach(cb=>cb.onchange=()=>{auxOn[cb.dataset.aux]=cb.checked;drawCube();persist();});
 }
 
-/* 드래그로 자유 회전 (입체 보기, 큐브 바깥 빈 곳) */
-let drag3=null;
+/* 드래그로 자유 회전 (입체 보기, 큐브 바깥 빈 곳)
+   손가락(포인터)마다 위치를 따로 기억하고 그 무게중심의 이동으로 돌린다.
+   두 손가락이면 감도를 1/4로 낮춰 천천히·세밀하게 맞출 수 있다. */
+let drag3=null;                     /* {pts:Map(pointerId→[x,y]), cx, cy} */
 const stage1El=document.getElementById('stage1');
+const centroid=m=>{let x=0,y=0;for(const p of m.values()){x+=p[0];y+=p[1];}return [x/m.size,y/m.size];};
+function viewDragAdd(e){
+  if(!drag3) drag3={pts:new Map()};
+  drag3.pts.set(e.pointerId,[e.clientX,e.clientY]);
+  [drag3.cx,drag3.cy]=centroid(drag3.pts);      /* 손가락 수가 바뀌면 기준점을 새로 잡아 튀지 않게 */
+}
 stage1El.addEventListener('pointerdown',e=>{
-  if(view!=='3d'||playing) return;
+  if(view!=='3d'||playing||grab) return;
   if(document.getElementById('lock').checked) return;
   if(e.target.classList&&e.target.classList.contains('st')) return;
   e.preventDefault();
-  drag3={x:e.clientX,y:e.clientY};
+  viewDragAdd(e);
 });
 addEventListener('pointermove',e=>{
-  if(!drag3) return;
-  const dx=e.clientX-drag3.x, dy=e.clientY-drag3.y;
+  if(!drag3||!drag3.pts.has(e.pointerId)) return;
+  drag3.pts.set(e.pointerId,[e.clientX,e.clientY]);
+  const [cx,cy]=centroid(drag3.pts);
+  const dx=cx-drag3.cx, dy=cy-drag3.cy;
+  drag3.cx=cx; drag3.cy=cy;
   if(!dx&&!dy) return;
-  drag3.x=e.clientX; drag3.y=e.clientY;
   dragging3d=true;
-  const Sp=0.0075, R=matMul(rotM('x',dy*Sp),rotM('y',dx*Sp));
+  const Sp=drag3.pts.size>=2?0.0075/4:0.0075;
+  const R=matMul(rotM('x',dy*Sp),rotM('y',dx*Sp));
   orient=matMul(CMT,matMul(R,matMul(CM,orient)));   /* 화면 기준 회전 */
   drawCube(); updateAngleUI();
 });
-addEventListener('pointerup',()=>{
-  if(!drag3) return;
+function viewDragEnd(e){
+  if(!drag3||!drag3.pts.has(e.pointerId)) return;
+  drag3.pts.delete(e.pointerId);
+  if(drag3.pts.size){[drag3.cx,drag3.cy]=centroid(drag3.pts);return;}   /* 남은 손가락으로 계속 */
   drag3=null;
   if(dragging3d){
     dragging3d=false;
     orient=document.getElementById('snap').checked?snapOrient(orient):orthonormalize(orient);
     drawCube(); updateAngleUI(); persist();
   }
-});
+}
+addEventListener('pointerup',viewDragEnd);
+addEventListener('pointercancel',viewDragEnd);
 
 /* 보기 전환 */
 function setView(v){
