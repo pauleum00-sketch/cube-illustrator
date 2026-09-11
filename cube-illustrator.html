@@ -147,7 +147,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.10.0</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.10.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -176,12 +176,12 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
           <button class="btn" data-preset="f2">2층까지</button>
         </div>
         <h2 style="margin-top:22px">저장 설정</h2>
-        <label class="chk"><input type="checkbox" id="trans"> 배경 투명하게</label>
-        <label class="chk">배경색 <input type="color" id="bgcol" value="#DFE6EC"></label>
+        <label class="chk">배경색 <input type="color" id="bgcol" value="#D8DDE3"><button class="rst" id="rstBg" title="기본 배경색으로 되돌리기" aria-label="기본 배경색으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></label>
         <div class="row" style="margin-top:14px">
           <button class="btn pri" id="save1">PNG 저장</button>
           <button class="btn" id="copy1">복사</button>
           <button class="btn gh" id="reset">초기화</button>
+          <label class="chk" style="margin-left:4px"><input type="checkbox" id="trans"> 배경 투명하게</label>
         </div>
         <p class="hint">스티커를 누르면 칠해지고, 같은 색을 다시 누르면 회색이 됩니다. 스티커를 끌면 그 층이 돌아가고, 큐브 바깥을 끌면 큐브 전체가 돌아갑니다. 두 손가락으로 끌면 천천히·세밀하게 돌아갑니다. 입체와 탑다운은 별개의 큐브입니다.</p>
       </div>
@@ -808,10 +808,12 @@ document.getElementById('customCol').addEventListener('input',e=>{
 function reflectPick(){[...pal.children].forEach(x=>x.setAttribute('aria-pressed',x.dataset.col===pick));}
 
 /* 배경색 */
-let bgCol='#DFE6EC';
+const DEF_BG='#D8DDE3';
+let bgCol=DEF_BG;
 const bgInput=document.getElementById('bgcol');
 function applyBg(){document.querySelectorAll('.stage').forEach(s=>s.style.background=bgCol);}
-bgInput.addEventListener('input',()=>{bgCol=bgInput.value;applyBg();persist();});
+function setBg(v){bgCol=v;bgInput.value=v;applyBg();updateResets();persist();}
+bgInput.addEventListener('input',()=>setBg(bgInput.value));
 applyBg();
 
 /* 돌리기 버튼: 회전축을 타원 화살표로 */
@@ -859,6 +861,7 @@ function updateResets(){
   document.getElementById('rstAngle').hidden=sameMat(orient,HOME_ORIENT);
   document.getElementById('rstAlpha').hidden=Math.round(cubeAlpha*100)===DEF_ALPHA;
   document.getElementById('rstGap').hidden=Math.abs(auxGap-DEF_GAP)<1e-9;
+  document.getElementById('rstBg').hidden=bgCol.toLowerCase()===DEF_BG.toLowerCase();
 }
 function updateAngleUI(){
   const e=eulerFromOrient(orient);
@@ -869,6 +872,7 @@ document.getElementById('rstAngle').onclick=()=>{
   orient=HOME_ORIENT.map(r=>r.slice()); drawCube(); updateAngleUI(); persist();};
 document.getElementById('rstAlpha').onclick=()=>setAlpha(DEF_ALPHA);
 document.getElementById('rstGap').onclick=()=>setGap(DEF_GAP);
+document.getElementById('rstBg').onclick=()=>setBg(DEF_BG);
 function applyAngles(){
   orient=orientFromEuler(+num('x').value||0,+num('y').value||0,+num('z').value||0);
   drawCube();updateResets();persist();
