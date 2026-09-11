@@ -55,6 +55,10 @@ svg.out{max-width:100%;height:auto;display:block}
 .btn.mv{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;min-width:38px;padding:8px 6px}
 .btn.mod{border-color:var(--teal);color:var(--teal)}
 .btn[aria-pressed=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
+.rst{background:none;border:none;padding:0 0 0 7px;margin:0;color:var(--muted);
+  cursor:pointer;vertical-align:-3px;line-height:0}
+.rst[hidden]{display:none}
+.rst:hover{color:var(--teal)}
 .ang{display:flex;align-items:center;gap:8px;margin-bottom:7px;color:var(--muted);font-size:12px}
 .ang b{width:12px}
 .ang input[type=range]{flex:1;accent-color:var(--teal);min-width:0}
@@ -143,7 +147,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.9.3</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.10.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -187,19 +191,19 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <div class="row" id="rots"></div>
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="snap" checked> 드래그를 놓으면 반듯하게 정렬</label>
         <label class="chk"><input type="checkbox" id="lock"> 드래그 잠그기 (지금 각도 보호)</label>
-        <h2 style="margin-top:22px">각도 (°)</h2>
+        <h2 style="margin-top:22px">각도 (°)<button class="rst" id="rstAngle" title="기본 각도로 되돌리기" aria-label="기본 각도로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
         <div id="angles"></div>
         <h2 style="margin-top:22px">각도 슬롯 <span style="text-transform:none;letter-spacing:0">(최대 5개)</span></h2>
         <div class="row">
           <button class="btn" id="slotSave">+ 지금 각도 저장</button>
           <span id="slots" class="row"></span>
         </div>
-        <h2 style="margin-top:22px">투명도</h2>
+        <h2 style="margin-top:22px">투명도<button class="rst" id="rstAlpha" title="기본값(0%)으로 되돌리기" aria-label="기본값(0%)으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
         <div class="ang">
           <input type="range" id="alpha" min="0" max="90" step="5" value="0">
           <input type="number" id="alphanum" min="0" max="90" step="5" value="0">
         </div>
-        <h2 style="margin-top:22px">보조면 거리</h2>
+        <h2 style="margin-top:22px">보조면 거리<button class="rst" id="rstGap" title="기본값(1.95)으로 되돌리기" aria-label="기본값(1.95)으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
         <div class="ang">
           <input type="range" id="gap" min="0" max="4" step="0.05" value="1.95">
           <input type="number" id="gapnum" min="0" max="4" step="0.05" value="1.95">
@@ -848,13 +852,26 @@ function eulerFromOrient(M){
   return [a/RAD,b/RAD,c/RAD];
 }
 const orientFromEuler=(x,y,z)=>matMul(rotM('x',x*RAD),matMul(rotM('y',y*RAD),rotM('z',z*RAD)));
+/* 기본값과 다를 때만 되돌리기 버튼을 보여준다 */
+const DEF_ALPHA=0, DEF_GAP=1.95;
+const sameMat=(A,B)=>A.every((r,i)=>r.every((v,j)=>Math.abs(v-B[i][j])<1e-3));
+function updateResets(){
+  document.getElementById('rstAngle').hidden=sameMat(orient,HOME_ORIENT);
+  document.getElementById('rstAlpha').hidden=Math.round(cubeAlpha*100)===DEF_ALPHA;
+  document.getElementById('rstGap').hidden=Math.abs(auxGap-DEF_GAP)<1e-9;
+}
 function updateAngleUI(){
   const e=eulerFromOrient(orient);
   AXES.forEach((ax,i)=>{const v=Math.round(e[i]);rg(ax).value=v;num(ax).value=v;});
+  updateResets();
 }
+document.getElementById('rstAngle').onclick=()=>{
+  orient=HOME_ORIENT.map(r=>r.slice()); drawCube(); updateAngleUI(); persist();};
+document.getElementById('rstAlpha').onclick=()=>setAlpha(DEF_ALPHA);
+document.getElementById('rstGap').onclick=()=>setGap(DEF_GAP);
 function applyAngles(){
   orient=orientFromEuler(+num('x').value||0,+num('y').value||0,+num('z').value||0);
-  drawCube();persist();
+  drawCube();updateResets();persist();
 }
 AXES.forEach(ax=>{
   rg(ax).addEventListener('input',()=>{num(ax).value=rg(ax).value;applyAngles();});
@@ -866,7 +883,7 @@ const alRg=document.getElementById('alpha'), alNum=document.getElementById('alph
 function setAlpha(v){
   v=Math.max(0,Math.min(90,+v||0));
   cubeAlpha=v/100; alRg.value=v; alNum.value=v;
-  drawCube(); persist();
+  drawCube(); updateResets(); persist();
 }
 alRg.addEventListener('input',()=>setAlpha(alRg.value));
 alNum.addEventListener('input',()=>setAlpha(alNum.value));
@@ -943,7 +960,7 @@ const gapRg=document.getElementById('gap'), gapNum=document.getElementById('gapn
 function setGap(v){
   v=Math.max(0,Math.min(4,+v||0));
   auxGap=v; gapRg.value=v; gapNum.value=v;
-  drawCube(); persist();
+  drawCube(); updateResets(); persist();
 }
 gapRg.addEventListener('input',()=>setGap(gapRg.value));
 gapNum.addEventListener('input',()=>setGap(gapNum.value));
