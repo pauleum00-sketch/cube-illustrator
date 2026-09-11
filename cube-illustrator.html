@@ -149,7 +149,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.12.0</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.12.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -194,6 +194,10 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <label class="chk" style="margin-top:8px"><input type="checkbox" id="snap" checked> 드래그를 놓으면 반듯하게 정렬</label>
         <label class="chk"><input type="checkbox" id="lock"> 드래그 잠그기 (지금 각도 보호)</label>
         <label class="chk"><input type="checkbox" id="lefty"> 왼손잡이용 각도</label>
+        <div class="row" style="margin-top:8px">
+          <button class="btn" id="setFront">현재 정면을 F면으로 설정</button>
+          <button class="rst" id="rstFront" title="기본 기준면으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>기본</button>
+        </div>
         <h2 style="margin-top:22px">각도 (°)<button class="rst" id="rstAngle" title="기본 각도로 되돌리기" aria-label="기본 각도로 되돌리기" hidden><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg></button></h2>
         <div id="angles"></div>
         <h2 style="margin-top:22px">각도 슬롯 <span style="text-transform:none;letter-spacing:0">(최대 5개)</span></h2>
@@ -233,10 +237,6 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <div class="card">
       <h2>시뮬레이터</h2>
       <input class="alginput" id="applyAlg" spellcheck="false" placeholder="예: R U R' U'">
-      <div class="row" style="margin-top:8px">
-        <button class="btn" id="setFront">현재 정면을 F면으로 설정</button>
-        <button class="rst" id="rstFront" title="기본 기준면으로 되돌리기" hidden><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"/></svg>기본</button>
-      </div>
       <div class="row" style="margin-top:8px">
         <button class="btn" id="applyBtn">적용</button>
         <button class="btn" id="applyInvBtn">역으로 적용</button>
@@ -587,8 +587,14 @@ function renderAnim(geo,ang){document.getElementById('stage1').innerHTML=buildCu
 function faceLabel(face,off,T){
   const F=FACES[face], c=mul(F.n,1.5+(off||0)), k=0.7;
   const P0=T(applyM(orient,c));
-  const Pu=T(applyM(orient,add(c,mul(F.u,k)))), Pv=T(applyM(orient,add(c,mul(F.v,k))));
-  const m=[(Pu[0]-P0[0])/k,(Pu[1]-P0[1])/k,(Pv[0]-P0[0])/k,(Pv[1]-P0[1])/k,P0[0],P0[1]];
+  const proj=v=>{const q=T(applyM(orient,add(c,mul(v,k))));return [(q[0]-P0[0])/k,(q[1]-P0[1])/k];};
+  /* 면 위에서 글자를 90°씩 돌려 보고, 글자 아래쪽이 화면 아래를 가장 잘 향하는 방향을 고른다.
+     (면의 고정 축을 그대로 쓰면 큐브를 뒤집었을 때 글자가 뒤집혀 보인다) */
+  const neg=v=>mul(v,-1);
+  const cand=[[F.u,F.v],[F.v,neg(F.u)],[neg(F.u),neg(F.v)],[neg(F.v),F.u]];
+  let bx=null,by=null,best=-Infinity;
+  cand.forEach(([xv,yv])=>{const py=proj(yv); if(py[1]>best){best=py[1];by=py;bx=proj(xv);}});
+  const m=[bx[0],bx[1],by[0],by[1],P0[0],P0[1]];
   return `<text transform="matrix(${m.map(v=>v.toFixed(3)).join(' ')})" text-anchor="middle"`
     +` dominant-baseline="central" font-family="Arial,Helvetica,sans-serif" font-weight="700"`
     +` font-size="1.25" fill="#0b1622" stroke="#fff" stroke-width="0.16" paint-order="stroke"`
