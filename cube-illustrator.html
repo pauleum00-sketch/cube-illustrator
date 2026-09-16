@@ -144,6 +144,10 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .prpic svg{width:100%;height:auto;display:block}
 .prcase{font-size:19px;font-weight:700}
 .prcase span{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
+.pralt{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;color:var(--muted);
+  margin-top:6px;line-height:1.9}
+.case.mini{padding:8px}
+.case.mini .img{margin-top:2px}
 @media(max-width:560px){.prans{flex-direction:column}.prpic{width:100%;max-width:220px}}
 .plinfo{margin-top:12px;font-size:13px;color:var(--muted)}
 .plinfo div{display:flex;gap:10px;align-items:baseline;padding:2px 0}
@@ -165,7 +169,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.0</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.1</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -354,9 +358,26 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <div class="prcase" id="prCase"></div>
         <div class="prlabel" style="margin-top:10px">공식</div>
         <div class="prsetup" id="prAlg"></div>
+        <div class="prlabel" style="margin-top:12px">다른 공식</div>
+        <div class="pralt" id="prAlt"></div>
       </div>
     </div>
   </div>
+</div>
+
+<div class="card">
+  <h2>연습할 케이스</h2>
+  <div class="row">
+    <button class="btn" id="prAll">전체 선택</button>
+    <button class="btn" id="prNone">전체 해제</button>
+    <label class="chk" style="margin-left:8px"><input type="checkbox" id="prCat"> 분류대로 정렬</label>
+    <span class="chk" style="margin-left:8px;gap:10px">기준 슬롯:
+      <label class="chk"><input type="radio" name="prside" value="fr"> Front Right</label>
+      <label class="chk"><input type="radio" name="prside" value="fl"> Front Left</label>
+    </span>
+  </div>
+  <p class="hint">여기서 고른 케이스만 출제됩니다. F2L 교본의 선택과는 별개입니다.</p>
+  <div id="prGroups"></div>
 </div>
 </section>
 </main>
@@ -1818,43 +1839,106 @@ renderProfiles();
 renderGroups();
 refreshF2l();
 
-/* ========== 연습 (F2L 교본에서 고른 케이스를 무작위 출제) ========== */
-let prNo=null;
-function prPool(){return DATA.map(d=>d[0]).filter(n=>P.sel.has(n));}
+/* ========== 연습 (교본과 완전히 독립: 자체 선택·기준·저장) ========== */
+const PRKEY='f2lPractice.v1';
+let prSel=new Set(), prCatOn=false, prSide='fr', prNo=null;
+try{
+  const d=JSON.parse(localStorage.getItem(PRKEY)||'null');
+  if(d){prSel=new Set((d.sel||[]).filter(n=>DATA.some(x=>x[0]===n)));
+    prCatOn=!!d.cat; if(d.side==='fl')prSide='fl';}
+}catch(e){}
+const prPersist=()=>{try{localStorage.setItem(PRKEY,JSON.stringify(
+  {sel:[...prSel],cat:prCatOn,side:prSide}));}catch(e){}};
+const prSvg=n=>prSide==='fl'?SVGSL[n]:SVGS[n];
+const prText=a=>prSide==='fl'?mirrorAlg(a):a;
+const prRow=n=>DATA.find(x=>x[0]===(prSide==='fl'?FLPARTNER[n]:n));
+
+/* --- 케이스 선택 --- */
+function prCard([n]){
+  return `<div class="case mini" data-prcase="${n}">
+    <div class="top"><input type="checkbox" data-prchk="${n}"> F2L ${n}</div>
+    <div class="img">${prSvg(n)}</div>
+  </div>`;
+}
+function prGroups(){
+  const box=document.getElementById('prGroups');
+  box.innerHTML = prCatOn
+    ? CATS.map(cat=>`<div class="cat">
+        <label class="cat-head"><input type="checkbox" data-prcat="${cat}"> ${cat}
+          <span class="cnt" data-prcnt="${cat}"></span></label>
+        <div class="cases">${DATA.filter(d=>d[1]===cat).map(prCard).join('')}</div></div>`).join('')
+    : `<div class="cat"><div class="cases">${DATA.map(prCard).join('')}</div></div>`;
+  box.querySelectorAll('[data-prcase]').forEach(el=>el.addEventListener('click',e=>{
+    if(['INPUT','BUTTON'].includes(e.target.tagName)) return;
+    prToggle(+el.dataset.prcase);}));
+  box.querySelectorAll('[data-prchk]').forEach(cb=>cb.addEventListener('change',()=>prToggle(+cb.dataset.prchk,cb.checked)));
+  box.querySelectorAll('[data-prcat]').forEach(cb=>cb.addEventListener('change',()=>{
+    DATA.filter(d=>d[1]===cb.dataset.prcat).forEach(([n])=>cb.checked?prSel.add(n):prSel.delete(n));
+    prPersist(); prRefresh();}));
+  prMarks();
+}
+function prMarks(){
+  document.querySelectorAll('[data-prcase]').forEach(el=>{
+    const n=+el.dataset.prcase, on=prSel.has(n);
+    el.classList.toggle('on',on);
+    el.querySelector('[data-prchk]').checked=on;});
+  CATS.forEach(cat=>{
+    const cb=document.querySelector(`[data-prcat="${CSS.escape(cat)}"]`); if(!cb) return;
+    const items=DATA.filter(d=>d[1]===cat), k=items.filter(([n])=>prSel.has(n)).length;
+    cb.checked=k===items.length; cb.indeterminate=k>0&&k<items.length;
+    document.querySelector(`[data-prcnt="${CSS.escape(cat)}"]`).textContent=`${k}/${items.length}`;});
+}
+function prToggle(n,on){
+  if(on===undefined) on=!prSel.has(n);
+  on?prSel.add(n):prSel.delete(n);
+  prPersist(); prRefresh();
+}
+
+/* --- 출제 --- */
+function prPool(){return DATA.map(d=>d[0]).filter(n=>prSel.has(n));}
 function prPick(){
   const pool=prPool();
   if(!pool.length){prNo=null;return;}
   let n=pool[Math.floor(Math.random()*pool.length)];
-  if(pool.length>1){let guard=0;while(n===prNo&&guard++<20)n=pool[Math.floor(Math.random()*pool.length)];}
+  if(pool.length>1){let g=0;while(n===prNo&&g++<20)n=pool[Math.floor(Math.random()*pool.length)];}
   prNo=n;
 }
 function prShow(reveal){
   const box=document.getElementById('prAnswer');
-  if(prNo===null){
-    document.getElementById('prSetup').textContent='—';
-    box.hidden=true; return;
-  }
-  document.getElementById('prSetup').textContent=algText(dispData(prNo)[2]);
+  if(prNo===null){document.getElementById('prSetup').textContent='—';box.hidden=true;return;}
+  const row=prRow(prNo), algs=row[3].map(prText);
+  document.getElementById('prSetup').textContent=prText(row[2]);
   document.getElementById('prCase').innerHTML=
     `F2L ${prNo}<span>${esc(DATA.find(d=>d[0]===prNo)[1])}</span>`;
-  document.getElementById('prPic').innerHTML=svgFor(prNo);
-  document.getElementById('prAlg').textContent=chosenAlg(prNo);
+  document.getElementById('prPic').innerHTML=prSvg(prNo);
+  document.getElementById('prAlg').textContent=algs[0];
+  document.getElementById('prAlt').innerHTML=algs.slice(1).map(esc).join('<br>');
   box.hidden=!reveal;
   document.getElementById('prSolve').textContent=reveal?'정답 숨기기':'정답 보기';
 }
-function prRefresh(){                       /* 탭에 들어올 때마다 출제 범위를 다시 읽는다 */
+function prRefresh(){
   const pool=prPool();
+  prMarks();
   document.getElementById('prRange').textContent=pool.length
-    ? `${P.name} · ${pool.length}개 케이스 · ${slotSide==='fl'?'Front Left(왼손)':'Front Right'} 기준 — F2L 교본에서 고른 케이스가 나옵니다`
-    : 'F2L 교본 탭에서 연습할 케이스를 먼저 골라주세요.';
+    ? `${pool.length}개 케이스 · ${prSide==='fl'?'Front Left(왼손)':'Front Right'} 기준`
+    : '아래에서 연습할 케이스를 먼저 골라주세요.';
   if(prNo===null||!pool.includes(prNo)) prPick();
   prShow(false);
 }
 document.getElementById('prNext').onclick=()=>{prPick();prShow(false);};
 document.getElementById('prSolve').onclick=()=>{
   if(prNo===null){prRefresh();return;}
-  prShow(document.getElementById('prAnswer').hidden);
-};
+  prShow(document.getElementById('prAnswer').hidden);};
+document.getElementById('prAll').onclick=()=>{DATA.forEach(([n])=>prSel.add(n));prPersist();prRefresh();};
+document.getElementById('prNone').onclick=()=>{prSel.clear();prPersist();prRefresh();};
+const prCatCb=document.getElementById('prCat');
+prCatCb.checked=prCatOn;
+prCatCb.addEventListener('change',()=>{prCatOn=prCatCb.checked;prPersist();prGroups();prRefresh();});
+document.querySelectorAll('[name=prside]').forEach(r=>{
+  r.checked=r.value===prSide;
+  r.addEventListener('change',()=>{prSide=r.value;prPersist();prGroups();prRefresh();});
+});
+prGroups();
 addEventListener('keydown',e=>{
   if(activeTab!==4||!document.getElementById('player').hidden) return;
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
