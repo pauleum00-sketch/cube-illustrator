@@ -133,6 +133,10 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .pstage{background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center}
 .pstage svg{width:100%;max-width:380px;height:auto;display:block}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.plinfo{margin-top:12px;font-size:13px;color:var(--muted)}
+.plinfo div{display:flex;gap:10px;align-items:baseline;padding:2px 0}
+.plinfo b{flex:none;width:34px;font-size:11px;letter-spacing:.6px;color:var(--muted);font-weight:700}
+.plinfo span{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;color:var(--ink)}
 .chip2{background:#0c1e35;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;
   padding:6px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;
   font-weight:700;cursor:pointer;line-height:1}
@@ -149,7 +153,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.12.1</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.12.2</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -340,7 +344,11 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         </select>
       </span>
     </div>
-    <p class="hint" id="plSub" style="margin-top:10px"></p>
+    <div class="plinfo">
+      <div><b>셋업</b><span id="plSetup"></span></div>
+      <div><b>공식</b><span id="plAlg"></span></div>
+    </div>
+    <p class="hint" id="plSub" style="margin-top:8px"></p>
   </div>
 </div>
 <div class="foot">모든 그림이 같은 투시각을 씁니다. 작업 내용은 이 브라우저에 자동 저장됩니다.</div>
@@ -1739,8 +1747,10 @@ function openPlayer(n){
   const view=slotSide==='fl'?YROT:PLEYE;
   PL={n,alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0};
   document.getElementById('plTitle').textContent=`F2L ${n} 재생`;
+  document.getElementById('plSetup').textContent=algText(dispData(n)[2]);
+  document.getElementById('plAlg').textContent=alg;
   document.getElementById('plSub').textContent=
-    `${alg}  ·  ${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 기호를 누르면 그 수부터 재생됩니다`;
+    `${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 셋업을 적용한 상태에서 시작합니다. 기호를 누르면 그 수부터 재생됩니다`;
   document.getElementById('plSpeed').value=String(PL.speed);
   plChips(); plRender(null,0); plBtn();
   document.getElementById('player').hidden=false;
