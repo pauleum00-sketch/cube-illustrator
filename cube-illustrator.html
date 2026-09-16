@@ -169,7 +169,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.1</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.2</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -1896,15 +1896,34 @@ function prToggle(n,on){
 
 /* --- 출제 --- */
 function prPool(){return DATA.map(d=>d[0]).filter(n=>prSel.has(n));}
+/* 매번 독립적으로 뽑으면 41개 중 40번을 뽑아도 평균 26개밖에 안 나온다(쿠폰 수집 문제).
+   그래서 고른 케이스를 섞은 '한 벌'로 만들어 한 바퀴에 모두 한 번씩 나오게 한다. */
+let prBag=[], prBagKey='';
 function prPick(){
   const pool=prPool();
-  if(!pool.length){prNo=null;return;}
-  let n=pool[Math.floor(Math.random()*pool.length)];
-  if(pool.length>1){let g=0;while(n===prNo&&g++<20)n=pool[Math.floor(Math.random()*pool.length)];}
-  prNo=n;
+  if(!pool.length){prNo=null;prBag=[];prBagKey='';return;}
+  const key=pool.join(',');
+  if(key!==prBagKey){prBagKey=key;prBag=[];}     /* 선택이 바뀌면 새 바퀴 */
+  if(!prBag.length){
+    prBag=pool.slice();
+    for(let i=prBag.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));
+      [prBag[i],prBag[j]]=[prBag[j],prBag[i]];}
+    if(prBag.length>1&&prBag[prBag.length-1]===prNo){   /* 바퀴가 바뀔 때 같은 문제가 연달아 나오지 않게 */
+      const j=Math.floor(Math.random()*(prBag.length-1));
+      [prBag[prBag.length-1],prBag[j]]=[prBag[j],prBag[prBag.length-1]];}
+  }
+  prNo=prBag.pop();
+}
+function prRangeText(){
+  const pool=prPool();
+  document.getElementById('prRange').textContent=pool.length
+    ? `${pool.length}개 케이스 · ${prSide==='fl'?'Front Left(왼손)':'Front Right'} 기준 · `
+      +`이번 바퀴 ${Math.min(pool.length,pool.length-prBag.length)}/${pool.length}`
+    : '아래에서 연습할 케이스를 먼저 골라주세요.';
 }
 function prShow(reveal){
   const box=document.getElementById('prAnswer');
+  prRangeText();
   if(prNo===null){document.getElementById('prSetup').textContent='—';box.hidden=true;return;}
   const row=prRow(prNo), algs=row[3].map(prText);
   document.getElementById('prSetup').textContent=prText(row[2]);
@@ -1919,9 +1938,6 @@ function prShow(reveal){
 function prRefresh(){
   const pool=prPool();
   prMarks();
-  document.getElementById('prRange').textContent=pool.length
-    ? `${pool.length}개 케이스 · ${prSide==='fl'?'Front Left(왼손)':'Front Right'} 기준`
-    : '아래에서 연습할 케이스를 먼저 골라주세요.';
   if(prNo===null||!pool.includes(prNo)) prPick();
   prShow(false);
 }
