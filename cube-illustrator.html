@@ -133,6 +133,18 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .pstage{background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center}
 .pstage svg{width:100%;max-width:380px;height:auto;display:block}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
+.prbox{background:#0c1e35;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
+.prlabel{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
+.prsetup{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:26px;font-weight:700;
+  color:var(--ink);margin-top:8px;line-height:1.4;word-break:break-word}
+.prans{display:flex;gap:20px;align-items:flex-start;margin-top:18px;background:var(--navy-2);
+  border:1px solid var(--line);border-radius:12px;padding:18px}
+.prans .prsetup{font-size:20px}
+.prpic{background:#fff;border-radius:10px;padding:8px;flex:none;width:190px}
+.prpic svg{width:100%;height:auto;display:block}
+.prcase{font-size:19px;font-weight:700}
+.prcase span{font-size:13px;font-weight:400;color:var(--muted);margin-left:8px}
+@media(max-width:560px){.prans{flex-direction:column}.prpic{width:100%;max-width:220px}}
 .plinfo{margin-top:12px;font-size:13px;color:var(--muted)}
 .plinfo div{display:flex;gap:10px;align-items:baseline;padding:2px 0}
 .plinfo b{flex:none;width:34px;font-size:11px;letter-spacing:.6px;color:var(--muted);font-weight:700}
@@ -153,12 +165,13 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.12.2</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.0</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
     <button id="t2" aria-selected="false">회전기호 도해</button>
     <button id="t3" aria-selected="false">F2L 교본</button>
+    <button id="t4" aria-selected="false">연습</button>
   </nav>
 </div></header>
 
@@ -318,6 +331,32 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   <h1 contenteditable="true" spellcheck="false">F2L 복습 교본</h1>
   <div class="meta" id="meta"></div>
   <div id="tablebox"></div>
+</div>
+</section>
+
+<section class="panel" id="p4">
+<div class="card">
+  <h2>연습</h2>
+  <p class="hint" id="prRange" style="margin:0 0 14px"></p>
+  <div class="prbox">
+    <div class="prlabel">셋업 — 이대로 돌려서 케이스를 만드세요</div>
+    <div class="prsetup" id="prSetup">—</div>
+  </div>
+  <div class="row" style="margin-top:14px">
+    <button class="btn pri" id="prSolve">정답 보기</button>
+    <button class="btn" id="prNext">다음 문제</button>
+    <span class="hint" style="margin:0 0 0 6px">스페이스: 정답 보기 · Enter: 다음</span>
+  </div>
+  <div id="prAnswer" hidden>
+    <div class="prans">
+      <div class="prpic" id="prPic"></div>
+      <div>
+        <div class="prcase" id="prCase"></div>
+        <div class="prlabel" style="margin-top:10px">공식</div>
+        <div class="prsetup" id="prAlg"></div>
+      </div>
+    </div>
+  </div>
 </div>
 </section>
 </main>
@@ -1291,11 +1330,12 @@ document.getElementById('snap').onchange=persist;
 document.getElementById('lock').onchange=persist;
 
 /* 탭 */
-const TABS=[1,2,3].map(i=>document.getElementById('t'+i));
+const TABS=[1,2,3,4].map(i=>document.getElementById('t'+i));
 function tab(n){
   TABS.forEach((b,i)=>{b.setAttribute('aria-selected',i===n-1);
     document.getElementById('p'+(i+1)).classList.toggle('on',i===n-1);});
-  activeTab=n;persist();}
+  activeTab=n;persist();
+  if(n===4) prRefresh();}
 let activeTab=1;
 TABS.forEach((b,i)=>b.onclick=()=>tab(i+1));
 
@@ -1354,7 +1394,7 @@ function loadLocal(){
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
-    if(d.tab===2||d.tab===3) tab(d.tab);
+    if([2,3,4].includes(d.tab)) tab(d.tab);
   }catch(e){}
 }
 
@@ -1777,6 +1817,50 @@ addEventListener('keydown',e=>{
 renderProfiles();
 renderGroups();
 refreshF2l();
+
+/* ========== 연습 (F2L 교본에서 고른 케이스를 무작위 출제) ========== */
+let prNo=null;
+function prPool(){return DATA.map(d=>d[0]).filter(n=>P.sel.has(n));}
+function prPick(){
+  const pool=prPool();
+  if(!pool.length){prNo=null;return;}
+  let n=pool[Math.floor(Math.random()*pool.length)];
+  if(pool.length>1){let guard=0;while(n===prNo&&guard++<20)n=pool[Math.floor(Math.random()*pool.length)];}
+  prNo=n;
+}
+function prShow(reveal){
+  const box=document.getElementById('prAnswer');
+  if(prNo===null){
+    document.getElementById('prSetup').textContent='—';
+    box.hidden=true; return;
+  }
+  document.getElementById('prSetup').textContent=algText(dispData(prNo)[2]);
+  document.getElementById('prCase').innerHTML=
+    `F2L ${prNo}<span>${esc(DATA.find(d=>d[0]===prNo)[1])}</span>`;
+  document.getElementById('prPic').innerHTML=svgFor(prNo);
+  document.getElementById('prAlg').textContent=chosenAlg(prNo);
+  box.hidden=!reveal;
+  document.getElementById('prSolve').textContent=reveal?'정답 숨기기':'정답 보기';
+}
+function prRefresh(){                       /* 탭에 들어올 때마다 출제 범위를 다시 읽는다 */
+  const pool=prPool();
+  document.getElementById('prRange').textContent=pool.length
+    ? `${P.name} · ${pool.length}개 케이스 · ${slotSide==='fl'?'Front Left(왼손)':'Front Right'} 기준 — F2L 교본에서 고른 케이스가 나옵니다`
+    : 'F2L 교본 탭에서 연습할 케이스를 먼저 골라주세요.';
+  if(prNo===null||!pool.includes(prNo)) prPick();
+  prShow(false);
+}
+document.getElementById('prNext').onclick=()=>{prPick();prShow(false);};
+document.getElementById('prSolve').onclick=()=>{
+  if(prNo===null){prRefresh();return;}
+  prShow(document.getElementById('prAnswer').hidden);
+};
+addEventListener('keydown',e=>{
+  if(activeTab!==4||!document.getElementById('player').hidden) return;
+  if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if(e.key===' '){document.getElementById('prSolve').click();e.preventDefault();}
+  else if(e.key==='Enter'||e.key==='ArrowRight'){document.getElementById('prNext').click();e.preventDefault();}
+});
 
 loadLocal();
 updateAngleUI();
