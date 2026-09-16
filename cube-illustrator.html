@@ -169,7 +169,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </style>
 
 <header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.2</span></h1>
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.3</span></h1>
   <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
   <nav>
     <button id="t1" aria-selected="true">큐브 색칠</button>
@@ -332,7 +332,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   <div id="groups"></div>
 </div>
 <div id="sheet">
-  <h1 contenteditable="true" spellcheck="false">F2L 복습 교본</h1>
+  <h1 contenteditable="true" spellcheck="false"></h1>
   <div class="meta" id="meta"></div>
   <div id="tablebox"></div>
 </div>
@@ -1675,6 +1675,7 @@ function renderTable(){
   document.getElementById('tablebox').innerHTML = !rows.length
     ? '<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>'
     : `<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th>${reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`;
+  refreshTitle();
 }
 const diagCb=document.getElementById('diagMode');
 diagCb.checked=diag;
@@ -1693,8 +1694,28 @@ document.querySelectorAll('[name=slotside]').forEach(r=>{
 });
 document.getElementById('selAll').onclick=()=>{DATA.forEach(([n])=>P.sel.add(n));persistF2l();refreshF2l();};
 document.getElementById('selNone').onclick=()=>{P.sel.clear();persistF2l();refreshF2l();};
-document.getElementById('printBtn').onclick=()=>window.print();
-document.getElementById('pdfBtn').onclick=()=>window.print();
+/* 제목·PDF 파일명: '260916 박연우 F2L 복습' */
+const sheetH1=document.querySelector('#sheet h1');
+const AUTOTITLE=/^\d{6}\s.*\sF2L 복습$/;
+function sheetTitle(){
+  const d=new Date(), p2=n=>String(n).padStart(2,'0');
+  return `${String(d.getFullYear()).slice(2)}${p2(d.getMonth()+1)}${p2(d.getDate())} ${P.name} F2L 복습`;
+}
+function refreshTitle(){                       /* 직접 고쳐 쓴 제목은 건드리지 않는다 */
+  const t=sheetH1.textContent.trim();
+  if(!t||AUTOTITLE.test(t)) sheetH1.textContent=sheetTitle();
+}
+function printSheet(){
+  refreshTitle();
+  const keep=document.title;
+  document.title=(sheetH1.textContent.trim()||keep).replace(/[\\/:*?"<>|]/g,' ');
+  const back=()=>{document.title=keep;removeEventListener('afterprint',back);};
+  addEventListener('afterprint',back);
+  setTimeout(back,4000);
+  window.print();
+}
+document.getElementById('printBtn').onclick=printSheet;
+document.getElementById('pdfBtn').onclick=printSheet;
 /* ========== 공식 재생 플레이어 ========== */
 const PLW=420, PLH=380, PLEYE=[[1,0,0],[0,1,0],[0,0,1]];
 let PL=null, plLastSpeed=1;
