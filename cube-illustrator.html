@@ -11,19 +11,30 @@ body{background:var(--navy);color:var(--ink);
   font-family:Pretendard,'Apple SD Gothic Neo','Malgun Gothic',sans-serif;
   background-image:linear-gradient(rgba(255,255,255,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.045) 1px,transparent 1px);
   background-size:29px 29px}
-header{padding:26px 24px 18px;border-bottom:1px solid var(--line)}
-.wrap{max-width:1520px;margin:0 auto}
-h1{font-family:'Paperlogy',Pretendard,sans-serif;font-weight:900;font-size:30px;margin:0;letter-spacing:-1px}
+.app{display:flex;align-items:flex-start;max-width:1740px;margin:0 auto}
+.side{width:228px;flex:none;position:sticky;top:0;align-self:stretch;min-height:100vh;
+  padding:24px 16px;border-right:1px solid var(--line);background:rgba(10,26,46,.55)}
+h1{font-family:'Paperlogy',Pretendard,sans-serif;font-weight:900;font-size:22px;margin:0;letter-spacing:-.5px}
 h1 .a{color:#fff}h1 .b{color:var(--teal)}
-h1 .ver{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px;font-weight:600;
-  color:var(--muted);margin-left:10px;letter-spacing:0;vertical-align:middle;
-  border:1px solid var(--line);border-radius:999px;padding:3px 9px}
-.sub{color:var(--muted);font-size:14px;margin-top:6px}
-nav{display:flex;gap:8px;margin-top:18px}
-nav button{background:transparent;border:1.5px solid var(--line);color:var(--muted);
-  padding:9px 18px;border-radius:9px;font:inherit;font-size:14.5px;font-weight:600;cursor:pointer}
+.sub{color:var(--muted);font-size:12.5px;margin-top:7px;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.ver{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:600;
+  color:var(--muted);letter-spacing:0;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
+nav{display:flex;flex-direction:column;gap:4px;margin-top:24px}
+.navgrp{font-size:10.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);
+  font-weight:700;margin:12px 0 4px 10px}
+.navgrp:first-child{margin-top:0}
+nav button{background:transparent;border:1.5px solid transparent;color:var(--muted);text-align:left;
+  padding:9px 12px;border-radius:9px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
+nav button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
 nav button[aria-selected=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
-main{max-width:1520px;margin:0 auto;padding:24px}
+main{flex:1;min-width:0;padding:24px}
+@media(max-width:900px){
+  .app{flex-direction:column}
+  .side{width:100%;min-height:0;position:static;border-right:none;border-bottom:1px solid var(--line);padding:16px 18px}
+  nav{flex-direction:row;flex-wrap:wrap;gap:7px;margin-top:14px}
+  .navgrp{display:none}
+  nav button{border-color:var(--line);padding:8px 14px}
+}
 .panel{display:none}.panel.on{display:block}
 .grid{display:grid;grid-template-columns:600px 1fr;gap:22px;align-items:start}
 .cols{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
@@ -160,7 +171,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .chip2.done{color:var(--ink);background:#17365c}
 .chip2.now{border-color:var(--teal);color:#08243a;background:var(--teal)}
 @media print{
-  header,.foot,.no-print{display:none !important}
+  header,.side,.foot,.no-print{display:none !important}
   body{background:#fff}
   main{padding:0;max-width:none}
   #sheet{border-radius:0;padding:0;margin:0}
@@ -168,16 +179,19 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 }
 </style>
 
-<header><div class="wrap">
-  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span><span class="ver">v1.13.3</span></h1>
-  <div class="sub">교본에 넣을 큐브 그림과 회전기호 도해를 만들고 PNG로 내보냅니다.</div>
+<div class="app">
+<aside class="side no-print">
+  <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.14.0</span></div>
   <nav>
-    <button id="t1" aria-selected="true">큐브 색칠</button>
-    <button id="t2" aria-selected="false">회전기호 도해</button>
-    <button id="t3" aria-selected="false">F2L 교본</button>
-    <button id="t4" aria-selected="false">연습</button>
+    <div class="navgrp">도구</div>
+    <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
+    <button id="t2" aria-selected="false">회전기호 그림 생성기</button>
+    <div class="navgrp">F2L</div>
+    <button id="t3" aria-selected="false">F2L 교본 제작기</button>
+    <button id="t4" aria-selected="false">F2L 연습</button>
   </nav>
-</div></header>
+</aside>
 
 <main>
 <section class="panel on" id="p1"><div class="grid">
@@ -381,6 +395,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 </div>
 </section>
 </main>
+</div>
 
 <div class="modal no-print" id="player" hidden>
   <div class="pbox">
@@ -411,7 +426,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <p class="hint" id="plSub" style="margin-top:8px"></p>
   </div>
 </div>
-<div class="foot">모든 그림이 같은 투시각을 씁니다. 작업 내용은 이 브라우저에 자동 저장됩니다.</div>
+<div class="foot" style="padding-left:0">모든 그림이 같은 투시각을 씁니다. 작업 내용은 이 브라우저에 자동 저장됩니다.</div>
 <div class="toast" id="toast"></div>
 
 <script>
