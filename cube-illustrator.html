@@ -124,7 +124,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 #sheet .idx{font-weight:700;white-space:nowrap;width:70px}
 #sheet .pic{width:104px}
 #sheet .pic svg{width:96px;height:auto;display:block}
-#sheet .alg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px}
+#sheet .alg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;color:#000}
 #sheet .alg svg{max-width:100%;height:auto;display:block}
 #sheet tr.cathead td{border-bottom:1.5px solid #111;background:#f0f2f4;
   font-weight:800;font-size:13.5px;letter-spacing:.4px;padding:9px 8px}
@@ -182,7 +182,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.15.0</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.15.1</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1500,7 +1500,7 @@ function algSVG(txt){
     const x=(i%PER)*CW, y=Math.floor(i/PER)*(CH+LBL);
     s+=`<g transform="translate(${x},${y})">${moveDiagram(mv,CW,CH)}`
       +`<text x="${CW/2}" y="${CH+27}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"`
-      +` font-size="25" font-weight="700" fill="#111">${esc(lab(mv))}</text></g>`;
+      +` font-size="25" font-weight="700" fill="#000">${esc(lab(mv))}</text></g>`;
   });
   return s+'</svg>';
 }
