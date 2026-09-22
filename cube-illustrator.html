@@ -182,7 +182,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.14.2</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.15.0</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1435,11 +1435,24 @@ function loadLocal(){
 
 /* ========== F2L 교본 (f2l-workbook 이식 — 엔진은 위의 것을 그대로 씀) ========== */
 const F2LCENTER={U:'Y',D:'W',F:'R',B:'O',R:'G',L:'B'};   /* SpeedCubeDB 그림을 y 회전한 기준: 노랑 위·빨강 앞·초록 오른쪽 */
+const F2LRING=['R','B','O','G'], F2LCOLORKEY='f2lColorRotation.v1';
+let f2lColorRotation=0;
+try{const n=JSON.parse(localStorage.getItem(F2LCOLORKEY));
+  if(Number.isInteger(n)&&n>=0&&n<4)f2lColorRotation=n;}catch(e){}
+function f2lColor(c){
+  const i=F2LRING.indexOf(c);
+  return i<0?c:F2LRING[(i+f2lColorRotation)%4];
+}
+function f2lFront(side){
+  const solved=Object.fromEntries(FKEYS.map(f=>[f,Array.from({length:3},()=>Array(3).fill(f2lColor(F2LCENTER[f])))]));
+  return (side==='fl'?applyMoveTo(solved,YMOVE):solved).F[1][1];
+}
+const f2lColorName=c=>({R:'빨강',B:'파랑',O:'주황',G:'초록'}[c]);
 function caseState(setup){
   /* 2층까지 완성 + 탑레이어 전부 회색에서 셋업을 적용 → 페어 조각만 색이 있는 케이스 그림 */
   const s={};
   FKEYS.forEach(f=>{s[f]=[0,1,2].map(r=>[0,1,2].map(c=>
-    (f==='U'||('FBRL'.includes(f)&&r===0))?'X':F2LCENTER[f]));});
+    (f==='U'||('FBRL'.includes(f)&&r===0))?'X':f2lColor(F2LCENTER[f])));});
   return parseAlg(setup).moves.reduce(applyMoveTo,s);
 }
 function buildCaseSVG(st,M){
@@ -1539,11 +1552,12 @@ const DATA=[
 ];
 DATA.forEach(([n,,setup])=>console.assert(!parseAlg(setup).bad.length,`F2L ${n} 셋업 파싱 실패`));
 const SVGS={}, SVGSL={}, YROT=rotM('y',66*RAD);
-DATA.forEach(([n,,setup])=>{
+function rebuildF2lColors(){DATA.forEach(([n,,setup])=>{
   const st=caseState(setup);
   SVGS[n]=buildCaseSVG(st);
   SVGSL[n]=buildCaseSVG(applyMoveTo(st,YMOVE),YROT);   /* y 회전만, 모양·색 불변 */
-});
+});}
+rebuildF2lColors();
 
 /* ---- 저장: 과외생 프로필별 선택·공식, 나머지 설정은 공통 ---- */
 const LSKEY2='f2lWorkbook.v2';
@@ -1650,6 +1664,7 @@ function toggleCase(n,on){
   persistF2l();refreshF2l();
 }
 function refreshF2l(){
+  updateF2lColorControls();
   document.querySelectorAll('[data-case]').forEach(el=>{
     const n=+el.dataset.case, on=P.sel.has(n);
     el.classList.toggle('on',on);
@@ -1669,7 +1684,7 @@ const CATORDER=['Free Pairs','Corner In Slot','Edge In Slot','Connected Pairs','
 function renderTable(){
   const rows=DATA.filter(([n])=>P.sel.has(n));
   document.getElementById('meta').textContent=
-    rows.length?`${P.name} · ${rows.length}개 케이스 · 공식·분류 출처: speedcubedb.com`:'';
+    rows.length?`${P.name} · ${rows.length}개 케이스 · 정면 ${f2lColorName(f2lFront(slotSide))} · 공식·분류 출처: speedcubedb.com`:'';
   const boxes=reviewOn?`<td><div class="rv">${'<span></span>'.repeat(reviewN)}</div></td>`:'';
   const row=([n])=>{
     const [,,setup]=dispData(n), a=chosenAlg(n);
@@ -1846,7 +1861,7 @@ function openPlayer(n){
   document.getElementById('plSetup').textContent=algText(dispData(n)[2]);
   document.getElementById('plAlg').textContent=alg;
   document.getElementById('plSub').textContent=
-    `${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 셋업을 적용한 상태에서 시작합니다. 기호를 누르면 그 수부터 재생됩니다`;
+    `${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 정면 ${f2lColorName(f2lFront(slotSide))} · 셋업을 적용한 상태에서 시작합니다. 기호를 누르면 그 수부터 재생됩니다`;
   document.getElementById('plSpeed').value=String(PL.speed);
   plChips(); plRender(null,0); plBtn();
   document.getElementById('player').hidden=false;
@@ -1950,9 +1965,10 @@ function prPick(){
   prNo=prBag.pop();
 }
 function prRangeText(){
+  updateF2lColorControls();
   const pool=prPool();
   document.getElementById('prRange').textContent=pool.length
-    ? `${pool.length}개 케이스 · ${prSide==='fl'?'Front Left(왼손)':'Front Right'} 기준 · `
+    ? `${pool.length}개 케이스 · ${prSide==='fl'?'Front Left(왼손)':'Front Right'} 기준 · 정면 ${f2lColorName(f2lFront(prSide))} · `
       +`이번 바퀴 ${Math.min(pool.length,pool.length-prBag.length)}/${pool.length}`
     : '아래에서 연습할 케이스를 먼저 골라주세요.';
 }
@@ -1989,10 +2005,33 @@ document.querySelectorAll('[name=prside]').forEach(r=>{
   r.checked=r.value===prSide;
   r.addEventListener('change',()=>{prSide=r.value;prPersist();prGroups();prRefresh();});
 });
+/* 학습·연습은 배색만 공유한다. 선택·공식·출제 순서는 그대로 유지한다. */
+function updateF2lColorControls(){
+  document.querySelectorAll('[data-f2l-front]').forEach(el=>{
+    const c=f2lFront(el.dataset.f2lFront==='learn'?slotSide:prSide);
+    el.textContent=f2lColorName(c);
+    el.style.borderBottom=`3px solid ${COLORS[c][0]}`;
+  });
+}
+function changeF2lColor(delta){
+  f2lColorRotation=(f2lColorRotation+delta+4)%4;
+  try{localStorage.setItem(F2LCOLORKEY,JSON.stringify(f2lColorRotation));}catch(e){}
+  rebuildF2lColors(); renderGroups(); refreshF2l(); prGroups();
+  prShow(!document.getElementById('prAnswer').hidden);
+}
+[['p3','learn'],['p4','practice']].forEach(([panel,kind])=>{
+  const slots=document.querySelector(`#${panel} input[name="${kind==='learn'?'slotside':'prside'}"]`).closest('span');
+  const control=document.createElement('span');
+  control.className='chk'; control.style.cssText='display:inline-flex;align-items:center;gap:8px;margin-left:8px;white-space:nowrap';
+  control.innerHTML=`정면 <button class="btn" type="button" aria-label="이전 정면 색" data-color-step="-1">&lt;</button><span data-f2l-front="${kind}" aria-live="polite"></span><button class="btn" type="button" aria-label="다음 정면 색" data-color-step="1">&gt;</button>`;
+  control.querySelectorAll('button').forEach(b=>b.onclick=()=>changeF2lColor(+b.dataset.colorStep));
+  slots.after(control);
+});
+updateF2lColorControls();
 prGroups();
 addEventListener('keydown',e=>{
   if(activeTab!==4||!document.getElementById('player').hidden) return;
-  if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName)) return;
+  if(/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(document.activeElement.tagName)) return;
   if(e.key===' '){document.getElementById('prSolve').click();e.preventDefault();}
   else if(e.key==='Enter'||e.key==='ArrowRight'){document.getElementById('prNext').click();e.preventDefault();}
 });
