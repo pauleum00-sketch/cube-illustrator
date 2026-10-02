@@ -182,7 +182,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.15.1</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.0</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -288,6 +288,8 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   <div>
     <div class="card">
       <h2>회전기호</h2>
+      <label for="diagramPuzzle" class="chk">퍼즐 종류</label>
+      <select id="diagramPuzzle" class="alginput" style="margin:6px 0 12px;font-family:inherit"></select>
       <textarea id="alg" spellcheck="false">R U2 R' U' R U R'</textarea>
       <div class="err" id="err"></div>
       <div id="keys"></div>
@@ -306,7 +308,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <button class="btn pri" id="save2">PNG 저장</button>
         <button class="btn" id="copy2">복사</button>
       </div>
-      <p class="hint"><kbd>'</kbd>는 반대 방향, <kbd>2</kbd>는 180도. 보이지 않는 <kbd>B</kbd>·<kbd>S</kbd>는 점선 화살표로 그립니다.</p>
+      <p class="hint" id="diagramHint"></p>
     </div>
   </div>
   <div class="card"><div class="stage" id="stage2"></div></div>
@@ -1248,6 +1250,56 @@ function moveDiagram(mv,W,H){
   return s;
 }
 
+/* 피라밍크스: 정사면체 각 면을 9개 삼각형으로 나눈다. */
+const PYRA_VERTICES={U:[0,3*Math.SQRT2/2,0],L:[-Math.sqrt(3),-Math.SQRT2/2,1],
+  R:[Math.sqrt(3),-Math.SQRT2/2,1],B:[0,-Math.SQRT2/2,-2]};
+function parsePyraAlg(txt){
+  const moves=[],bad=[];
+  txt.trim().split(/[\s,]+/).filter(Boolean).forEach(token=>{
+    const m=token.match(/^([ULRBulrb])(['’]2|2['’]|['’]|2)?$/);
+    if(!m){bad.push(token);return;}
+    // 240°는 반대 방향 120°. 입력한 각 회전은 합치지 않고 남긴다.
+    const suffix=m[2]||'';
+    moves.push({letter:m[1],prime:/['’]/.test(suffix)!==suffix.includes('2'),dbl:false});
+  });
+  return {moves,bad};
+}
+function pyraGeometry(mv){
+  const key=mv.letter.toUpperCase(),vertex=PYRA_VERTICES[key];
+  const axis=mul(vertex,1/Math.hypot(...vertex)),tip=mv.letter!==key;
+  const cut=tip?2/3:1/3,shift=mul(axis,tip?.13:.23),tiles=[];
+  Object.keys(PYRA_VERTICES).forEach(opposite=>{
+    const names=Object.keys(PYRA_VERTICES).filter(k=>k!==opposite);
+    const verts=names.map(k=>PYRA_VERTICES[k]);
+    const point=(i,j)=>[0,1,2].map(k=>verts[0][k]*(1-(i+j)/3)+verts[1][k]*i/3+verts[2][k]*j/3);
+    const weight=([i,j])=>names.indexOf(key)===0?1-(i+j)/3:names.indexOf(key)===1?i/3:names.indexOf(key)===2?j/3:0;
+    const tile=coords=>{
+      const moving=coords.every(p=>weight(p)>=cut-1e-8);
+      tiles.push({points:coords.map(([i,j])=>add(point(i,j),moving?shift:[0,0,0])),
+        normal:mul(PYRA_VERTICES[opposite],-1),moving});
+    };
+    for(let i=0;i<3;i++)for(let j=0;j<3-i;j++){
+      tile([[i,j],[i+1,j],[i,j+1]]);
+      if(i+j<2)tile([[i+1,j],[i+1,j+1],[i,j+1]]);
+    }
+  });
+  // Axis-view clockwise = negative right-hand rotation about the outward vertex axis.
+  const eye=[-Math.sin(TH)*Math.cos(PH),Math.sin(PH),Math.cos(TH)*Math.cos(PH)];
+  const radial=add(eye,mul(axis,-dot3(eye,axis)));
+  const u=mul(radial,1/Math.hypot(...radial)),v=cross(axis,u);
+  const center=add(mul(vertex,tip?.80:.37),shift);
+  const arc=arcPts(center,u,v,tip?.49:1.08,mv.prime?-60:60,mv.prime?120:-120);
+  return {tiles,arc,hidden:key==='B'};
+}
+function pyraMoveDiagram(mv,W,H){
+  const {tiles,arc,hidden}=pyraGeometry(mv);
+  const T=fit(tiles.flatMap(t=>t.points).concat(arc),W,H,11);
+  const visible=tiles.filter(t=>faceVisible(t.normal,mul(t.points.reduce(add),1/3)));
+  visible.sort((a,b)=>a.points.reduce((s,p)=>s+camPt(p)[2],0)-b.points.reduce((s,p)=>s+camPt(p)[2],0));
+  return visible.map(t=>`<path d="${path(t.points.map(T),true)}" fill="${t.moving?MOVEC:STATC}" stroke="#111" stroke-width="1.7" stroke-linejoin="round"/>`).join('')
+    +drawArrow(arc,T,false,hidden);
+}
+
 /* ========== 파싱 / 정리 ========== */
 function parseAlg(txt){
   const toks=txt.trim().split(/[\s,]+/).filter(Boolean), out=[], bad=[];
@@ -1271,10 +1323,22 @@ function merge(list){                               /* U' U' → U'2 */
 const lab=m=>m.letter+(m.prime?"'":'')+(m.dbl?'2':'');
 
 /* ========== 도해 SVG ========== */
+// 새 종목은 파서·도해·버튼을 여기 한 항목으로 등록한다. 저장/복사/배치는 공유한다.
+const DIAGRAM_PUZZLES={
+  cube3:{name:'3×3 큐브',parse:parseAlg,draw:moveDiagram,
+    keys:[['바깥 층',['R','L','U','D','F','B']],['두 층 (넓게)',['r','l','u','d','f','b']],['가운데 층',['M','E','S']],['큐브 전체',['x','y','z']]],
+    hint:"'는 반대 방향, 2는 180도. 보이지 않는 B·S는 점선 화살표로 그립니다.",example:"R U2 R' U' R U R'"},
+  pyraminx:{name:'피라밍크스',parse:parsePyraAlg,draw:pyraMoveDiagram,
+    keys:[['두 층 · 120°',['U','L','R','B']],['끝부분만 · 120°',['u','l','r','b']]],
+    hint:"흰 부분을 회전합니다. 꼭짓점에서 안쪽을 보았을 때 시계 방향이 기본, '는 반대 방향입니다. 2는 240°(반대 방향 120°)로 정리합니다. 뒤쪽 B·b는 점선 화살표입니다.",example:"R U R' U R U R'"}
+};
+let diagramPuzzle='cube3',diagramAlgs={};
 let zoom=1; const ZL=[0.55,0.68,0.82,1,1.2,1.45];
 function buildAlgSVG(){
-  const {moves,bad}=parseAlg(document.getElementById('alg').value);
+  const puzzle=DIAGRAM_PUZZLES[diagramPuzzle];
+  const {moves,bad}=puzzle.parse(document.getElementById('alg').value);
   document.getElementById('err').textContent = bad.length?`모르는 기호: ${bad.join(', ')}`:'';
+  document.getElementById('save2').disabled=document.getElementById('copy2').disabled=!!bad.length||!moves.length;
   if(!moves.length) return '<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140"></svg>';
   const CW=Math.round(124*zoom), CH=Math.round(132*zoom), LBL=Math.round(40*zoom);
   const PER=Math.max(1,Math.min(moves.length,Math.floor(880/CW)));
@@ -1283,7 +1347,7 @@ function buildAlgSVG(){
   let s=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
   moves.forEach((mv,i)=>{
     const x=(i%PER)*CW, y=Math.floor(i/PER)*(CH+LBL);
-    s+=`<g transform="translate(${x},${y})">${moveDiagram(mv,CW,CH)}`
+    s+=`<g transform="translate(${x},${y})">${puzzle.draw(mv,CW,CH)}`
       +`<text x="${CW/2}" y="${CH+Math.round(27*zoom)}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"`
       +` font-size="${Math.round(25*zoom)}" font-weight="700" fill="#111">${esc(lab(mv))}</text></g>`;
   });
@@ -1292,16 +1356,19 @@ function buildAlgSVG(){
 function drawAlg(){document.getElementById('stage2').innerHTML=buildAlgSVG();}
 
 /* 기호 버튼 */
-const KEYS=[['바깥 층',['R','L','U','D','F','B']],['두 층 (넓게)',['r','l','u','d','f','b']],
-            ['가운데 층',['M','E','S']],['큐브 전체',['x','y','z']]];
+const ta=document.getElementById('alg');
+const puzzleSelect=document.getElementById('diagramPuzzle');
+puzzleSelect.innerHTML=Object.entries(DIAGRAM_PUZZLES).map(([id,p])=>`<option value="${id}">${p.name}</option>`).join('');
+function renderDiagramControls(){
+const puzzle=DIAGRAM_PUZZLES[diagramPuzzle];
+puzzleSelect.value=diagramPuzzle;
+document.getElementById('diagramHint').textContent=puzzle.hint;
 document.getElementById('keys').innerHTML=
-  KEYS.map(([t,ks])=>`<div class="grp"><b>${t}</b><div class="row">`
+  puzzle.keys.map(([t,ks])=>`<div class="grp"><b>${t}</b><div class="row">`
     +ks.map(k=>`<button class="btn mv" data-k="${k}">${k}</button>`).join('')+`</div></div>`).join('')
   +`<div class="grp"><b>붙이기</b><div class="row">
       <button class="btn mv mod" data-mod="'">'</button>
       <button class="btn mv mod" data-mod="2">2</button></div></div>`;
-const ta=document.getElementById('alg');
-function setVal(v){ta.value=v;drawAlg();persist();}
 document.querySelectorAll('#keys [data-k]').forEach(b=>b.onclick=()=>{
   const v=ta.value.trim(); setVal((v?v+' ':'')+b.dataset.k);});
 document.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{
@@ -1311,12 +1378,21 @@ document.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{
   let pr=/['’]/.test(m[2]), db=/2/.test(m[2]);
   if(b.dataset.mod==="'") pr=!pr; else db=!db;
   t.push(m[1]+(pr?"'":'')+(db?'2':'')); setVal(t.join(' '));});
+}
+renderDiagramControls();
+function setVal(v){ta.value=v;drawAlg();persist();}
+puzzleSelect.onchange=()=>{
+  diagramAlgs[diagramPuzzle]=ta.value;
+  diagramPuzzle=puzzleSelect.value;
+  ta.value=diagramAlgs[diagramPuzzle]??DIAGRAM_PUZZLES[diagramPuzzle].example;
+  renderDiagramControls();drawAlg();persist();
+};
 document.getElementById('undo').onclick=()=>{
   const t=ta.value.trim().split(/\s+/).filter(Boolean); t.pop(); setVal(t.join(' '));};
 document.getElementById('clear').onclick=()=>setVal('');
 ta.addEventListener('input',()=>{drawAlg();persist();});
 ta.addEventListener('blur',()=>{                    /* 자동 정리 */
-  const {moves,bad}=parseAlg(ta.value); if(bad.length)return;
+  const {moves,bad}=DIAGRAM_PUZZLES[diagramPuzzle].parse(ta.value); if(bad.length)return;
   const t=moves.map(lab).join(' '); if(t!==ta.value.trim())setVal(t);});
 function setZoom(d){
   let i=ZL.indexOf(zoom); i=Math.max(0,Math.min(ZL.length-1,i+d)); zoom=ZL[i];
@@ -1382,7 +1458,8 @@ function persistNow(){
     localStorage.setItem(LSKEY,JSON.stringify({
       state,stateTop,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
       custom:COLORS.C[0],bg:bgCol,lefty:isLefty(),faceRole,zoom3d:cubeZoom,
-      alg:ta.value,
+      alg:diagramPuzzle==='cube3'?ta.value:(diagramAlgs.cube3??DIAGRAM_PUZZLES.cube3.example),
+      diagramPuzzle,diagramAlgs:{...diagramAlgs,[diagramPuzzle]:ta.value},
       snap:document.getElementById('snap').checked,
       lock:document.getElementById('lock').checked,
       trans:document.getElementById('trans').checked,
@@ -1411,6 +1488,13 @@ function loadLocal(){
     if(d.auxOn) FKEYS.forEach(f=>{if(typeof d.auxOn[f]==='boolean')auxOn[f]=d.auxOn[f];});
     if(COLORS[d.pick]){pick=d.pick;reflectPick();}
     if(typeof d.alg==='string') ta.value=d.alg;
+    diagramAlgs.cube3=ta.value;
+    Object.keys(DIAGRAM_PUZZLES).forEach(id=>{
+      if(typeof d.diagramAlgs?.[id]==='string')diagramAlgs[id]=d.diagramAlgs[id];
+    });
+    if(Object.hasOwn(DIAGRAM_PUZZLES,d.diagramPuzzle))diagramPuzzle=d.diagramPuzzle;
+    ta.value=diagramAlgs[diagramPuzzle]??DIAGRAM_PUZZLES[diagramPuzzle].example;
+    renderDiagramControls();
     if(ZL.includes(d.zoom)){zoom=d.zoom;document.getElementById('zlab').textContent=Math.round(zoom*100)+'%';}
     if(typeof d.snap==='boolean') document.getElementById('snap').checked=d.snap;
     if(typeof d.lock==='boolean') document.getElementById('lock').checked=d.lock;
