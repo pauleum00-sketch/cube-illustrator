@@ -182,7 +182,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.1</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.2</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1174,19 +1174,27 @@ function renderBoxes(list,T){
   const cz=b=>{let s=0,n=0;for(const a of b.lim[0])for(const bb of b.lim[1])for(const c of b.lim[2]){s+=camPt(add([a,bb,c],b.off))[2];n++;}return s/n;};
   return list.map(b=>[cz(b),drawBox(b.lim,b.off,T,b.fill)]).sort((a,b)=>a[0]-b[0]).map(x=>x[1]).join('');
 }
-function head(a,b){const an=Math.atan2(b[1]-a[1],b[0]-a[0]),L=11.5,w=.44;
-  return `<polygon points="${b[0].toFixed(1)},${b[1].toFixed(1)} ${(b[0]-L*Math.cos(an-w)).toFixed(1)},${(b[1]-L*Math.sin(an-w)).toFixed(1)} ${(b[0]-L*Math.cos(an+w)).toFixed(1)},${(b[1]-L*Math.sin(an+w)).toFixed(1)}" fill="#111"/>`;}
+function head(a,b){
+  const an=Math.atan2(b[1]-a[1],b[0]-a[0]),w=Math.min(6.5,Math.hypot(b[0]-a[0],b[1]-a[1])*.6);
+  const dx=-Math.sin(an)*w,dy=Math.cos(an)*w;
+  return `<polygon points="${b.join(',')} ${a[0]+dx},${a[1]+dy} ${a[0]-dx},${a[1]-dy}" fill="#111" stroke="#fff" stroke-width="1.2" stroke-linejoin="round" paint-order="stroke fill"/>`;
+}
+// 투영된 선을 머리 밑변에서 끝내 곡선이 삼각형 한쪽을 덮지 않게 한다.
+function arrowShaft(pts,cut){
+  const out=pts.slice();
+  while(out.length>1){
+    const b=out.pop(),a=out[out.length-1],len=Math.hypot(b[0]-a[0],b[1]-a[1]);
+    if(len>cut){out.push([b[0]+(a[0]-b[0])*cut/len,b[1]+(a[1]-b[1])*cut/len]);break;}
+    cut-=len;
+  }
+  return out;
+}
 function drawArrow(p3,T,dbl,dash){
   const pts=p3.map(T), d=dash?' stroke-dasharray="8 5.5"':'';
-  let s=`<path d="${path(pts)}" fill="none" stroke="#111" stroke-width="3.4" stroke-linecap="round"${d}/>`;
-  s+=head(pts[pts.length-2],pts[pts.length-1]);
-  if(dbl){
-    const a=pts[pts.length-2],b=pts[pts.length-1];
-    const an=Math.atan2(b[1]-a[1],b[0]-a[0]),k=9.5;
-    const c=[b[0]-k*Math.cos(an),b[1]-k*Math.sin(an)];
-    s+=head([c[0]-Math.cos(an),c[1]-Math.sin(an)],c);
-  }
-  return s;
+  const shaft=arrowShaft(pts,dbl?22:12);
+  let s=`<path d="${path(shaft)}" fill="none" stroke="#111" stroke-width="3.4" stroke-linecap="round"${d}/>`;
+  if(dbl)s+=head(shaft.at(-1),arrowShaft(pts,10).at(-1));
+  return s+head(arrowShaft(pts,12).at(-1),pts.at(-1));
 }
 const AX={R:0,L:0,M:0,U:1,D:1,E:1,F:2,B:2,S:2};
 const SPAN={R:[0.5,1.5],r:[-0.5,1.5],L:[-1.5,-0.5],l:[-1.5,0.5],M:[-0.5,0.5],
