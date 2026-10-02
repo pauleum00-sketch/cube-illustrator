@@ -182,7 +182,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.0</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.1</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1250,9 +1250,11 @@ function moveDiagram(mv,W,H){
   return s;
 }
 
-/* 피라밍크스: 정사면체 각 면을 9개 삼각형으로 나눈다. */
+/* 피라밍크스: 스티커 대신 움직이는 층의 경계만 표시한다. */
 const PYRA_VERTICES={U:[0,3*Math.SQRT2/2,0],L:[-Math.sqrt(3),-Math.SQRT2/2,1],
   R:[Math.sqrt(3),-Math.SQRT2/2,1],B:[0,-Math.SQRT2/2,-2]};
+// 3×3 카메라는 유지하고 피라밍크스만 10° 돌려 오른쪽 면을 더 보여 준다.
+Object.keys(PYRA_VERTICES).forEach(k=>{PYRA_VERTICES[k]=applyM(rotM('y',-10*RAD),PYRA_VERTICES[k]);});
 function parsePyraAlg(txt){
   const moves=[],bad=[];
   txt.trim().split(/[\s,]+/).filter(Boolean).forEach(token=>{
@@ -1267,21 +1269,15 @@ function parsePyraAlg(txt){
 function pyraGeometry(mv){
   const key=mv.letter.toUpperCase(),vertex=PYRA_VERTICES[key];
   const axis=mul(vertex,1/Math.hypot(...vertex)),tip=mv.letter!==key;
-  const cut=tip?2/3:1/3,shift=mul(axis,tip?.13:.23),tiles=[];
+  const cut=tip?2/3:1/3,shift=mul(axis,tip?.13:.23),faces=[];
   Object.keys(PYRA_VERTICES).forEach(opposite=>{
     const names=Object.keys(PYRA_VERTICES).filter(k=>k!==opposite);
-    const verts=names.map(k=>PYRA_VERTICES[k]);
-    const point=(i,j)=>[0,1,2].map(k=>verts[0][k]*(1-(i+j)/3)+verts[1][k]*i/3+verts[2][k]*j/3);
-    const weight=([i,j])=>names.indexOf(key)===0?1-(i+j)/3:names.indexOf(key)===1?i/3:names.indexOf(key)===2?j/3:0;
-    const tile=coords=>{
-      const moving=coords.every(p=>weight(p)>=cut-1e-8);
-      tiles.push({points:coords.map(([i,j])=>add(point(i,j),moving?shift:[0,0,0])),
-        normal:mul(PYRA_VERTICES[opposite],-1),moving});
-    };
-    for(let i=0;i<3;i++)for(let j=0;j<3-i;j++){
-      tile([[i,j],[i+1,j],[i,j+1]]);
-      if(i+j<2)tile([[i+1,j],[i+1,j+1],[i,j+1]]);
-    }
+    const normal=mul(PYRA_VERTICES[opposite],-1);
+    if(opposite===key){faces.push({points:names.map(k=>PYRA_VERTICES[k]),normal,moving:false});return;}
+    const [a,b]=names.filter(k=>k!==key).map(k=>PYRA_VERTICES[k]);
+    const pa=add(mul(vertex,cut),mul(a,1-cut)),pb=add(mul(vertex,cut),mul(b,1-cut));
+    faces.push({points:[vertex,pa,pb].map(p=>add(p,shift)),normal,moving:true},
+      {points:[a,b,pb,pa],normal,moving:false});
   });
   // Axis-view clockwise = negative right-hand rotation about the outward vertex axis.
   const eye=[-Math.sin(TH)*Math.cos(PH),Math.sin(PH),Math.cos(TH)*Math.cos(PH)];
@@ -1289,13 +1285,14 @@ function pyraGeometry(mv){
   const u=mul(radial,1/Math.hypot(...radial)),v=cross(axis,u);
   const center=add(mul(vertex,tip?.80:.37),shift);
   const arc=arcPts(center,u,v,tip?.49:1.08,mv.prime?-60:60,mv.prime?120:-120);
-  return {tiles,arc,hidden:key==='B'};
+  return {faces,arc,hidden:key==='B'};
 }
 function pyraMoveDiagram(mv,W,H){
-  const {tiles,arc,hidden}=pyraGeometry(mv);
-  const T=fit(tiles.flatMap(t=>t.points).concat(arc),W,H,11);
-  const visible=tiles.filter(t=>faceVisible(t.normal,mul(t.points.reduce(add),1/3)));
-  visible.sort((a,b)=>a.points.reduce((s,p)=>s+camPt(p)[2],0)-b.points.reduce((s,p)=>s+camPt(p)[2],0));
+  const {faces,arc,hidden}=pyraGeometry(mv);
+  const T=fit(faces.flatMap(t=>t.points).concat(arc),W,H,11);
+  const center=t=>mul(t.points.reduce(add),1/t.points.length);
+  const visible=faces.filter(t=>faceVisible(t.normal,center(t)));
+  visible.sort((a,b)=>camPt(center(a))[2]-camPt(center(b))[2]);
   return visible.map(t=>`<path d="${path(t.points.map(T),true)}" fill="${t.moving?MOVEC:STATC}" stroke="#111" stroke-width="1.7" stroke-linejoin="round"/>`).join('')
     +drawArrow(arc,T,false,hidden);
 }
