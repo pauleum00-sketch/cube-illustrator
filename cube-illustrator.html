@@ -182,7 +182,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.2</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.3</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1301,7 +1301,7 @@ function pyraMoveDiagram(mv,W,H){
   const center=t=>mul(t.points.reduce(add),1/t.points.length);
   const visible=faces.filter(t=>faceVisible(t.normal,center(t)));
   visible.sort((a,b)=>camPt(center(a))[2]-camPt(center(b))[2]);
-  return visible.map(t=>`<path d="${path(t.points.map(T),true)}" fill="${t.moving?MOVEC:STATC}" stroke="#111" stroke-width="1.7" stroke-linejoin="round"/>`).join('')
+  return visible.map(t=>`<path d="${path(t.points.map(T),true)}" fill="${t.moving?MOVEC:STATC}" stroke="#111" stroke-width="3" stroke-linejoin="round"/>`).join('')
     +drawArrow(arc,T,false,hidden);
 }
 
