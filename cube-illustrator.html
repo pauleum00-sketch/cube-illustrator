@@ -37,6 +37,11 @@ main{flex:1;min-width:0;padding:24px}
 }
 .panel{display:none}.panel.on{display:block}
 .grid{display:grid;grid-template-columns:600px 1fr;gap:22px;align-items:start}
+#p2>.grid{grid-template-columns:minmax(0,1fr)}
+.notation{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.notation .chunk{display:inline-flex;flex-wrap:wrap;gap:4px;background:#e6e6e6;color:#111;border-radius:6px;padding:4px 6px;box-shadow:inset 0 0 0 1px #ccc;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.notation .alg-gap{display:inline-block;width:16px;flex-shrink:0}
+.notation .alg-break{flex-basis:100%;height:4px}
 .cols{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
 @media(max-width:1150px){.grid{grid-template-columns:1fr}}
 @media(max-width:640px){.cols{grid-template-columns:1fr}}
@@ -166,6 +171,9 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .plinfo div{display:flex;gap:10px;align-items:baseline;padding:2px 0}
 .plinfo b{flex:none;width:34px;font-size:11px;letter-spacing:.6px;color:var(--muted);font-weight:700}
 .plinfo span{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;color:var(--ink)}
+.plinfo .chunk span{color:#111}
+#plAlg{min-width:0}
+.chips>.notation{width:100%}
 .chip2{background:#0c1e35;border:1.5px solid var(--line);color:var(--muted);border-radius:7px;
   padding:6px 10px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14px;
   font-weight:700;cursor:pointer;line-height:1}
@@ -185,7 +193,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.17.0</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.0</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1269,6 +1277,7 @@ const PYRA_VERTICES={U:[0,3*Math.SQRT2/2,0],L:[-Math.sqrt(3),-Math.SQRT2/2,1],
 // 3×3 카메라는 유지하고 피라밍크스만 10° 돌려 오른쪽 면을 더 보여 준다.
 Object.keys(PYRA_VERTICES).forEach(k=>{PYRA_VERTICES[k]=applyM(rotM('y',-10*RAD),PYRA_VERTICES[k]);});
 function parsePyraAlg(txt){
+  if(/[()\/]/.test(txt))return parseNotation(txt,parsePyraAlg);
   const moves=[],bad=[];
   txt.trim().split(/[\s,]+/).filter(Boolean).forEach(token=>{
     const m=token.match(/^([ULRBulrb])(['’]2|2['’]|['’]|2)?$/);
@@ -1312,6 +1321,7 @@ function pyraMoveDiagram(mv,W,H){
 
 /* ========== 파싱 / 정리 ========== */
 function parseAlg(txt){
+  if(/[()\/]/.test(txt))return parseNotation(txt,parseAlg);
   const toks=txt.trim().split(/[\s,]+/).filter(Boolean), out=[], bad=[];
   toks.forEach(t=>{
     t=t.replace(/^([RLUDFB])w/,(_,l)=>l.toLowerCase());   /* Rw = r */
@@ -1321,6 +1331,35 @@ function parseAlg(txt){
   });
   return {moves:merge(out),bad};
 }
+// Layout marks never become cube moves; merge only inside each uninterrupted span.
+function parseNotation(txt,parse){
+  const moves=[],bad=[];let depth=0,chunk=0,nextChunk=0,space=false,line=false;
+  for(const token of txt.match(/\/\/|[()\/]|[^()\/]+/g)||[]){
+    if(token==='('){if(!depth)chunk=++nextChunk;depth++;continue;}
+    if(token===')'){if(!depth)bad.push('짝이 없는 )');else if(!--depth)chunk=0;continue;}
+    if(token==='//'){line=true;space=false;continue;}
+    if(token==='/'){space=true;continue;}
+    const parsed=parse(token);bad.push(...parsed.bad);
+    for(const m of parsed.moves){
+      moves.push({...m,...(chunk?{chunk}:{}),...(line?{lineBefore:true}:space?{spaceBefore:true}:{})});
+      line=space=false;
+    }
+  }
+  if(depth)bad.push('닫히지 않은 괄호');
+  return {moves,bad};
+}
+function notationHTML(moves,render=m=>esc(lab(m))){
+  let s='',chunk=0;
+  moves.forEach((m,i)=>{
+    if(chunk&&(m.chunk!==chunk||m.lineBefore||m.spaceBefore)){s+='</span>';chunk=0;}
+    if(m.lineBefore)s+='<span class="alg-break"></span>';
+    else if(m.spaceBefore)s+='<span class="alg-gap"></span>';
+    if(m.chunk&&!chunk){s+='<span class="chunk">';chunk=m.chunk;}
+    s+=`<span>${render(m,i)}</span>`;
+  });
+  return `<span class="notation">${s}${chunk?'</span>':''}</span>`;
+}
+function algHTML(txt){const p=parseAlg(txt);return p.bad.length?esc(txt):notationHTML(p.moves);}
 function merge(list){                               /* U' U' → U'2 */
   const o=[];
   list.forEach(m=>{
@@ -1351,16 +1390,27 @@ function buildAlgSVG(){
   document.getElementById('save2').disabled=document.getElementById('copy2').disabled=!!bad.length||!moves.length;
   if(!moves.length) return '<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140"></svg>';
   const CW=Math.round(124*zoom), CH=Math.round(132*zoom), LBL=Math.round(40*zoom);
-  const PER=Math.max(1,Math.min(moves.length,Math.floor(880/CW)));
-  const rows=Math.ceil(moves.length/PER);
-  const W=PER*CW, H=rows*(CH+LBL);
-  let s=`<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">`;
-  moves.forEach((mv,i)=>{
-    const x=(i%PER)*CW, y=Math.floor(i/PER)*(CH+LBL);
-    s+=`<g transform="translate(${x},${y})">${puzzle.draw(mv,CW,CH)}`
-      +`<text x="${CW/2}" y="${CH+Math.round(27*zoom)}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"`
-      +` font-size="${Math.round(25*zoom)}" font-weight="700" fill="#111">${esc(lab(mv))}</text></g>`;
+  return notationSVG(moves,puzzle.draw,CW,CH,LBL,Math.max(1,Math.floor(880/CW)),1,'out');
+}
+function notationSVG(moves,draw,CW,CH,LBL,columns,scale=1,cls=''){
+  const limit=columns*CW,step=CH+LBL,placed=[];let x=0,y=0,W=0;
+  moves.forEach((m,i)=>{
+    if(m.lineBefore){x=0;y+=step;}
+    else if(m.spaceBefore&&x)x+=CW*.28;
+    if(m.chunk&&m.chunk!==moves[i-1]?.chunk){
+      let n=1;while(moves[i+n]?.chunk===m.chunk&&!moves[i+n].lineBefore&&!moves[i+n].spaceBefore)n++;
+      if(n<=columns&&x+n*CW>limit){x=0;y+=step;}
+    }
+    if(x+CW>limit){x=0;y+=step;}
+    placed.push({m,x,y});x+=CW;W=Math.max(W,x);
   });
+  const H=y+step,boxes=[];
+  placed.forEach(p=>{if(!p.m.chunk)return;const last=boxes.at(-1);
+    if(last&&last.chunk===p.m.chunk&&last.y===p.y&&Math.abs(last.x+last.w-p.x)<.01)last.w+=CW;
+    else boxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:CW});});
+  let s=`<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W*scale}" height="${H*scale}">`;
+  s+=boxes.map(b=>`<rect class="alg-chunk" x="${b.x+2}" y="${b.y+2}" width="${b.w-4}" height="${step-4}" rx="8" fill="#e6e6e6" stroke="#ccc"/>`).join('');
+  s+=placed.map(({m,x,y})=>`<g class="alg-move" transform="translate(${x},${y})">${draw(m,CW,CH)}<text x="${CW/2}" y="${CH+LBL*.675}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${LBL*.625}" font-weight="700" fill="#000">${esc(lab(m))}</text></g>`).join('');
   return s+'</svg>';
 }
 function drawAlg(){document.getElementById('stage2').innerHTML=buildAlgSVG();}
@@ -1372,13 +1422,14 @@ puzzleSelect.innerHTML=Object.entries(DIAGRAM_PUZZLES).map(([id,p])=>`<option va
 function renderDiagramControls(){
 const puzzle=DIAGRAM_PUZZLES[diagramPuzzle];
 puzzleSelect.value=diagramPuzzle;
-document.getElementById('diagramHint').textContent=puzzle.hint;
+document.getElementById('diagramHint').textContent=puzzle.hint+' ( )는 회색 묶음, /는 간격, //는 줄바꿈입니다. 괄호는 반복이 아닌 묶음 표시입니다.';
 document.getElementById('keys').innerHTML=
   puzzle.keys.map(([t,ks])=>`<div class="grp"><b>${t}</b><div class="row">`
     +ks.map(k=>`<button class="btn mv" data-k="${k}">${k}</button>`).join('')+`</div></div>`).join('')
   +`<div class="grp"><b>붙이기</b><div class="row">
       <button class="btn mv mod" data-mod="'">'</button>
-      <button class="btn mv mod" data-mod="2">2</button></div></div>`;
+      <button class="btn mv mod" data-mod="2">2</button></div></div>`
+  +`<div class="grp"><b>묶음 · 간격</b><div class="row">${['(',')','/','//'].map(k=>`<button class="btn mv" data-k="${k}">${k}</button>`).join('')}</div></div>`;
 document.querySelectorAll('#keys [data-k]').forEach(b=>b.onclick=()=>{
   const v=ta.value.trim(); setVal((v?v+' ':'')+b.dataset.k);});
 document.querySelectorAll('[data-mod]').forEach(b=>b.onclick=()=>{
@@ -1402,6 +1453,7 @@ document.getElementById('undo').onclick=()=>{
 document.getElementById('clear').onclick=()=>setVal('');
 ta.addEventListener('input',()=>{drawAlg();persist();});
 ta.addEventListener('blur',()=>{                    /* 자동 정리 */
+  if(/[()\/]/.test(ta.value))return; // Keep the user's grouping and line-break marks.
   const {moves,bad}=DIAGRAM_PUZZLES[diagramPuzzle].parse(ta.value); if(bad.length)return;
   const t=moves.map(lab).join(' '); if(t!==ta.value.trim())setVal(t);});
 function setZoom(d){
@@ -1583,6 +1635,7 @@ const FLPARTNER={1:2,2:1,3:4,4:3,5:6,6:5,7:8,8:7,9:10,10:9,11:12,12:11,13:14,14:
   15:16,16:15,17:18,18:17,19:20,20:19,21:22,22:21,23:24,24:23,25:26,26:25,27:28,28:27,
   29:30,30:29,31:31,32:32,33:34,34:33,35:36,36:35,37:37,38:39,39:38,40:41,41:40};
 function mirrorAlg(txt){
+  if(/[()\/]/.test(txt))return txt.replace(/[^()\/]+/g,part=>mirrorAlg(part)+' ');
   const {moves,bad}=parseAlg(txt);
   if(bad.length) return txt;
   const LM={R:'L',L:'R',r:'l',l:'r'};
@@ -1595,17 +1648,7 @@ function algSVG(txt){
   if(bad.length||!moves.length) return esc(txt);
   /* 도해 탭 원본 크기로 그린 뒤 절반으로 축소 표시 → 선 굵기 비율 동일 */
   const CW=124, CH=132, LBL=40;
-  const PER=Math.min(moves.length,8);
-  const rows=Math.ceil(moves.length/PER);
-  const W=PER*CW, H=rows*(CH+LBL);
-  let s=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W/2}" height="${H/2}">`;
-  moves.forEach((mv,i)=>{
-    const x=(i%PER)*CW, y=Math.floor(i/PER)*(CH+LBL);
-    s+=`<g transform="translate(${x},${y})">${moveDiagram(mv,CW,CH)}`
-      +`<text x="${CW/2}" y="${CH+27}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif"`
-      +` font-size="25" font-weight="700" fill="#000">${esc(lab(mv))}</text></g>`;
-  });
-  return s+'</svg>';
+  return notationSVG(moves,moveDiagram,CW,CH,LBL,8,.5);
 }
 
 /* 데이터 (SpeedCubeDB 기준): [번호, 분류, 셋업, 공식들] */
@@ -1818,7 +1861,7 @@ function renderTable(){
     return `<tr>
       <td class="idx">F2L ${n}</td>
       <td class="pic">${svgFor(n)}</td>
-      <td class="alg">${diag?algSVG(a):esc(a)}</td>
+      <td class="alg">${diag?algSVG(a):algHTML(a)}</td>
       <td class="setup">${esc(algText(setup))}</td>${boxes}
     </tr>`;};
   const cols=reviewOn?5:4;
@@ -1910,8 +1953,8 @@ function plBtn(){
   b.textContent=PL.playing?'⏸ 일시정지':(PL.i>=PL.moves.length?'↺ 다시 재생':'▶ 재생');
 }
 function plChips(){
-  document.getElementById('plChips').innerHTML=PL.moves.map((m,k)=>
-    `<button class="chip2${k<PL.i?' done':''}${k===PL.i?' now':''}" data-mv="${k}" title="이 기호부터 재생">${esc(lab(m))}</button>`).join('');
+  document.getElementById('plChips').innerHTML=notationHTML(PL.moves,(m,k)=>
+    `<button class="chip2${k<PL.i?' done':''}${k===PL.i?' now':''}" data-mv="${k}" title="이 기호부터 재생">${esc(lab(m))}</button>`);
   document.querySelectorAll('#plChips [data-mv]').forEach(b=>b.onclick=()=>{
     plPause(); plSeek(+b.dataset.mv); plPlay();});
 }
@@ -1991,7 +2034,7 @@ function startPlayer(title,alg,moves,base,view,setup,subtitle){
   PL={alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0};
   document.getElementById('plTitle').textContent=title;
   document.getElementById('plSetup').textContent=setup;
-  document.getElementById('plAlg').textContent=alg;
+  document.getElementById('plAlg').innerHTML=algHTML(alg);
   document.getElementById('plSub').textContent=subtitle;
   document.getElementById('plSpeed').value=String(PL.speed);
   plChips(); plRender(null,0); plBtn();
@@ -2179,7 +2222,8 @@ for(let i=0;i<PLL_ORIENTATIONS.length;i++)for(const letter of ['x','y','z'])for(
 }
 // 괄호는 손동작 묶음 표시다. 허용하지 않은 토큰을 조용히 버리지 않는다.
 function parsePLL(txt){
-  const tokens=txt.replace(/[()]/g,' ').trim().split(/[\s,]+/).filter(Boolean);
+  if(/[()\/]/.test(txt))return parseNotation(txt,parsePLL);
+  const tokens=txt.trim().split(/[\s,]+/).filter(Boolean);
   const bad=tokens.filter(t=>!/^([RLUDFB]w|[RLUDFBrludfbMESxyz])(?:['’]2|2['’]|['’]|2)?$/.test(t));
   return bad.length?{moves:[],bad}:parseAlg(tokens.join(' '));
 }
@@ -2223,7 +2267,7 @@ function pllTitle(){
 }
 function pllTable(){
   const rows=PLL_DATA.filter(d=>PP.sel.has(d[0])),o=pllOptions;
-  const row=([n])=>{const a=pllAlg(n),info=pllInfo(a);return `<tr><td class="idx">PLL ${n}</td><td class="pic">${pllSVG(n)}</td><td class="alg">${info.error?esc(info.error):o.diag?algSVG(info.moves.map(lab).join(' ')):esc(a)}</td><td class="setup">${esc(info.setup||'—')}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
+  const row=([n])=>{const a=pllAlg(n),info=pllInfo(a);return `<tr><td class="idx">PLL ${n}</td><td class="pic">${pllSVG(n)}</td><td class="alg">${info.error?esc(info.error):o.diag?algSVG(a):algHTML(a)}</td><td class="setup">${esc(info.setup||'—')}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
   const body=o.order==='cat'?PLL_CATS.map(cat=>{const group=rows.filter(d=>d[1]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?5:4}">${cat}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
   pllEl('meta').textContent=`${PP.name} · ${rows.length}개 케이스 · 공식 출처: SpeedCubeDB (2026-10-03)`;
   pllEl('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
