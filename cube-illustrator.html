@@ -114,25 +114,27 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .case .img svg{width:100%;max-width:120px;height:auto;display:block}
 .case select{width:100%;margin-top:8px;background:#0c1e35;border:1px solid var(--line);color:var(--ink);
   border-radius:6px;padding:5px 4px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11.5px}
-#sheet{background:#fff;color:#111;border-radius:14px;padding:28px 30px;margin-top:18px}
-#sheet h1{font-size:22px;color:#111;margin:0 0 4px;font-family:inherit;letter-spacing:0}
-#sheet .meta{font-size:12.5px;color:#666;margin-bottom:14px}
-#sheet table{width:100%;border-collapse:collapse}
-#sheet th{font-size:12px;letter-spacing:.6px;text-align:left;color:#555;border-bottom:2px solid #111;padding:6px 8px}
-#sheet td{border-bottom:1px solid #d5d9de;padding:7px 8px;vertical-align:middle}
-#sheet tr{page-break-inside:avoid;break-inside:avoid}
-#sheet .idx{font-weight:700;white-space:nowrap;width:70px}
-#sheet .pic{width:104px}
-#sheet .pic svg{width:96px;height:auto;display:block}
-#sheet .alg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;color:#000}
-#sheet .alg svg{max-width:100%;height:auto;display:block}
-#sheet tr.cathead td{border-bottom:1.5px solid #111;background:#f0f2f4;
+:is(#sheet,#pllsheet){background:#fff;color:#111;border-radius:14px;padding:28px 30px;margin-top:18px}
+:is(#sheet,#pllsheet) h1{font-size:22px;color:#111;margin:0 0 4px;font-family:inherit;letter-spacing:0}
+:is(#sheet,#pllsheet) .meta{font-size:12.5px;color:#666;margin-bottom:14px}
+:is(#sheet,#pllsheet) table{width:100%;border-collapse:collapse;color:#111}
+:is(#sheet,#pllsheet) th{font-size:12px;letter-spacing:.6px;text-align:left;color:#555;border-bottom:2px solid #111;padding:6px 8px}
+:is(#sheet,#pllsheet) td{border-bottom:1px solid #d5d9de;padding:7px 8px;vertical-align:middle}
+:is(#sheet,#pllsheet) tr{page-break-inside:avoid;break-inside:avoid}
+:is(#sheet,#pllsheet) .idx{font-weight:700;white-space:nowrap;width:70px}
+:is(#sheet,#pllsheet) .pic{width:104px}
+:is(#sheet,#pllsheet) .pic svg{width:96px;height:auto;display:block}
+:is(#sheet,#pllsheet) .alg{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:14.5px;color:#000}
+:is(#sheet,#pllsheet) .alg svg{max-width:100%;height:auto;display:block}
+:is(#sheet,#pllsheet) tr.cathead td{border-bottom:1.5px solid #111;background:#f0f2f4;
   font-weight:800;font-size:13.5px;letter-spacing:.4px;padding:9px 8px}
-#sheet .setup{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#444}
-#sheet .empty{color:#888;font-size:14px;padding:26px 0;text-align:center}
-#sheet .rv{display:grid;grid-template-columns:repeat(5,14px);gap:3px}   /* 한 줄 5칸 고정 */
-#sheet .rv span{width:14px;height:14px;border:1.5px solid #333;border-radius:2px;display:inline-block}
+:is(#sheet,#pllsheet) .setup{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:13px;color:#444}
+:is(#sheet,#pllsheet) .empty{color:#888;font-size:14px;padding:26px 0;text-align:center}
+:is(#sheet,#pllsheet) .rv{display:grid;grid-template-columns:repeat(5,14px);gap:3px}   /* 한 줄 5칸 고정 */
+:is(#sheet,#pllsheet) .rv span{width:14px;height:14px;border:1.5px solid #333;border-radius:2px;display:inline-block}
 .case .cust{margin-top:6px;padding:5px 6px;font-size:11.5px}
+#pllsheet{overflow-x:auto}
+#p5 a{color:var(--teal)}
 .case .top .play{margin-left:auto;padding:3px 9px;font-size:12px;line-height:1.3}
 .modal[hidden]{display:none}   /* display:flex가 hidden 속성을 덮어쓰지 않도록 */
 .modal{position:fixed;inset:0;background:rgba(6,16,30,.72);display:flex;align-items:center;
@@ -174,7 +176,8 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
   header,.side,.foot,.no-print{display:none !important}
   body{background:#fff}
   main{padding:0;max-width:none}
-  #sheet{border-radius:0;padding:0;margin:0}
+  :is(#sheet,#pllsheet){border-radius:0;padding:0;margin:0}
+  #pllsheet{overflow:visible}
   @page{margin:14mm 12mm}
 }
 </style>
@@ -182,7 +185,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.16.3</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.17.0</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -190,6 +193,8 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <div class="navgrp">F2L</div>
     <button id="t3" aria-selected="false">F2L 학습</button>
     <button id="t4" aria-selected="false">F2L 연습</button>
+    <div class="navgrp">PLL</div>
+    <button id="t5" aria-selected="false">PLL 학습</button>
   </nav>
 </aside>
 
@@ -715,7 +720,7 @@ function buildCubeSVG(tight){
 }
 
 /* ========== 큐브 그리기 (탑다운, OLL·PLL 도해) ========== */
-function buildTopSVG(){
+function buildTopSVG(st=stateTop,arrows=topArrows,interactive=true){
   /* t = 모든 검정 윤곽의 두께. 면 테두리·칸 사이·띠 테두리가 전부 같은 값 */
   const t=4, cw=96, C=cw+t, Sf=3*C+t, D=40, G=12, P=10;
   const x0=P+D+G, W=x0+Sf+G+D+P;
@@ -724,9 +729,9 @@ function buildTopSVG(){
   const centers={};                                  /* 화살표용 스티커 중심 좌표 */
   const cell=(f,r,c,x,y,w,h,rx)=>{
     centers[f+r+c]=[x+w/2,y+h/2];
-    const pend=arrowPending&&arrowPending[0]===f&&arrowPending[1]===r&&arrowPending[2]===c;
-    return rr(x,y,w,h,COLORS[stateTop[f][r][c]][0],rx,
-      ` class="st" data-f="${f}" data-r="${r}" data-c="${c}" style="cursor:pointer"`
+    const pend=interactive&&arrowPending&&arrowPending[0]===f&&arrowPending[1]===r&&arrowPending[2]===c;
+    return rr(x,y,w,h,COLORS[st[f][r][c]][0],rx,
+      (interactive?` class="st" data-f="${f}" data-r="${r}" data-c="${c}" style="cursor:pointer"`:'')
       +(pend?' stroke="#4dd8cf" stroke-width="5"':''));
   };
   const back=(x,y,w,h,rx)=>rr(x-t,y-t,w+2*t,h+2*t,'#111',rx);
@@ -744,7 +749,7 @@ function buildTopSVG(){
   }
   const bigHead=(a,b)=>{const an=Math.atan2(b[1]-a[1],b[0]-a[0]),L=24,w=.5;
     return `<polygon points="${b[0].toFixed(1)},${b[1].toFixed(1)} ${(b[0]-L*Math.cos(an-w)).toFixed(1)},${(b[1]-L*Math.sin(an-w)).toFixed(1)} ${(b[0]-L*Math.cos(an+w)).toFixed(1)},${(b[1]-L*Math.sin(an+w)).toFixed(1)}" fill="#111"/>`;};
-  topArrows.forEach(a=>{                             /* PLL 교환 화살표 */
+  arrows.forEach(a=>{                             /* PLL 교환 화살표 */
     const A=centers[a.a.join('')], B=centers[a.b.join('')];
     if(!A||!B) return;
     const an=Math.atan2(B[1]-A[1],B[0]-A[0]), k=14;
@@ -1446,7 +1451,16 @@ document.getElementById('snap').onchange=persist;
 document.getElementById('lock').onchange=persist;
 
 /* 탭 */
-const TABS=[1,2,3,4].map(i=>document.getElementById('t'+i));
+// 학습 페이지의 동일한 컨트롤·표 레이아웃을 복제하되 ID와 저장은 분리한다.
+const pllPanel=document.getElementById('p3').cloneNode(true);
+pllPanel.id='p5';
+pllPanel.querySelector('[name=slotside]').closest('span').remove();
+pllPanel.querySelectorAll('[id]').forEach(e=>e.id='pll'+e.id);
+pllPanel.querySelectorAll('[name]').forEach(e=>e.name='pll'+e.name);
+pllPanel.innerHTML=pllPanel.innerHTML.replace('숫자 순서대로','이름 순서대로');
+pllPanel.querySelector('p.hint').insertAdjacentHTML('beforeend',' PLL 그림은 탑다운, 재생은 3D입니다.');
+document.querySelector('main').append(pllPanel);
+const TABS=[1,2,3,4,5].map(i=>document.getElementById('t'+i));
 function tab(n){
   TABS.forEach((b,i)=>{b.setAttribute('aria-selected',i===n-1);
     document.getElementById('p'+(i+1)).classList.toggle('on',i===n-1);});
@@ -1518,7 +1532,7 @@ function loadLocal(){
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
-    if([2,3,4].includes(d.tab)) tab(d.tab);
+    if([2,3,4,5].includes(d.tab)) tab(d.tab);
   }catch(e){}
 }
 
@@ -1649,6 +1663,30 @@ function rebuildF2lColors(){DATA.forEach(([n,,setup])=>{
 rebuildF2lColors();
 
 /* ---- 저장: 과외생 프로필별 선택·공식, 나머지 설정은 공통 ---- */
+// SpeedCubeDB PLL, 2026-10-03: 21 cases × 4 alternatives. R3 is written as R'.
+const PLL_DATA=[
+["Aa","인접 코너 교환","x R2' D2' R U R' D2' R U' R x'",["x R' U R' D2 R U' R' D2 R2 x'","y' x L2 D2 L' U' L D2 L' U L'","l' U R' D2 R U' R' D2 R2 x'","y x' R2 D2 R' U' R D2 R' U R' x"]],
+["Ab","인접 코너 교환","x R' U R' D2' R U' R' D2' R2' x'",["x R2 D2 R U R' D2 R U' R x'","y' x L U' L D2 L' U L D2 L2","y x' R U' R D2 R' U R D2 R2 x","R' B' R U' R D R' U R D' R2 B R"]],
+["E","대각 코너 교환","x' D R U R' D' R U' R' D R U' R' D' R U R' x y'",["y x' R U' R' D R U R' D' R U R' D R U' R' D' x","y R' U' R' D' R U' R' D R U R' D' R U R' D R2","R2 U F' R' U R U' R' U R U' R' U R U' F U' R2","y x' L' U L D' L' U' L D L' U' L D' L' U L D"]],
+["F","인접 코너 교환","R' U' R U' R' U R U R2' F' R U R U' R' F U R y'",["y R' U' F' R U R' U' R' F R2 U' R' U' R U R' U R","y R' F R f' R' F R2 U R' U' R' F' R2 U R' S","R' U R U' R2 F' U' F U R F R' F' R2","y R2 F R F' R' U' F' U F R2 U R' U' R"]],
+["Ga","인접 코너 교환","R' U' R D' U R2' U R' U R U' R U' R2' D",["R2 U R' U R' U' R U' R2 D U' R' U R D'","R2 u R' U R' U' R u' R2 F' U F","y R U R' F' R U R' U' R' F R U' R' F R2 U' R' U' R U R' F'","D' R2 U R' U R' U' R U' R2 U' D R' U R"]],
+["Gb","인접 코너 교환","R2' U R' U R' U' R U' R2' D U' R' U R D'",["D R' U' R U D' R2 U R' U R U' R U' R2","R' U' R U D' R2 U R' U R U' R U' R2 D","y F' U' F R2 u R' U R U' R u' R2","R' d' F R2 u R' U R U' R u' R2"]],
+["Gc","인접 코너 교환","D' R U R' U' D R2' U' R U' R' U R' U R2'",["R2 U' R U' R U R' U R2 D' U R U' R' D","y2 R2 F2 R U2 R U2 R' F R U R' U' R' F R2","D R2 U' R U' R U R' U R2 D' U R U' R'","R2 u' R U' R U R' u R2 f R' f'"]],
+["Gd","인접 코너 교환","R2' U' R U' R U R' U R2' D' U R U' R' D",["R U R' U' D R2 U' R U' R' U R' U R2 D'","D' R U R' U' D R2 U' R U' R' U R' U R2","R U R' y' R2 u' R U' R' U R' u R2","y R2 F' R U R U' R' F' R U2 R' U2 R' F2 R2"]],
+["H","엣지 교환","M2' U' M2' U2' M2' U' M2'",["M2 U M2 U2 M2 U M2","M2 U' M2 U2 M2 U' M2","R2 S2 R2 U' R2 S2 R2","M2 U2 M2 U M2 U2 M2"]],
+["Ja","인접 코너 교환","L' R' U2' R U R' U2' L U' R y'",["y2 x R2 F R F' R U2 r' U r U2 x'","y R' U L' U2 R U' R' U2 R L","L' U' L F L' U' L U L F' L2 U L","R U' L' U R' U2 L U' L' U2 L"]],
+["Jb","인접 코너 교환","R U R2' F' R U R U' R' F R U' R'",["R U R' F' R U R' U' R' F R2 U' R'","R U2 R' U' R U2 L' U R' U' L","r' F R F' r U2 R' U R U2 R'","L' U R U' L U2 R' U R U2 R'"]],
+["Na","대각 코너 교환","R U R' U2' R U R2' F' R U R U' R' F R U' R' U' R U' R'",["R U R' U R U R' F' R U R' U' R' F R2 U' R' U2 R U' R'","F' R U R' U' R' F R2 F U' R' U' R U F' R'","R F U' R' U R U F' R2 F' R U R U' R' F","r' D r U2 r' D r U2 r' D r U2 r' D r U2 r' D r"]],
+["Nb","대각 코너 교환","F r' F' r U r U' r2' D' F r U r' F' D r",["R' U R U' R' F' U' F R U R' F R' F' R U' R","r' D' F r U' r' F' D r2 U r' U' r' F r F'","R' U L' U2 R U' L R' U L' U2 R U' L","R' U R U' R' F' U' F R U R' U' R U' f R f'"]],
+["Ra","인접 코너 교환","R U2' R D R' U R D' R' U' R' U R U R' y'",["y R U' R' U' R U R D R' U' R D' R' U2 R'","y R U R' F' R U2 R' U2 R' F R U R U2 R'","L U2 L' U2 L F' L' U' L U L F L2","y R U' R' U' R U R' U R' D' R U' R' D R2 U R'"]],
+["Rb","인접 코너 교환","R' U R U R' U' R' D' R U R' D R U2' R",["R' U2 R U2 R' F R U R' U' R' F' R2","y R2 F R U R U' R' F' R U2 R' U2 R","R' U2 R' D' R U' R' D R U R U' R' U' R","y R' U R U R' U' R' D' R U R' D R U2 R"]],
+["T","인접 코너 교환","F R U' R' U R U R2' F' R U R U' R'",["R U R' U' R' F R2 U' R' U' R U R' F'","l b d' L' U' F U2 L' U' L' U L U' f' S M r u E U' R'","R U R' U' R' F R2 U' R' U F' L' U L","R2 u R2 u' R2 F2 u' F2 u F2"]],
+["Ua","엣지 교환","M2' U' M' U2' M U' M2'",["y2 M2 U M U2 M' U M2","R U R' U R' U' R2 U' R' U R' U R","y R2 U' S' U2 S U' R2","y2 R U' R U R U R U' R' U' R2"]],
+["Ub","엣지 교환","M2' U M' U2' M U M2'",["y2 M2 U' M U2 M' U' M2","R' U R' U' R' U' R' U R U R2","R2' U R U R' U' R' U' R' U R'","y2 R2 U R U R' U' R' U' R' U R'"]],
+["V","대각 코너 교환","D2' R' U R D' R2' U' R' U R' U R' D' R U2' R'",["R' U R' U' R D' R' D R' U D' R2 U' R2 D R2","R' U R U' R' f' U' R U2 R' U' R U' R' f R","R' U R' U' y R' F' R2 U' R' U R' F R F","y R U' R U R' D R D' R U' D R2 U R2 D' R2"]],
+["Y","대각 코너 교환","F R' F' R U R U' R' F R U' R' U R U R' F'",["F R U' R' U' R U R' F' R U R' U' R' F R F'","F R' F R2 U' R' U' R U R' F' R U R' U' F'","R2 U' R2 U' R2 U F U F' R2 F U' F'","F R' F' R U R U' R2 U' R U R f' U' f"]],
+["Z","엣지 교환","M U2' M2' U2' M U' M2' U' M2'",["M' U' M2 U' M2 U' M' U2 M2","M2 U M2 U M' U2 M2 U2 M'","y M2 U' M2 U' M' U2 M2 U2 M'","y M' U M2 U M2 U M' U2 M2"]],
+];
 const LSKEY2='f2lWorkbook.v2';
 const newProfile=name=>({id:Date.now().toString(36)+Math.random().toString(36).slice(2,6),name,sel:[],algIdx:{},custom:{}});
 let profiles=[], P=null, diag=false, order='num', slotSide='fr', reviewOn=false, reviewN=10;
@@ -1823,17 +1861,17 @@ function refreshTitle(){                       /* 직접 고쳐 쓴 제목은 �
   const t=sheetH1.textContent.trim();
   if(!t||AUTOTITLE.test(t)) sheetH1.textContent=sheetTitle();
 }
-function printSheet(){
-  refreshTitle();
+function printSheet(heading=sheetH1){
+  if(heading===sheetH1)refreshTitle();
   const keep=document.title;
-  document.title=(sheetH1.textContent.trim()||keep).replace(/[\\/:*?"<>|]/g,' ');
+  document.title=(heading.textContent.trim()||keep).replace(/[\\/:*?"<>|]/g,' ');
   const back=()=>{document.title=keep;removeEventListener('afterprint',back);};
   addEventListener('afterprint',back);
   setTimeout(back,4000);
   window.print();
 }
-document.getElementById('printBtn').onclick=printSheet;
-document.getElementById('pdfBtn').onclick=printSheet;
+document.getElementById('printBtn').onclick=()=>printSheet();
+document.getElementById('pdfBtn').onclick=()=>printSheet();
 /* ========== 공식 재생 플레이어 ========== */
 const PLW=420, PLH=380, PLEYE=[[1,0,0],[0,1,0],[0,0,1]];
 let PL=null, plLastSpeed=1;
@@ -1887,10 +1925,10 @@ function plCancel(){ if(PL){PL.gen++; PL.tweening=false;} }
 function plPause(){ if(!PL) return; PL.playing=false; plCancel(); plBtn(); }
 /* 한 수를 지정한 각도 구간으로 굴리는 공용 애니메이션 (되감기에 씀) */
 function plTween(geo,a0,a1,dur,done){
-  const gen=(PL.gen++,PL.gen), t0=performance.now();
+  const session=PL,gen=(PL.gen++,PL.gen), t0=performance.now();
   PL.tweening=true;
   (function frame(t){
-    if(!PL||gen!==PL.gen) return;
+    if(PL!==session||gen!==PL.gen) return;
     const p=Math.min(1,(t-t0)/Math.max(1,dur));
     plRender(geo,a0+(a1-a0)*plEase(p));
     if(p<1){plFrame(frame);return;}
@@ -1919,9 +1957,9 @@ function plRun(){
   if(PL.i>=PL.moves.length||(PL.stopAt!==null&&PL.i>=PL.stopAt)){PL.playing=false;PL.stopAt=null;plBtn();return;}
   const mv=PL.moves[PL.i], geo=moveGeom(mv);
   const full=geo.dir*90*(mv.dbl?2:1)*RAD;
-  const dur=(mv.dbl?540:380)/PL.speed, startK=PL.k||0, t0=performance.now(), gen=PL.gen;
+  const dur=(mv.dbl?540:380)/PL.speed, startK=PL.k||0, t0=performance.now(), gen=PL.gen,session=PL;
   (function frame(t){
-    if(!PL||!PL.playing||gen!==PL.gen) return;
+    if(PL!==session||!PL.playing||gen!==PL.gen) return;
     const p=Math.min(1,startK+(t-t0)/Math.max(1,dur*(1-startK)));
     PL.k=p; plRender(geo,full*plEase(p));
     if(p<1){plFrame(frame);return;}
@@ -1945,12 +1983,16 @@ function openPlayer(n){
   const st0=caseState(DATA.find(d=>d[0]===n)[2]);
   const base=slotSide==='fl'?applyMoveTo(st0,YMOVE):st0;
   const view=slotSide==='fl'?YROT:PLEYE;
-  PL={n,alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0};
-  document.getElementById('plTitle').textContent=`F2L ${n} 재생`;
-  document.getElementById('plSetup').textContent=algText(dispData(n)[2]);
+  startPlayer(`F2L ${n} 재생`,alg,moves,base,view,algText(dispData(n)[2]),
+    `${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 정면 ${f2lColorName(f2lFront(slotSide))} · 셋업을 적용한 상태에서 시작합니다. 기호를 누르면 그 수부터 재생됩니다`);
+}
+function startPlayer(title,alg,moves,base,view,setup,subtitle){
+  plPause();
+  PL={alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0};
+  document.getElementById('plTitle').textContent=title;
+  document.getElementById('plSetup').textContent=setup;
   document.getElementById('plAlg').textContent=alg;
-  document.getElementById('plSub').textContent=
-    `${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 정면 ${f2lColorName(f2lFront(slotSide))} · 셋업을 적용한 상태에서 시작합니다. 기호를 누르면 그 수부터 재생됩니다`;
+  document.getElementById('plSub').textContent=subtitle;
   document.getElementById('plSpeed').value=String(PL.speed);
   plChips(); plRender(null,0); plBtn();
   document.getElementById('player').hidden=false;
@@ -2124,6 +2166,108 @@ addEventListener('keydown',e=>{
   if(e.key===' '){document.getElementById('prSolve').click();e.preventDefault();}
   else if(e.key==='Enter'||e.key==='ArrowRight'){document.getElementById('prNext').click();e.preventDefault();}
 });
+
+/* ========== PLL 학습: 공통 탑다운·도해·3D 플레이어를 사용 ========== */
+const PLL_CENTER={U:'Y',D:'W',F:'G',B:'B',L:'R',R:'O'};
+const pllSolved=()=>Object.fromEntries(FKEYS.map(f=>[f,Array.from({length:3},()=>Array(3).fill(PLL_CENTER[f]))]));
+const pllCenterKey=s=>FKEYS.map(f=>s[f][1][1]).join('');
+const PLL_ORIENTATIONS=[{st:pllSolved(),moves:[]}];
+const pllSeen=new Set([pllCenterKey(PLL_ORIENTATIONS[0].st)]);
+for(let i=0;i<PLL_ORIENTATIONS.length;i++)for(const letter of ['x','y','z'])for(const turn of [0,1,2]){
+  const mv={letter,prime:turn===1,dbl:turn===2},entry=PLL_ORIENTATIONS[i],st=applyMoveTo(entry.st,mv),key=pllCenterKey(st);
+  if(!pllSeen.has(key)){pllSeen.add(key);PLL_ORIENTATIONS.push({st,moves:[...entry.moves,mv]});}
+}
+// 괄호는 손동작 묶음 표시다. 허용하지 않은 토큰을 조용히 버리지 않는다.
+function parsePLL(txt){
+  const tokens=txt.replace(/[()]/g,' ').trim().split(/[\s,]+/).filter(Boolean);
+  const bad=tokens.filter(t=>!/^([RLUDFB]w|[RLUDFBrludfbMESxyz])(?:['’]2|2['’]|['’]|2)?$/.test(t));
+  return bad.length?{moves:[],bad}:parseAlg(tokens.join(' '));
+}
+function pllCase(alg){
+  const {moves,bad}=parsePLL(alg);
+  if(bad.length||!moves.length)return {error:bad.length?`모르는 기호: ${bad.join(', ')}`:'공식을 입력하세요'};
+  const end=moves.reduce(applyMoveTo,pllSolved());
+  const target=PLL_ORIENTATIONS.find(e=>pllCenterKey(e.st)===pllCenterKey(end));
+  const inverse=invMoves(moves),base=inverse.reduce(applyMoveTo,target.st);
+  const valid=base.U.flat().every(c=>c==='Y')&&base.D.flat().every(c=>c==='W')&&
+    ['F','B','L','R'].every(f=>base[f].slice(1).flat().every(c=>c===PLL_CENTER[f]));
+  if(!valid)return {error:'PLL 공식인지 확인해 주세요 (윗면 방향·아래 두 층이 유지되어야 합니다)'};
+  return {moves,base,setup:[...target.moves,...inverse].map(lab).join(' ')};
+}
+const PLL_CACHE=new Map();
+function pllInfo(alg){if(!PLL_CACHE.has(alg))PLL_CACHE.set(alg,pllCase(alg));return PLL_CACHE.get(alg);}
+const PLL_KEY='pllWorkbook.v1',PLL_CATS=['엣지 교환','인접 코너 교환','대각 코너 교환'];
+const pllEl=id=>document.getElementById('pll'+id);
+let pllProfiles=[newProfile('기본')],PP=pllProfiles[0],pllOptions={diag:false,order:'num',reviewOn:false,reviewN:10,color:0};
+try{
+  const saved=JSON.parse(localStorage.getItem(PLL_KEY)||'null');
+  if(Array.isArray(saved?.profiles)&&saved.profiles.length){
+    pllProfiles=saved.profiles.filter(p=>typeof p.id==='string'&&typeof p.name==='string');
+    if(!pllProfiles.length)pllProfiles=[newProfile('기본')];
+    PP=pllProfiles.find(p=>p.id===saved.current)||pllProfiles[0];
+    Object.assign(pllOptions,saved.options||{});
+  }
+}catch(e){}
+pllOptions.reviewN=Math.max(1,Math.min(60,+pllOptions.reviewN||10));
+pllOptions.color=((+pllOptions.color||0)%4+4)%4;
+pllProfiles.forEach(p=>{p.sel=new Set((Array.isArray(p.sel)?p.sel:[]).filter(n=>PLL_DATA.some(d=>d[0]===n)));p.algIdx=p.algIdx||{};p.custom=p.custom||{};});
+function pllSave(){try{localStorage.setItem(PLL_KEY,JSON.stringify({profiles:pllProfiles.map(p=>({...p,sel:[...p.sel]})),current:PP.id,options:pllOptions}));}catch(e){toast('PLL 저장 공간을 확인해 주세요');}}
+const pllAlg=n=>PP.algIdx[n]==='c'?(PP.custom[n]||''):(PLL_DATA.find(d=>d[0]===n)[3][PP.algIdx[n]||0]||PLL_DATA.find(d=>d[0]===n)[3][0]);
+function pllColors(st){return Object.fromEntries(FKEYS.map(f=>[f,st[f].map(row=>row.map(c=>{const i=F2LRING.indexOf(c);return i<0?c:F2LRING[(i+pllOptions.color)%4];}))]));}
+const pllSVG=n=>{const info=pllInfo(pllAlg(n));return info.error?`<span>${esc(info.error)}</span>`:buildTopSVG(pllColors(info.base),[],false);};
+const pllAttr=s=>esc(s).replace(/"/g,'&quot;');
+function pllProfilesUI(){pllEl('profSel').innerHTML=pllProfiles.map(p=>`<option value="${pllAttr(p.id)}"${p===PP?' selected':''}>${esc(p.name)}</option>`).join('');}
+function pllTitle(){
+  const h=pllEl('sheet').querySelector('h1'),d=new Date(),pad=n=>String(n).padStart(2,'0');
+  if(!h.textContent.trim()||/^\d{6} .* PLL 복습$/.test(h.textContent))h.textContent=`${String(d.getFullYear()).slice(2)}${pad(d.getMonth()+1)}${pad(d.getDate())} ${PP.name} PLL 복습`;
+}
+function pllTable(){
+  const rows=PLL_DATA.filter(d=>PP.sel.has(d[0])),o=pllOptions;
+  const row=([n])=>{const a=pllAlg(n),info=pllInfo(a);return `<tr><td class="idx">PLL ${n}</td><td class="pic">${pllSVG(n)}</td><td class="alg">${info.error?esc(info.error):o.diag?algSVG(info.moves.map(lab).join(' ')):esc(a)}</td><td class="setup">${esc(info.setup||'—')}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
+  const body=o.order==='cat'?PLL_CATS.map(cat=>{const group=rows.filter(d=>d[1]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?5:4}">${cat}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
+  pllEl('meta').textContent=`${PP.name} · ${rows.length}개 케이스 · 공식 출처: SpeedCubeDB (2026-10-03)`;
+  pllEl('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
+  pllTitle();
+}
+function pllRefresh(){
+  pllPanel.querySelectorAll('[data-pll-case]').forEach(el=>{const on=PP.sel.has(el.dataset.pllCase);el.classList.toggle('on',on);el.querySelector('input[type=checkbox]').checked=on;});
+  pllPanel.querySelectorAll('[data-pll-cat]').forEach(el=>{const group=PLL_DATA.filter(d=>d[1]===el.dataset.pllCat),n=group.filter(d=>PP.sel.has(d[0])).length;el.checked=n===group.length;el.indeterminate=n>0&&n<group.length;el.parentElement.querySelector('.cnt').textContent=`${n}/${group.length}`;});
+  pllTable();
+}
+function pllGroups(){
+  const card=([n])=>`<div class="case" data-pll-case="${n}"><div class="top"><input type="checkbox" aria-label="PLL ${n} 선택">PLL ${n}<button class="btn play" title="PLL ${n} 3D 재생">▶</button></div><div class="img">${pllSVG(n)}</div><select aria-label="PLL ${n} 공식">${PLL_DATA.find(d=>d[0]===n)[3].map((a,i)=>`<option value="${i}">${esc(a)}</option>`).join('')}<option value="c">직접 입력…</option></select><input class="alginput cust" aria-label="PLL ${n} 직접 입력" placeholder="공식 직접 입력" value="${pllAttr(PP.custom[n]||'')}"${PP.algIdx[n]==='c'?'':' hidden'}></div>`;
+  pllEl('groups').innerHTML=pllOptions.order==='cat'?PLL_CATS.map(cat=>`<div class="cat"><label class="cat-head"><input type="checkbox" data-pll-cat="${cat}">${cat}<span class="cnt"></span></label><div class="cases">${PLL_DATA.filter(d=>d[1]===cat).map(card).join('')}</div></div>`).join(''):`<div class="cat"><div class="cases">${PLL_DATA.map(card).join('')}</div></div>`;
+  pllPanel.querySelectorAll('[data-pll-case]').forEach(el=>{
+    const n=el.dataset.pllCase,select=el.querySelector('select'),input=el.querySelector('.cust');
+    const toggle=()=>{PP.sel.has(n)?PP.sel.delete(n):PP.sel.add(n);pllSave();pllRefresh();};
+    el.onclick=e=>{if(!e.target.closest('input,select,button'))toggle();};
+    el.querySelector('input[type=checkbox]').onchange=toggle;
+    select.value=PP.algIdx[n]??0;
+    select.onchange=()=>{PP.algIdx[n]=select.value==='c'?'c':+select.value;input.hidden=select.value!=='c';el.querySelector('.img').innerHTML=pllSVG(n);pllSave();pllTable();};
+    input.oninput=()=>{PP.custom[n]=input.value;el.querySelector('.img').innerHTML=pllSVG(n);pllSave();pllTable();};
+    el.querySelector('button').onclick=()=>{const alg=pllAlg(n),info=pllInfo(alg);if(info.error){toast(info.error);return;}startPlayer(`PLL ${n} 재생`,alg,info.moves,pllColors(info.base),PLEYE,info.setup,'카드와 같은 시작 상태 · 선택한 공식에 맞춰 그림·셋업이 바뀝니다. 기호를 누르면 그 수부터 재생됩니다.');};
+  });
+  pllPanel.querySelectorAll('[data-pll-cat]').forEach(el=>el.onchange=()=>{PLL_DATA.filter(d=>d[1]===el.dataset.pllCat).forEach(([n])=>el.checked?PP.sel.add(n):PP.sel.delete(n));pllSave();pllRefresh();});
+  pllRefresh();
+}
+pllEl('profSel').onchange=()=>{PP=pllProfiles.find(p=>p.id===pllEl('profSel').value);pllSave();pllGroups();};
+pllEl('profAdd').onclick=()=>{const name=prompt('과외생 이름','새 과외생')?.trim();if(!name)return;PP=newProfile(name);PP.sel=new Set();pllProfiles.push(PP);pllSave();pllProfilesUI();pllGroups();};
+pllEl('profRename').onclick=()=>{const name=prompt('새 이름',PP.name)?.trim();if(!name)return;PP.name=name;pllSave();pllProfilesUI();pllTable();};
+pllEl('profDel').onclick=()=>{if(pllProfiles.length===1){toast('마지막 과외생은 지울 수 없습니다');return;}if(!confirm(`"${PP.name}" PLL 기록을 지울까요?`))return;pllProfiles=pllProfiles.filter(p=>p!==PP);PP=pllProfiles[0];pllSave();pllProfilesUI();pllGroups();};
+pllEl('selAll').onclick=()=>{PLL_DATA.forEach(([n])=>PP.sel.add(n));pllSave();pllRefresh();};
+pllEl('selNone').onclick=()=>{PP.sel.clear();pllSave();pllRefresh();};
+for(const [id,key] of [['diagMode','diag'],['reviewOn','reviewOn']]){pllEl(id).checked=pllOptions[key];pllEl(id).onchange=()=>{pllOptions[key]=pllEl(id).checked;pllSave();pllTable();};}
+pllEl('reviewN').value=pllOptions.reviewN;
+pllEl('reviewN').oninput=()=>{pllOptions.reviewN=Math.max(1,Math.min(60,+pllEl('reviewN').value||1));pllSave();pllTable();};
+pllPanel.querySelectorAll('[name=pllord]').forEach(r=>{r.checked=r.value===pllOptions.order;r.onchange=()=>{pllOptions.order=r.value;pllSave();pllGroups();};});
+for(const id of ['printBtn','pdfBtn'])pllEl(id).onclick=()=>printSheet(pllEl('sheet').querySelector('h1'));
+const pllFront=document.createElement('span');pllFront.className='chk';
+pllFront.innerHTML='정면 <button class="btn" aria-label="PLL 이전 정면 색">&lt;</button><span></span><button class="btn" aria-label="PLL 다음 정면 색">&gt;</button>';
+pllEl('printBtn').before(pllFront);
+function pllFrontUI(){pllFront.querySelector('span').textContent=f2lColorName(F2LRING[(F2LRING.indexOf('G')+pllOptions.color)%4]);}
+pllFront.querySelectorAll('button').forEach((b,i)=>b.onclick=()=>{pllOptions.color=(pllOptions.color+(i?1:3))%4;pllSave();pllFrontUI();pllGroups();});
+pllEl('groups').insertAdjacentHTML('beforebegin','<p class="hint">그림·셋업은 선택한 공식의 시작 상태에 맞춰 바뀝니다. SCDB의 같은 케이스라도 시작 방향·윗면 정렬이 다를 수 있습니다. <a href="https://speedcubedb.com/a/3x3/PLL" target="_blank" rel="noopener">SCDB 원문</a> · R3는 같은 회전인 R\'로 표기했습니다.</p>');
+pllProfilesUI();pllFrontUI();pllGroups();
 
 loadLocal();
 updateAngleUI();
