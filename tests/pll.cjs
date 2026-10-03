@@ -26,9 +26,9 @@ for(const [name,,setup,algs] of PLL_DATA){
   const info=pllCase(alg);assert(!info.error,`${name}: ${info.error}`);
   assert(variants.has(key(info.base)),`${name}: wrong case for ${alg}`);
   assert(solved(info.moves.reduce(applyMoveTo,info.base)),`${name}: unsolved`);
-  assert.equal(JSON.stringify(run(pllSolved(),info.setup)),JSON.stringify(info.base),`${name}: setup differs`);
+  assert.equal(info.setup,undefined,`${name}: PLL must not generate a setup formula`);
   checked++;
  }
 }
 assert(pllCase('R banana').error);assert(pllCase('R').error);assert(pllCase('').error);
-console.log(`PLL: ${checked} algorithms match their SCDB cases up to U/y, setups reproduce the same state, and all solve`);
+console.log(`PLL: ${checked} algorithms match their SCDB cases up to U/y and all solve; no setup formula generated`);
