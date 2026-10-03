@@ -35,3 +35,18 @@ assert(!c.notationHTML(long.moves).includes('alg-break'));
 const split=c.parseAlg("(R U R' U') // (L U L' U')");
 assert.equal((c.notationSVG(split.moves,()=>'',124,132,40).match(/translate\([^,]+,172\)/g)||[]).length,4);
 console.log('Notation: grouping, gaps, line breaks, strict errors, SVG placement, mirror and merge boundaries OK');
+for(const parse of [c.parseAlg,c.parsePyraAlg,c.parsePLL]){
+ const inner=parse('(R U / L U / R U)').moves;
+ const drawing=c.notationSVG(inner,()=>'',124,132,40),markup=c.notationHTML(inner);
+ assert.equal((drawing.match(/class="alg-chunk"/g)||[]).length,1);
+ assert.equal((drawing.match(/class="alg-subchunk"/g)||[]).length,3);
+ assert.equal((markup.match(/class="chunk"/g)||[]).length,1);
+ assert.equal((markup.match(/class="subchunk"/g)||[]).length,3);
+ assert(!markup.includes('alg-gap'));assert(!markup.includes('alg-break'));
+ assert(drawing.includes('translate(255.44,0)'));
+ const outside=c.notationHTML(parse('(R U) / (L U)').moves);
+ assert(!outside.includes('subchunk'));assert(outside.includes('alg-gap'));
+ const broken=c.notationHTML(parse('(R U / L U // R U)').moves);
+ assert(broken.includes('alg-break'));
+ assert.equal((broken.match(/<span/g)||[]).length,(broken.match(/<\/span>/g)||[]).length);
+}

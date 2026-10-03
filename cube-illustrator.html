@@ -57,6 +57,7 @@ main{flex:1;min-width:0;padding:24px}
 .notation{display:block;white-space:nowrap;max-width:100%;overflow-x:auto}
 .notation>span{display:inline-block;margin-right:4px;vertical-align:middle}
 .notation .chunk{display:inline-flex;gap:4px;background:#e6e6e6;color:#111;border-radius:6px;padding:4px 6px;box-shadow:inset 0 0 0 1px #ccc;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.notation .subchunk{display:inline-flex;gap:4px;background:#c6c6c6;border-radius:4px;padding:3px 5px;box-shadow:inset 0 0 0 1px #aaa;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .notation .alg-gap{display:inline-block;width:16px;flex-shrink:0}
 .notation .alg-break{display:block;height:4px;margin:0}
 .cols{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
@@ -210,7 +211,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.4</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.5</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1362,16 +1363,22 @@ function parseNotation(txt,parse){
   if(depth)bad.push('닫히지 않은 괄호');
   return {moves,bad};
 }
+function notationSubchunks(moves){
+  return new Set(moves.filter((m,i)=>m.chunk&&m.spaceBefore&&moves[i-1]?.chunk===m.chunk).map(m=>m.chunk));
+}
 function notationHTML(moves,render=m=>esc(lab(m))){
-  let s='',chunk=0;
+  const subdivided=notationSubchunks(moves);let s='',chunk=0,sub=false;
   moves.forEach((m,i)=>{
-    if(chunk&&(m.chunk!==chunk||m.lineBefore||m.spaceBefore)){s+='</span>';chunk=0;}
+    if(chunk&&(m.chunk!==chunk||m.lineBefore)){s+=(sub?'</span>':'')+'</span>';chunk=0;sub=false;}
     if(m.lineBefore)s+='<span class="alg-break"></span>';
-    else if(m.spaceBefore)s+='<span class="alg-gap"></span>';
-    if(m.chunk&&!chunk){s+='<span class="chunk">';chunk=m.chunk;}
+    else if(m.spaceBefore){
+      if(chunk&&sub)s+='</span><span class="subchunk">';
+      else s+='<span class="alg-gap"></span>';
+    }
+    if(m.chunk&&!chunk){s+='<span class="chunk">';chunk=m.chunk;sub=subdivided.has(chunk);if(sub)s+='<span class="subchunk">';}
     s+=`<span>${render(m,i)}</span>`;
   });
-  return `<span class="notation">${s}${chunk?'</span>':''}</span>`;
+  return `<span class="notation">${s}${sub?'</span>':''}${chunk?'</span>':''}</span>`;
 }
 function algHTML(txt){const p=parseAlg(txt);return p.bad.length?esc(txt):notationHTML(p.moves);}
 function merge(list){                               /* U' U' → U'2 */
@@ -1407,18 +1414,25 @@ function buildAlgSVG(){
   return notationSVG(moves,puzzle.draw,CW,CH,LBL,1,'out');
 }
 function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls=''){
-  const step=CH+LBL,placed=[];let x=0,y=0,W=0;
-  moves.forEach(m=>{
+  const step=CH+LBL,placed=[],subdivided=notationSubchunks(moves);let x=0,y=0,W=0;
+  moves.forEach((m,i)=>{
     if(m.lineBefore){x=0;y+=step;}
-    else if(m.spaceBefore&&x)x+=CW*.28;
+    else if(m.spaceBefore&&x)x+=CW*((m.chunk&&moves[i-1]?.chunk===m.chunk)?0.06:0.28);
     placed.push({m,x,y});x+=CW;W=Math.max(W,x);
   });
-  const H=y+step,boxes=[];
+  const H=y+step,boxes=[],subboxes=[];
   placed.forEach(p=>{if(!p.m.chunk)return;const last=boxes.at(-1);
-    if(last&&last.chunk===p.m.chunk&&last.y===p.y&&Math.abs(last.x+last.w-p.x)<.01)last.w+=CW;
-    else boxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:CW});});
+    if(last&&last.chunk===p.m.chunk&&last.y===p.y)last.w=p.x+CW-last.x;
+    else boxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:CW});
+    if(subdivided.has(p.m.chunk)){
+      const prev=subboxes.at(-1);
+      if(prev&&prev.chunk===p.m.chunk&&prev.y===p.y&&!p.m.spaceBefore)prev.w=p.x+CW-prev.x;
+      else subboxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:CW});
+    }
+  });
   let s=`<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W*scale}" height="${H*scale}">`;
   s+=boxes.map(b=>`<rect class="alg-chunk" x="${b.x+2}" y="${b.y+2}" width="${b.w-4}" height="${step-4}" rx="8" fill="#e6e6e6" stroke="#ccc"/>`).join('');
+  s+=subboxes.map(b=>`<rect class="alg-subchunk" x="${b.x+8}" y="${b.y+8}" width="${b.w-16}" height="${step-16}" rx="5" fill="#c6c6c6" stroke="#aaa"/>`).join('');
   s+=placed.map(({m,x,y})=>`<g class="alg-move" transform="translate(${x},${y})">${draw(m,CW,CH)}<text x="${CW/2}" y="${CH+LBL*.675}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${LBL*.625}" font-weight="700" fill="#000">${esc(lab(m))}</text></g>`).join('');
   return s+'</svg>';
 }
@@ -1431,7 +1445,7 @@ puzzleSelect.innerHTML=Object.entries(DIAGRAM_PUZZLES).map(([id,p])=>`<option va
 function renderDiagramControls(){
 const puzzle=DIAGRAM_PUZZLES[diagramPuzzle];
 puzzleSelect.value=diagramPuzzle;
-document.getElementById('diagramHint').textContent=puzzle.hint+' ( )는 회색 묶음, /는 간격, //는 줄바꿈입니다. 괄호는 반복이 아닌 묶음 표시입니다.';
+document.getElementById('diagramHint').textContent=puzzle.hint+' ( )는 회색 묶음, 괄호 안 /는 진한 회색 하위 묶음, 괄호 밖 /는 간격, //는 줄바꿈입니다. 괄호는 반복이 아닌 묶음 표시입니다.';
 document.getElementById('keys').innerHTML=
   puzzle.keys.map(([t,ks])=>`<div class="grp"><b>${t}</b><div class="row">`
     +ks.map(k=>`<button class="btn mv" data-k="${k}">${k}</button>`).join('')+`</div></div>`).join('')
