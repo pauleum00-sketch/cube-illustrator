@@ -30,6 +30,7 @@ nav button[aria-selected=true]{border-color:var(--teal);color:var(--teal);backgr
 main{flex:1;min-width:0;padding:24px}
 @media(max-width:900px){
   .app{flex-direction:column}
+  main{width:100%}
   .side{width:100%;min-height:0;position:static;border-right:none;border-bottom:1px solid var(--line);padding:16px 18px}
   nav{flex-direction:row;flex-wrap:wrap;gap:7px;margin-top:14px}
   .navgrp{display:none}
@@ -53,10 +54,11 @@ main{flex:1;min-width:0;padding:24px}
 #p2 .diagram-help summary{cursor:pointer}
 #diagramHint{margin-top:4px}
 #stage2{min-height:0;padding:6px}
-.notation{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
-.notation .chunk{display:inline-flex;flex-wrap:wrap;gap:4px;background:#e6e6e6;color:#111;border-radius:6px;padding:4px 6px;box-shadow:inset 0 0 0 1px #ccc;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.notation{display:block;white-space:nowrap;max-width:100%;overflow-x:auto}
+.notation>span{display:inline-block;margin-right:4px;vertical-align:middle}
+.notation .chunk{display:inline-flex;gap:4px;background:#e6e6e6;color:#111;border-radius:6px;padding:4px 6px;box-shadow:inset 0 0 0 1px #ccc;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .notation .alg-gap{display:inline-block;width:16px;flex-shrink:0}
-.notation .alg-break{flex-basis:100%;height:4px}
+.notation .alg-break{display:block;height:4px;margin:0}
 .cols{display:grid;grid-template-columns:1fr 1fr;column-gap:22px;align-items:start}
 @media(max-width:1150px){.grid{grid-template-columns:1fr}}
 @media(max-width:640px){.cols{grid-template-columns:1fr}}
@@ -208,7 +210,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.3</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.4</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -1402,18 +1404,13 @@ function buildAlgSVG(){
   document.getElementById('save2').disabled=document.getElementById('copy2').disabled=!!bad.length||!moves.length;
   if(!moves.length) return '<svg class="out" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 140" width="400" height="140"></svg>';
   const CW=Math.round(124*zoom), CH=Math.round(132*zoom), LBL=Math.round(40*zoom);
-  return notationSVG(moves,puzzle.draw,CW,CH,LBL,Math.max(1,Math.floor(880/CW)),1,'out');
+  return notationSVG(moves,puzzle.draw,CW,CH,LBL,1,'out');
 }
-function notationSVG(moves,draw,CW,CH,LBL,columns,scale=1,cls=''){
-  const limit=columns*CW,step=CH+LBL,placed=[];let x=0,y=0,W=0;
-  moves.forEach((m,i)=>{
+function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls=''){
+  const step=CH+LBL,placed=[];let x=0,y=0,W=0;
+  moves.forEach(m=>{
     if(m.lineBefore){x=0;y+=step;}
     else if(m.spaceBefore&&x)x+=CW*.28;
-    if(m.chunk&&m.chunk!==moves[i-1]?.chunk){
-      let n=1;while(moves[i+n]?.chunk===m.chunk&&!moves[i+n].lineBefore&&!moves[i+n].spaceBefore)n++;
-      if(n<=columns&&x+n*CW>limit){x=0;y+=step;}
-    }
-    if(x+CW>limit){x=0;y+=step;}
     placed.push({m,x,y});x+=CW;W=Math.max(W,x);
   });
   const H=y+step,boxes=[];
@@ -1660,7 +1657,7 @@ function algSVG(txt){
   if(bad.length||!moves.length) return esc(txt);
   /* 도해 탭 원본 크기로 그린 뒤 절반으로 축소 표시 → 선 굵기 비율 동일 */
   const CW=124, CH=132, LBL=40;
-  return notationSVG(moves,moveDiagram,CW,CH,LBL,8,.5);
+  return notationSVG(moves,moveDiagram,CW,CH,LBL,.5);
 }
 
 /* 데이터 (SpeedCubeDB 기준): [번호, 분류, 셋업, 공식들] */

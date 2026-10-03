@@ -18,7 +18,7 @@ for(const parse of [c.parseAlg,c.parsePyraAlg,c.parsePLL]){
  assert.equal(parse('(R) R').moves.length,2);
 }
 const p=c.parseAlg('(R U) / F // (L D)');
-const svg=c.notationSVG(p.moves,()=>'',124,132,40,8);
+const svg=c.notationSVG(p.moves,()=>'',124,132,40);
 assert.equal((svg.match(/class="alg-chunk"/g)||[]).length,2);
 assert(svg.includes('translate(282.72,0)'));assert(svg.includes('translate(0,172)'));
 assert(c.notationHTML(p.moves).includes('class="alg-break"'));
@@ -28,4 +28,10 @@ assert.equal(mirrored.bad.length,0);assert(mirrored.moves[3].lineBefore);
 assert.equal(mirrored.moves[0].letter,'L');
 assert.equal(c.parseAlg('U U').moves.length,1);
 assert.equal(c.parseAlg('U / U').moves.length,2);
+const long=c.parseAlg("R U F L D B (R U R' U') / (L U L' U')");
+const longSVG=c.notationSVG(long.moves,()=>'',124,132,40);
+assert.equal((longSVG.match(/translate\([^,]+,0\)/g)||[]).length,long.moves.length);
+assert(!c.notationHTML(long.moves).includes('alg-break'));
+const split=c.parseAlg("(R U R' U') // (L U L' U')");
+assert.equal((c.notationSVG(split.moves,()=>'',124,132,40).match(/translate\([^,]+,172\)/g)||[]).length,4);
 console.log('Notation: grouping, gaps, line breaks, strict errors, SVG placement, mirror and merge boundaries OK');
