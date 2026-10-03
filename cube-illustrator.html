@@ -37,7 +37,22 @@ main{flex:1;min-width:0;padding:24px}
 }
 .panel{display:none}.panel.on{display:block}
 .grid{display:grid;grid-template-columns:600px 1fr;gap:22px;align-items:start}
-#p2>.grid{grid-template-columns:minmax(0,1fr)}
+#p2>.grid{grid-template-columns:minmax(0,1fr);gap:10px}
+#p2 .card{padding:12px}
+#p2 .diagram-head{margin-bottom:6px}
+#p2 .diagram-head h2{margin:0 auto 0 0}
+#diagramPuzzle{width:auto;padding:5px 8px;font-family:inherit}
+#alg{min-height:48px;height:48px;padding:8px;display:block}
+#err:empty{display:none}
+#keys{display:flex;flex-wrap:wrap;gap:6px 14px;margin:8px 0}
+#keys .grp{margin:0}
+#keys .grp b{margin-bottom:4px}
+#p2 .diagram-actions{gap:6px 12px}
+#p2 .zoom{margin-left:0}
+#p2 .diagram-help{margin-top:6px;color:var(--muted);font-size:12px}
+#p2 .diagram-help summary{cursor:pointer}
+#diagramHint{margin-top:4px}
+#stage2{min-height:0;padding:6px}
 .notation{display:flex;flex-wrap:wrap;align-items:center;gap:4px}
 .notation .chunk{display:inline-flex;flex-wrap:wrap;gap:4px;background:#e6e6e6;color:#111;border-radius:6px;padding:4px 6px;box-shadow:inset 0 0 0 1px #ccc;break-inside:avoid;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .notation .alg-gap{display:inline-block;width:16px;flex-shrink:0}
@@ -193,7 +208,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.1</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.18.2</span></div>
   <nav>
     <div class="navgrp">도구</div>
     <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
@@ -300,28 +315,25 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <section class="panel" id="p2"><div class="grid">
   <div>
     <div class="card">
-      <h2>회전기호</h2>
-      <label for="diagramPuzzle" class="chk">퍼즐 종류</label>
-      <select id="diagramPuzzle" class="alginput" style="margin:6px 0 12px;font-family:inherit"></select>
-      <textarea id="alg" spellcheck="false">R U2 R' U' R U R'</textarea>
+      <div class="row diagram-head">
+        <h2><label for="alg">회전기호</label></h2>
+        <label for="diagramPuzzle" class="chk">퍼즐 종류</label>
+        <select id="diagramPuzzle" class="alginput"></select>
+      </div>
+      <textarea id="alg" rows="2" spellcheck="false">R U2 R' U' R U R'</textarea>
       <div class="err" id="err"></div>
       <div id="keys"></div>
-      <div class="row" style="margin-top:12px">
+      <div class="row diagram-actions">
         <button class="btn gh" id="undo">마지막 지우기</button>
         <button class="btn gh" id="clear">전체 지우기</button>
-      </div>
-      <h2>저장 설정</h2>
-      <div class="row">
         <label class="chk"><input type="checkbox" id="trans2"> 배경 투명하게</label>
         <span class="zoom">크기
           <button class="btn" id="zout">−</button><span id="zlab">100%</span><button class="btn" id="zin">+</button>
         </span>
-      </div>
-      <div class="row" style="margin-top:14px">
         <button class="btn pri" id="save2">PNG 저장</button>
         <button class="btn" id="copy2">복사</button>
       </div>
-      <p class="hint" id="diagramHint"></p>
+      <details class="diagram-help"><summary>기호·묶음 사용 안내</summary><p class="hint" id="diagramHint"></p></details>
     </div>
   </div>
   <div class="card"><div class="stage" id="stage2"></div></div>
