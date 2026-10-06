@@ -271,7 +271,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.1</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.2</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -2732,7 +2732,7 @@ function twoCase(alg,kind){
   const p=parseTwoAlg(alg);if(p.bad.length||!p.moves.length)return {error:p.bad.length?`모르는 기호: ${p.bad.join(', ')}`:'공식을 입력하세요'};
   const inverse=invMoves(p.moves);
   const base=PLL_ORIENTATIONS.map(e=>inverse.reduce(applyMoveTo,e.st)).find(s=>cornerColors(s,'D').every(c=>c==='W')&&(kind!=='pbl2'||cornerColors(s,'U').every(c=>c==='Y')));
-  if(!base)return {error:'오르테가 공식인지 확인해 주세요 (아래 면 방향 유지)'};
+  if(!base)return {error:'Ortega 공식인지 확인해 주세요 (아래 면 방향 유지)'};
   const result={moves:p.moves,base};TWO_CACHE.set(cacheKey,result);return result;
 }
 function twoQuad(face,r,c){
@@ -2779,7 +2779,7 @@ function createTwoBook(kind,title){
   for(const [n,,algs] of BOOK_DATA[kind])if(!LIB.cases[kind+':'+n])sharedAdd(kind+':'+n,algs[0]);
   b.table=()=>{
     const rows=BOOK_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options;
-    const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* (오르테가|OLL)/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
+    const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* (오르테가|Ortega|OLL)/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
     b.el('meta').textContent=`${b.current.name} · ${rows.length}개 케이스`;
     const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}</td><td class="pic">${twoPicture(key)}</td><td class="alg">${workbookAlg(key,alg,o.diag,o.finger)}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
     const body=o.order==='cat'&&kind==='oll3'?[...new Set(OLL_DATA.map(d=>d[3]))].map(cat=>{const group=rows.filter(d=>d[3]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${esc(cat)}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
@@ -2821,7 +2821,7 @@ function openTwoPlayer(key){
   startPlayer(`${b.title} ${key.split(':')[1]} 재생`,alg,info.moves,st,PLEYE,'','기호를 선택해 핑거 설명을 편집합니다',key,kind!=='oll3');
 }
 orientOrtegaL();
-TWO_BOOKS.oll2=createTwoBook('oll2','오르테가 OLL');TWO_BOOKS.pbl2=createTwoBook('pbl2','오르테가 PBL');
+TWO_BOOKS.oll2=createTwoBook('oll2','Ortega OLL');TWO_BOOKS.pbl2=createTwoBook('pbl2','Ortega PBL');
 TWO_BOOKS.oll3=createTwoBook('oll3','OLL');
 for(const b of Object.values(TWO_BOOKS))b.render();saveLibrary();
 
