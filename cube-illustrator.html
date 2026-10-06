@@ -215,14 +215,25 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .chip2.now{border-color:var(--teal);color:#08243a;background:var(--teal)}
 .finger-board{background:#fff;color:#111;border-radius:12px;padding:12px;margin-top:12px}
 .finger-board .hint{color:#555;margin:0;font-size:11px}
-.finger-board .chip2{background:#eee;color:#111;border-color:#ccc;font-size:22px;padding:10px}
+.finger-board .chip2{background:#eee;color:#111;border-color:#ccc;border-width:2px;font-size:22px;padding:10px;vertical-align:top}
+.finger-board .btn[aria-pressed=true]{background:#d9f6f3;color:#175d56;border-color:#11847d}
 .finger-board .chip2.selected{border:2px solid #11847d;background:#d9f6f3}
 .finger-board .chip2.now{box-shadow:inset 0 -3px #11847d}
+.finger-board .chip2 b{display:block;text-align:center;line-height:28px}
+.finger-board .notation>span{vertical-align:top}
+.finger-board .notation .chunk,.finger-board .notation .subchunk{align-items:flex-start}
+.notation .highlight-span{display:inline-flex;gap:4px;align-items:flex-start;background:#deecf8;border:1px solid #a9c9e4;border-radius:7px;padding:4px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.finger-board .notation :is(.chunk,.subchunk,.highlight-span){padding-top:0;padding-bottom:0}
+.finger-board .notation .highlight-span{border:0;box-shadow:inset 0 0 0 1px #a9c9e4}
+.finger-board .chip2.range-start{outline:2px dashed #397bb5;outline-offset:2px}
 .chip2 small,.finger-token small{display:block;font-size:11px;font-weight:400;white-space:normal;max-width:130px;line-height:1.4;margin-top:4px}
+.chip2 small{text-align:center;font-family:Arial,sans-serif}
 .regrip-mark{display:inline-block;font-size:32px;font-weight:400;margin:0 8px;color:#555;vertical-align:middle}
 .grip-mark{display:inline-block;background:#ddf2ef;color:#175d56;padding:4px 7px;border-radius:4px;font-size:12px;font-weight:700;margin:0 6px 4px 0}
-.finger-print{margin-top:8px;padding-top:7px;border-top:1px dashed #bbb;color:#111}
-.finger-print .finger-token{display:inline-block;padding:3px;vertical-align:top}
+.finger-print{max-width:100%;height:auto;display:block;color:#111}
+#plChips{flex-wrap:nowrap;align-items:flex-start}
+#plChips .grip-mark{flex:none;margin-top:12px}
+#plChips>.notation{width:auto;min-width:0;flex:1}
 #fingerNote{background:#f6f6f6;color:#111;width:100%;font-family:inherit}
 #fingerEditor{font-size:12px}
 .picker-choice{display:block;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
@@ -254,7 +265,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.20.4</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.21.0</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -508,7 +519,9 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
         <button class="btn" id="reverseDouble">반대 회전</button>
         <button class="btn" id="regrip">리그립</button>
         <button class="btn" id="editPlayerAlg">공식 수정</button>
+        <button class="btn" id="highlight" aria-pressed="false">강조</button>
       </div>
+      <p class="hint" id="highlightHint" style="margin-top:8px">강조 → 시작 기호 → 끝 기호. 같은 구간을 다시 선택하면 해제됩니다.</p>
     </div>
     <div class="row" style="margin-top:14px">
       <button class="btn" id="plFirst" title="처음으로">⏮</button>
@@ -1440,9 +1453,11 @@ function parseNotation(txt,parse){
 function notationSubchunks(moves){
   return new Set(moves.filter((m,i)=>m.chunk&&m.spaceBefore&&moves[i-1]?.chunk===m.chunk).map(m=>m.chunk));
 }
-function notationHTML(moves,render=m=>esc(lab(m))){
-  const subdivided=notationSubchunks(moves);let s='',chunk=0,sub=false;
+function notationHTML(moves,render=m=>esc(lab(m)),highlights=[]){
+  const subdivided=notationSubchunks(moves);let s='',chunk=0,sub=false,highlight=-1;
   moves.forEach((m,i)=>{
+    const h=highlights.findIndex(([start,end])=>i>=start&&i<=end);
+    if(highlight>=0&&(h!==highlight||m.lineBefore||m.spaceBefore||(m.chunk||0)!==chunk)){s+='</span>';highlight=-1;}
     if(chunk&&(m.chunk!==chunk||m.lineBefore)){s+=(sub?'</span>':'')+'</span>';chunk=0;sub=false;}
     if(m.lineBefore)s+='<span class="alg-break"></span>';
     else if(m.spaceBefore){
@@ -1450,9 +1465,10 @@ function notationHTML(moves,render=m=>esc(lab(m))){
       else s+='<span class="alg-gap"></span>';
     }
     if(m.chunk&&!chunk){s+='<span class="chunk">';chunk=m.chunk;sub=subdivided.has(chunk);if(sub)s+='<span class="subchunk">';}
+    if(h>=0&&highlight<0){s+='<span class="highlight-span">';highlight=h;}
     s+=`<span>${render(m,i)}</span>`;
   });
-  return `<span class="notation">${s}${sub?'</span>':''}${chunk?'</span>':''}</span>`;
+  return `<span class="notation">${s}${highlight>=0?'</span>':''}${sub?'</span>':''}${chunk?'</span>':''}</span>`;
 }
 function algHTML(txt){const p=parseAlg(txt);return p.bad.length?esc(txt):notationHTML(p.moves);}
 function merge(list){                               /* U' U' → U'2 */
@@ -1506,27 +1522,43 @@ function buildAlgSVG(){
   const CW=Math.round(124*zoom), CH=Math.round(132*zoom), LBL=Math.round(40*zoom);
   return notationSVG(moves,puzzle.draw,CW,CH,LBL,1,'out');
 }
-function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls=''){
-  const step=CH+LBL,placed=[],subdivided=notationSubchunks(moves);let x=0,y=0,W=0;
+function wrapFingerNote(text){
+  const lines=[];let line='',width=0;
+  for(const ch of String(text||'')){const w=/[MW@#%&]/.test(ch)?12:/[\u0020-\u007e]/.test(ch)?8:12;
+    if(width+w>120&&line){lines.push({text:line,width});line='';width=0;}
+    line+=ch;width+=w;
+  }
+  if(line)lines.push({text:line,width});return lines;
+}
+function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls='',detail=null){
+  const notes=moves.map((m,i)=>detail?wrapFingerNote(detail.notes?.[i]):[]);
+  const noteH=Math.max(0,...notes.map(lines=>lines.length))*18;
+  const step=CH+LBL+noteH,placed=[],subdivided=notationSubchunks(moves),left=detail?.grip?detail.grip.length*12+24:0;let x=left,y=0,W=0;
   moves.forEach((m,i)=>{
-    if(m.lineBefore){x=0;y+=step;}
+    if(m.lineBefore){x=left;y+=step;}
     else if(m.spaceBefore&&x)x+=CW*((m.chunk&&moves[i-1]?.chunk===m.chunk)?0.06:0.28);
-    placed.push({m,x,y});x+=CW;W=Math.max(W,x);
+    const w=Math.max(CW,...notes[i].map(l=>l.width+16));
+    placed.push({m,i,x,y,w});x+=w+(detail?.regrips?.includes(i)?18:0);W=Math.max(W,x);
   });
   const H=y+step,boxes=[],subboxes=[];
   placed.forEach(p=>{if(!p.m.chunk)return;const last=boxes.at(-1);
-    if(last&&last.chunk===p.m.chunk&&last.y===p.y)last.w=p.x+CW-last.x;
-    else boxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:CW});
+    if(last&&last.chunk===p.m.chunk&&last.y===p.y)last.w=p.x+p.w-last.x;
+    else boxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:p.w});
     if(subdivided.has(p.m.chunk)){
       const prev=subboxes.at(-1);
-      if(prev&&prev.chunk===p.m.chunk&&prev.y===p.y&&!p.m.spaceBefore)prev.w=p.x+CW-prev.x;
-      else subboxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:CW});
+      if(prev&&prev.chunk===p.m.chunk&&prev.y===p.y&&!p.m.spaceBefore)prev.w=p.x+p.w-prev.x;
+      else subboxes.push({chunk:p.m.chunk,x:p.x,y:p.y,w:p.w});
     }
   });
   let s=`<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W*scale}" height="${H*scale}">`;
   s+=boxes.map(b=>`<rect class="alg-chunk" x="${b.x+2}" y="${b.y+2}" width="${b.w-4}" height="${step-4}" rx="8" fill="#e6e6e6" stroke="#ccc"/>`).join('');
   s+=subboxes.map(b=>`<rect class="alg-subchunk" x="${b.x+8}" y="${b.y+8}" width="${b.w-16}" height="${step-16}" rx="5" fill="#c6c6c6" stroke="#aaa"/>`).join('');
-  s+=placed.map(({m,x,y})=>`<g class="alg-move" transform="translate(${x},${y})">${draw(m,CW,CH)}<text x="${CW/2}" y="${CH+LBL*.675}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${LBL*.625}" font-weight="700" fill="#000">${esc(lab(m))}</text></g>`).join('');
+  for(const [start,end] of detail?.highlights||[]){
+    const rows=new Map();for(const p of placed.filter(p=>p.i>=start&&p.i<=end)){const b=rows.get(p.y);if(b)b.w=p.x+p.w-b.x;else rows.set(p.y,{x:p.x,y:p.y,w:p.w});}
+    s+=[...rows.values()].map(b=>`<rect class="alg-highlight" x="${b.x+1}" y="${b.y+1}" width="${b.w-2}" height="${step-2}" rx="6" fill="#deecf8" fill-opacity=".85" stroke="#a9c9e4"/>`).join('');
+  }
+  if(detail?.grip)s+=`<g class="grip-tag"><rect x="0" y="${CH+2}" width="${left-8}" height="24" rx="4" fill="#ddf2ef"/><text x="${(left-8)/2}" y="${CH+18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#175d56">${esc(detail.grip)}</text></g>`;
+  s+=placed.map(({m,i,x,y,w})=>`<g class="alg-move" transform="translate(${x},${y})">${draw?(w===CW?draw(m,CW,CH):`<g transform="translate(${(w-CW)/2},0)">${draw(m,CW,CH)}</g>`):''}<text class="move-label" x="${w/2}" y="${CH+LBL*.675}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${LBL*.625}" font-weight="700" fill="#000">${esc(lab(m))}</text>${notes[i].map((l,n)=>`<text class="finger-note" x="${w/2}" y="${CH+LBL+14+n*18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#111">${esc(l.text)}</text>`).join('')}${detail?.regrips?.includes(i)?`<line class="regrip-line" x1="${w+9}" x2="${w+9}" y1="${CH+2}" y2="${CH+LBL+noteH-2}" stroke="#555" stroke-width="3"/>`:''}</g>`).join('');
   return s+'</svg>';
 }
 function drawAlg(){document.getElementById('stage2').innerHTML=buildAlgSVG();}
@@ -1893,7 +1925,7 @@ const sharedText=key=>sharedEntry(key)?.text||'';
 function sharedAdd(key,text){
   const c=LIB.cases[key]||(LIB.cases[key]={algs:[],active:''}),trim=text.trim();
   let a=c.algs.find(a=>a.text===trim);
-  if(!a){a={id:crypto.randomUUID(),text:trim,grip:'home',notes:{},regrips:[]};c.algs.push(a);}
+  if(!a){a={id:crypto.randomUUID(),text:trim,grip:'home',notes:{},regrips:[],highlights:[]};c.algs.push(a);}
   if(!c.active)c.active=a.id;return a;
 }
 function sharedSelect(key,id){LIB.cases[key].active=id;saveLibrary();}
@@ -1928,11 +1960,23 @@ function validateShared(key,text){
   if(key.startsWith('oll2:')||key.startsWith('pbl2:'))return twoCase(text,key.split(':')[0]).error||'';
   return '';
 }
-function fingerHTML(key,alg){
-  const a=sharedEntry(key);if(!a)return '';const moves=parseAlg(alg).moves;
-  const start=a.grip==='up'?'업그립':a.grip==='down'?'다운그립':'';
-  const content=notationHTML(moves,(m,k)=>`<span class="finger-token"><b>${esc(lab(m))}</b>${a.notes[k]?`<small>${esc(a.notes[k])}</small>`:''}</span>${a.regrips.includes(k)?'<span class="regrip-mark" title="홈그립으로 리그립">|</span>':''}`);
-  return `<div class="finger-print">${start?`<span class="grip-mark">${start}</span>`:''}${content}</div>`;
+function highlightRanges(a,count){
+  const ranges=(a?.highlights||[]).filter(r=>Array.isArray(r)&&r.length===2&&r.every(Number.isInteger)&&r[0]>=0&&r[1]>=r[0]&&r[1]<count).map(r=>[...r]).sort((a,b)=>a[0]-b[0]);
+  const merged=[];for(const r of ranges){const prev=merged.at(-1);if(prev&&r[0]<=prev[1])prev[1]=Math.max(prev[1],r[1]);else merged.push(r);}return merged;
+}
+function toggleHighlight(a,start,end,count){
+  const range=[Math.min(start,end),Math.max(start,end)],ranges=highlightRanges(a,count),i=ranges.findIndex(r=>r[0]===range[0]&&r[1]===range[1]);
+  if(i>=0)ranges.splice(i,1);else ranges.push(range);a.highlights=highlightRanges({highlights:ranges},count);
+}
+function fingerHTML(key,alg,diagram=false,finger=true){
+  const a=sharedEntry(key),p=parseAlg(alg);if(p.bad.length||!p.moves.length)return esc(alg);
+  const grip=finger?(a?.grip==='up'?'업그립':a?.grip==='down'?'다운그립':'홈그립'):'';
+  return notationSVG(p.moves,diagram?(m,w,h)=>`<g transform="scale(.5)">${moveDiagram(m,w*2,h*2,key.startsWith('oll2:')||key.startsWith('pbl2:')?2:3)}</g>`:null,diagram?62:28,diagram?66:0,28,1,'finger-print',{
+    grip,notes:finger?a?.notes:{},regrips:finger?a?.regrips:[],highlights:highlightRanges(a,p.moves.length)});
+}
+function workbookAlg(key,alg,diagram,finger){
+  if(finger||highlightRanges(sharedEntry(key),parseAlg(alg).moves.length).length)return fingerHTML(key,alg,diagram,finger);
+  return diagram?(key.startsWith('oll2:')||key.startsWith('pbl2:')?twoAlgSVG(alg):algSVG(alg)):algHTML(alg);
 }
 let fingerOn=false;
 function fingerCheckbox(panel,id,on,change){
@@ -2068,7 +2112,7 @@ function renderTable(){
     return `<tr>
       <td class="idx">F2L ${n}</td>
       <td class="pic">${svgFor(n)}</td>
-      <td class="alg">${diag?algSVG(a):algHTML(a)}${fingerOn?fingerHTML(f2lKey(n),a):''}</td>
+      <td class="alg">${workbookAlg(f2lKey(n),a,diag,fingerOn)}</td>
       <td class="setup">${esc(algText(setup))}</td>${boxes}
     </tr>`;};
   const cols=reviewOn?5:4;
@@ -2161,11 +2205,16 @@ function plBtn(){
   b.textContent=PL.playing?'⏸ 일시정지':(PL.i>=PL.moves.length?'↺ 다시 재생':'▶ 재생');
 }
 function plChips(){
-  const a=sharedEntry(PL.libraryKey),grip=a?.grip==='up'?'업그립':a?.grip==='down'?'다운그립':'';
+  const a=sharedEntry(PL.libraryKey),grip=a?(a.grip==='up'?'업그립':a.grip==='down'?'다운그립':'홈그립'):'';
   document.getElementById('plChips').innerHTML=(grip?`<span class="grip-mark">${grip}</span>`:'')+notationHTML(PL.moves,(m,k)=>
-    `<button class="chip2${k<PL.i?' done':''}${k===PL.i?' now':''}${k===PL.selected?' selected':''}" data-mv="${k}" title="이 기호의 핑거 설명 편집"><b>${esc(lab(m))}</b>${a?.notes[k]?`<small>${esc(a.notes[k])}</small>`:''}</button>${a?.regrips.includes(k)?'<span class="regrip-mark" title="홈그립으로 리그립">|</span>':''}`);
+    `<button class="chip2${k<PL.i?' done':''}${k===PL.i?' now':''}${k===PL.selected?' selected':''}${k===PL.highlightStart?' range-start':''}" data-mv="${k}" title="이 기호의 핑거 설명 편집"><b>${esc(lab(m))}</b>${a?.notes[k]?`<small>${esc(a.notes[k])}</small>`:''}</button>${a?.regrips.includes(k)?'<span class="regrip-mark" title="홈그립으로 리그립">|</span>':''}`,highlightRanges(a,PL.moves.length));
   document.querySelectorAll('#plChips [data-mv]').forEach(b=>b.onclick=()=>{
-    plPause();PL.selected=+b.dataset.mv;plSeek(PL.selected);fingerEditorUI();});
+    plPause();PL.selected=+b.dataset.mv;
+    if(PL.highlighting&&a){if(PL.highlightStart===null)PL.highlightStart=PL.selected;else{
+      const before=a.highlights;toggleHighlight(a,PL.highlightStart,PL.selected,PL.moves.length);if(!saveLibrary())a.highlights=before;
+      PL.highlighting=false;PL.highlightStart=null;renderAllTables();
+    }}
+    plSeek(PL.selected);fingerEditorUI();});
 }
 function plSeek(i){
   plCancel();
@@ -2240,7 +2289,7 @@ function openPlayer(n){
 }
 function startPlayer(title,alg,moves,base,view,setup,subtitle,libraryKey='',two=false){
   plPause();
-  PL={alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0,libraryKey,two,selected:0};
+  PL={alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0,libraryKey,two,selected:0,highlighting:false,highlightStart:null};
   document.getElementById('plTitle').textContent=title;
   document.getElementById('plSetup').textContent=setup;
   document.getElementById('plSetup').parentElement.hidden=!setup;
@@ -2481,7 +2530,7 @@ function pllTitle(){
 }
 function pllTable(){
   const rows=PLL_DATA.filter(d=>PP.sel.has(d[0])),o=pllOptions;
-  const row=([n])=>{const a=pllAlg(n),info=pllInfo(a);return `<tr><td class="idx">PLL ${n}</td><td class="pic">${pllSVG(n)}</td><td class="alg">${info.error?esc(info.error):o.diag?algSVG(a):algHTML(a)}${o.finger?fingerHTML('pll:'+n,a):''}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
+  const row=([n])=>{const a=pllAlg(n),info=pllInfo(a);return `<tr><td class="idx">PLL ${n}</td><td class="pic">${pllSVG(n)}</td><td class="alg">${info.error?esc(info.error):workbookAlg('pll:'+n,a,o.diag,o.finger)}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
   const body=o.order==='cat'?PLL_CATS.map(cat=>{const group=rows.filter(d=>d[1]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${cat}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
   pllEl('meta').textContent=`${PP.name} · ${rows.length}개 케이스 · 공식 출처: SpeedCubeDB (2026-10-03)`;
   pllEl('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
@@ -2596,7 +2645,7 @@ const TWO_DATA={
  ['Anti Sune','Anti Sune',["R U2 R' U' R U' R'","y L' U' L U' L' U2 L","y' R' U' R U' R' U2 R","R' F R F' R U R'"]],
  ['Pi','Pi',["F R U R' U' R U R' U' F'","R U' R2 U R2 U R2 U' R","R U2 R2 U' R2 U' R2 U2 R","y' R' F R2 U' R2 F R"]],
  ['P','P',["F R U R' U' F'","y2 F U R U' R' F'","y' R2 D R' U2 R D' R' U2 R'","y R2 D' R U2 R' D R U2 R"]],
- ['L','L',["y F' R U R' U' R' F R","F R U' R' U' R U R' F'","F R' F' R U R U' R'","F' R U R' U' R' F R"]],
+ ['L','L',["F' R U R' U' R' F R","F R U' R' U' R U R' F'","F R' F' R U R U' R'","F' R U R' U' R' F R"]],
  ['T','T',["R U R' U' R' F R F'","U R U R' U' F' U' F","y2 x U' L' U R' U' L U R","x L U R' U' L' U R U'"]],
  ['H','H',["R2 U2 R' U2 R2","R2 U2 R U2 R2","F R U R' U' R U R' U' R U R' U' F'","y R U R' U R U' R' U R U2 R'"]]
  ],
@@ -2653,6 +2702,22 @@ function twoPicture(key){
   return kind==='oll2'?twoTopSVG(st,true):`<div>위${twoTopSVG(st)}아래${twoTopSVG(st,false,true)}</div>`;
 }
 function twoAlgSVG(alg){const p=parseTwoAlg(alg);return p.bad.length?esc(alg):notationSVG(p.moves,(m,w,h)=>moveDiagram(m,w,h,2),124,132,40,.5);}
+function orientOrtegaL(){
+  if(LIB.migrated.ortegaLStart)return;
+  const c=LIB.cases['oll2:L'],before=c?JSON.stringify(c.algs):null;
+  if(c){
+    try{if(!localStorage.getItem('cubeOrtegaLBeforeRotation.v1'))localStorage.setItem('cubeOrtegaLBeforeRotation.v1',before);}catch(e){toast('L 공식 백업 공간을 확인해 주세요');return;}
+    for(const a of c.algs){
+      const text=a.text.replace(/^(\s*\(*\s*)y(?:['’]2|2['’]?|['’])?(?=\s|[()/]|$)\s*/,'$1');
+      if(text===a.text)continue;a.text=text;
+      a.notes=Object.fromEntries(Object.entries(a.notes||{}).filter(([i])=>+i>0).map(([i,note])=>[+i-1,note]));
+      a.regrips=(a.regrips||[]).filter(i=>i>0).map(i=>i-1);
+      a.highlights=highlightRanges({highlights:(a.highlights||[]).filter(r=>r[1]>0).map(([s,e])=>[Math.max(0,s-1),e-1])},parseTwoAlg(text).moves.length);
+    }
+  }
+  LIB.migrated.ortegaLStart=true;
+  if(!saveLibrary()){if(c)c.algs=JSON.parse(before);delete LIB.migrated.ortegaLStart;}
+}
 const TWO_BOOKS={};
 function createTwoBook(kind,title){
   let stored={};try{stored=JSON.parse(localStorage.getItem(kind+'Workbook.v1')||'{}');}catch(e){}
@@ -2665,7 +2730,7 @@ function createTwoBook(kind,title){
     const rows=BOOK_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options;
     const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* (오르테가|OLL)/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
     b.el('meta').textContent=`${b.current.name} · ${rows.length}개 케이스 · 공식 출처: SpeedCubeDB (2026-10-06)`;
-    const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}</td><td class="pic">${twoPicture(key)}</td><td class="alg">${o.diag?(kind==='oll3'?algSVG(alg):twoAlgSVG(alg)):algHTML(alg)}${o.finger?fingerHTML(key,alg):''}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
+    const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}</td><td class="pic">${twoPicture(key)}</td><td class="alg">${workbookAlg(key,alg,o.diag,o.finger)}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
     const body=o.order==='cat'&&kind==='oll3'?[...new Set(OLL_DATA.map(d=>d[3]))].map(cat=>{const group=rows.filter(d=>d[3]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${esc(cat)}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
     b.el('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
   };
@@ -2704,6 +2769,7 @@ function openTwoPlayer(key){
   const b=TWO_BOOKS[kind],st=Object.fromEntries(FKEYS.map(f=>[f,info.base[f].map(row=>row.map(c=>{const i=F2LRING.indexOf(c);return i<0?c:F2LRING[(i+b.options.color)%4];}))]));
   startPlayer(`${b.title} ${key.split(':')[1]} 재생`,alg,info.moves,st,PLEYE,'','기호를 선택해 핑거 설명을 편집합니다',key,kind!=='oll3');
 }
+orientOrtegaL();
 TWO_BOOKS.oll2=createTwoBook('oll2','오르테가 OLL');TWO_BOOKS.pbl2=createTwoBook('pbl2','오르테가 PBL');
 TWO_BOOKS.oll3=createTwoBook('oll3','OLL');
 for(const b of Object.values(TWO_BOOKS))b.render();saveLibrary();
@@ -2730,6 +2796,9 @@ function fingerEditorUI(){
   for(const [id,grip] of [['gripUp','up'],['gripDown','down']]){document.getElementById(id).disabled=!a;document.getElementById(id).setAttribute('aria-pressed',a?.grip===grip);}
   document.getElementById('editPlayerAlg').disabled=!a;
   document.getElementById('reverseDouble').disabled=!a||!PL.moves[PL.selected]?.dbl;
+  document.getElementById('highlight').disabled=!a;
+  document.getElementById('highlight').setAttribute('aria-pressed',!!PL.highlighting);
+  document.getElementById('highlightHint').textContent=PL.highlighting?(PL.highlightStart===null?'강조할 시작 기호를 선택하세요.':'강조할 끝 기호를 선택하세요. 강조를 다시 누르면 취소됩니다.'):'강조 → 시작 기호 → 끝 기호. 같은 구간을 다시 선택하면 해제됩니다.';
 }
 function saveFinger(){saveLibrary();plChips();fingerEditorUI();renderAllTables();}
 document.getElementById('fingerNote').oninput=e=>{const a=sharedEntry(PL?.libraryKey);if(a){a.notes[PL.selected]=e.target.value;saveLibrary();plChips();renderAllTables();}};
@@ -2744,6 +2813,7 @@ document.getElementById('reverseDouble').onclick=()=>{
 };
 for(const [id,grip] of [['gripUp','up'],['gripDown','down']])document.getElementById(id).onclick=()=>{const a=sharedEntry(PL?.libraryKey);if(a){a.grip=a.grip===grip?'home':grip;saveFinger();}};
 document.getElementById('editPlayerAlg').onclick=()=>{if(PL?.libraryKey)openAlgPicker(PL.libraryKey,[],renderAllBooks,true);};
+document.getElementById('highlight').onclick=()=>{if(!PL?.libraryKey)return;plPause();PL.highlighting=!PL.highlighting;PL.highlightStart=null;plChips();fingerEditorUI();};
 
 /* 분류별 연습: 케이스 선택·출제 순환은 OLL/PLL/오르테가 각각 독립 저장. */
 const PRACTICE_KEY='cubeCasePractice.v1',CASE_PRACTICE={};let practiceKind='oll2';
