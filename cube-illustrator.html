@@ -20,28 +20,36 @@ h1 .a{color:#fff}h1 .b{color:var(--teal)}
 .ver{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:600;
   color:var(--muted);letter-spacing:0;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
 nav{display:flex;flex-direction:column;gap:4px;margin-top:24px}
-nav details{width:100%}
-nav summary{padding:10px 12px;border-radius:9px;cursor:pointer;font-weight:700;color:var(--ink)}
-nav details details{padding-left:12px}
-nav .navleaves{display:flex;flex-direction:column;padding-left:14px;gap:3px}
+nav .nav-category{width:100%;border:1px solid transparent;border-radius:11px;transition:background-color .18s,border-color .18s}
+nav .nav-category.open{border-color:rgba(143,176,201,.3);background:rgba(143,176,201,.045)}
+nav .nav-toggle{display:block;width:100%;font-weight:700;color:var(--ink)}
+nav .nav-branch{padding:0 8px}
+nav .nav-collapse{display:grid;grid-template-rows:0fr;opacity:0;visibility:hidden;transition:grid-template-rows .2s ease,opacity .2s ease,visibility .2s}
+nav .nav-collapse>.nav-content{min-height:0;overflow:hidden}
+nav .nav-toggle[aria-expanded=true]+.nav-collapse{grid-template-rows:1fr;opacity:1;visibility:visible}
+nav .navleaves{display:flex;flex-direction:column;padding-left:10px;gap:3px}
+nav .navleaves button{flex-shrink:0}
+nav .navleaves button:last-child{margin-bottom:8px}
+nav button:focus-visible{outline:2px solid var(--teal);outline-offset:-3px}
+@media(prefers-reduced-motion:reduce){nav .nav-collapse,nav .nav-category{transition:none}}
 nav button{background:transparent;border:1.5px solid transparent;color:var(--muted);text-align:left;
   padding:9px 12px;border-radius:9px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 nav button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
 nav button[aria-selected=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
 main{flex:1;min-width:0;padding:24px}
-.dashboard-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
 .lesson-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
 .lesson-header[hidden]{display:none}
-.lesson-header h2{margin:0 auto 0 0;font-size:18px}
+.lesson-header h2{margin:0;font-size:18px}
 .lesson-modes{display:flex;gap:4px;padding:4px;background:rgba(0,0,0,.2);border-radius:10px}
-.dashboard-tools [aria-selected=true],.lesson-modes [aria-selected=true]{color:var(--teal);border-color:var(--teal)}
+.lesson-modes [aria-selected=true]{color:var(--teal);border-color:var(--teal)}
 @media(max-width:900px){
   .app{flex-direction:column}
   main{width:100%}
   .side{width:100%;min-height:0;position:static;border-right:none;border-bottom:1px solid var(--line);padding:16px 18px}
   nav{flex-direction:row;flex-wrap:wrap;gap:7px;margin-top:14px}
-  nav>details{flex:1;min-width:140px}
-  nav button{border-color:var(--line);padding:8px 14px}
+  nav>.tool-link{flex-basis:100%}
+  nav>.nav-category{flex:1;min-width:140px}
+  nav button{padding:8px 14px}
 }
 .panel{display:none}.panel.on{display:block}
 .grid{display:grid;grid-template-columns:600px 1fr;gap:22px;align-items:start}
@@ -246,30 +254,40 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.20.1</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.20.2</span></div>
   <nav>
-    <details id="nav3"><summary>3×3</summary><details><summary>CFOP</summary><div class="navleaves">
-      <button id="t3" data-topic="f2l" aria-selected="false">F2L</button>
-      <button id="t9" data-topic="oll3" aria-selected="false">OLL</button>
-      <button id="t5" data-topic="pll" aria-selected="false">PLL</button>
-    </div></details></details>
-    <details id="nav2"><summary>2×2</summary><details><summary>Ortega</summary><div class="navleaves">
-      <button id="t6" data-topic="oll2" aria-selected="false">OLL</button>
-      <button id="t7" data-topic="pbl2" aria-selected="false">PBL</button>
-    </div></details></details>
+    <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
+    <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
+    <div class="nav-category" id="nav3">
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav3Children">3×3</button>
+      <div class="nav-collapse" id="nav3Children" inert><div class="nav-content"><div class="nav-branch">
+        <button class="nav-toggle" aria-expanded="false" aria-controls="cfopChildren">CFOP</button>
+        <div class="nav-collapse" id="cfopChildren" inert><div class="nav-content navleaves">
+          <button id="t3" data-topic="f2l" aria-selected="false">F2L</button>
+          <button id="t9" data-topic="oll3" aria-selected="false">OLL</button>
+          <button id="t5" data-topic="pll" aria-selected="false">PLL</button>
+        </div></div>
+      </div></div></div>
+    </div>
+    <div class="nav-category" id="nav2">
+      <button class="nav-toggle" aria-expanded="false" aria-controls="nav2Children">2×2</button>
+      <div class="nav-collapse" id="nav2Children" inert><div class="nav-content"><div class="nav-branch">
+        <button class="nav-toggle" aria-expanded="false" aria-controls="ortegaChildren">Ortega</button>
+        <div class="nav-collapse" id="ortegaChildren" inert><div class="nav-content navleaves">
+          <button id="t6" data-topic="oll2" aria-selected="false">OLL</button>
+          <button id="t7" data-topic="pbl2" aria-selected="false">PBL</button>
+        </div></div>
+      </div></div></div>
+    </div>
   </nav>
 </aside>
 
 <main>
-<div class="dashboard-tools no-print">
-  <button class="btn" id="t1" aria-selected="true">큐브 시뮬레이터</button>
-  <button class="btn" id="t2" aria-selected="false">회전기호 그림 생성기</button>
-</div>
 <div class="lesson-header no-print" id="lessonHeader" hidden>
-  <h2 id="lessonTitle"></h2><div class="lesson-modes" role="tablist" aria-label="학습 방식">
+  <div class="lesson-modes" role="tablist" aria-label="학습 방식">
     <button class="btn" id="learnMode" role="tab" aria-selected="true">학습</button>
     <button class="btn" id="practiceMode" role="tab" aria-selected="false">연습</button>
-  </div>
+  </div><h2 id="lessonTitle"></h2>
 </div>
 <section class="panel on" id="p1"><div class="grid">
   <div>
@@ -1624,6 +1642,12 @@ function selectTopic(topic,mode='learn'){
   tab(TOPICS[topic][mode]);
 }
 for(const i of [1,2])document.getElementById('t'+i).onclick=()=>tab(i);
+document.querySelectorAll('nav .nav-toggle').forEach(button=>button.onclick=()=>{
+  const open=button.getAttribute('aria-expanded')!=='true';
+  button.setAttribute('aria-expanded',open);
+  document.getElementById(button.getAttribute('aria-controls')).inert=!open;
+  button.parentElement.classList.toggle('open',open);
+});
 document.querySelectorAll('[data-topic]').forEach(b=>b.onclick=()=>selectTopic(b.dataset.topic));
 document.getElementById('learnMode').onclick=()=>selectTopic(dashboardTopic,'learn');
 document.getElementById('practiceMode').onclick=()=>selectTopic(dashboardTopic,'practice');
