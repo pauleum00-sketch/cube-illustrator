@@ -254,7 +254,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.20.2</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.20.3</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -505,7 +505,8 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
       <div id="fingerEditor" class="row" style="margin-top:10px">
         <label for="fingerNote" id="fingerLabel">기호를 선택하세요</label>
         <input class="alginput" id="fingerNote" maxlength="200" placeholder="예: 오른손 엄지 · 왼손 검지">
-        <button class="btn" id="regrip">선택한 수 뒤 리그립 |</button>
+        <button class="btn" id="reverseDouble">반대 회전</button>
+        <button class="btn" id="regrip">리그립</button>
       </div>
       <button class="btn gh" id="editPlayerAlg" style="margin-top:8px">공식 수정</button>
     </div>
@@ -1464,6 +1465,22 @@ function merge(list){                               /* U' U' → U'2 */
   return o;
 }
 const lab=m=>m.letter+(m.prime?"'":'')+(m.dbl?'2':'');
+// 표시/재생 방향만 반전하며 원문의 괄호·슬래시·다른 수는 그대로 둔다.
+function toggleDoubleDirection(text,index){
+  const p=parseAlg(text);if(p.bad.length||!p.moves[index]?.dbl)return text;
+  let current=0;
+  return text.replace(/[^()\/]+/g,span=>{
+    const tokens=[...span.matchAll(/[^\s,]+/g)];
+    for(let i=0;i<tokens.length;i++){
+      const first=tokens[i],m=parseAlg(first[0]).moves[0];let last=first;
+      const next=tokens[i+1],n=next&&parseAlg(next[0]).moves[0];
+      if(!m.dbl&&n&&!n.dbl&&m.letter===n.letter&&m.prime===n.prime){m.dbl=true;last=tokens[++i];}
+      if(current++===index){const letter=first[0].match(/^([RLUDFB]w|[RLUDFBrludfbMESxyz])/)[1];return span.slice(0,first.index)+letter+(m.prime?'':"'")+'2'+span.slice(last.index+last[0].length);}
+    }
+    return span;
+  });
+}
+const fingerSequence=text=>parseAlg(text).moves.map(m=>lab({...m,prime:!m.dbl&&m.prime})).join(' ');
 
 /* ========== 도해 SVG ========== */
 // 새 종목은 파서·도해·버튼을 여기 한 항목으로 등록한다. 저장/복사/배치는 공유한다.
@@ -2248,7 +2265,7 @@ addEventListener('keydown',e=>{
   if(!PL||document.getElementById('player').hidden) return;
   if(/^(INPUT|TEXTAREA|SELECT)$/.test(document.activeElement.tagName))return;
   if(e.key==='Escape'){closePlayer();e.preventDefault();}
-  else if(e.key===' '){PL.playing?plPause():plPlay();e.preventDefault();}
+  else if(e.key===' '&&document.activeElement.tagName!=='BUTTON'){PL.playing?plPause():plPlay();e.preventDefault();}
   else if(e.key==='ArrowRight'){document.getElementById('plNext').click();e.preventDefault();}
   else if(e.key==='ArrowLeft'){document.getElementById('plPrev').click();e.preventDefault();}
 });
@@ -2643,7 +2660,7 @@ function createTwoBook(kind,title){
   b.profiles.forEach(p=>p.sel=new Set((p.sel||[]).filter(n=>BOOK_DATA[kind].some(d=>d[0]===n))));b.current=b.profiles.find(p=>p.id===stored.current)||b.profiles[0];
   b.el=id=>document.getElementById(kind+id);
   b.save=()=>{try{localStorage.setItem(kind+'Workbook.v1',JSON.stringify({profiles:b.profiles.map(p=>({...p,sel:[...p.sel]})),current:b.current.id,options:b.options}));}catch(e){toast('저장 공간을 확인해 주세요');}};
-  for(const [n,,algs] of BOOK_DATA[kind])sharedAdd(kind+':'+n,algs[0]);
+  for(const [n,,algs] of BOOK_DATA[kind])if(!LIB.cases[kind+':'+n]?.algs.length)sharedAdd(kind+':'+n,algs[0]);
   b.table=()=>{
     const rows=BOOK_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options;
     const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* (오르테가|OLL)/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
@@ -2699,7 +2716,7 @@ document.getElementById('algPicker').onclick=e=>{if(e.target.id==='algPicker')do
 document.getElementById('pickerSave').onclick=()=>{
   const {key,done,edit,entry}=pickerContext,text=document.getElementById('pickerText').value.trim(),error=validateShared(key,text);
   if(error){document.getElementById('pickerError').textContent=error;return;}
-  const same=edit&&parseAlg(entry.text).moves.map(lab).join(' ')===parseAlg(text).moves.map(lab).join(' ');
+  const same=edit&&fingerSequence(entry.text)===fingerSequence(text);
   const a=same?(entry.text=text,entry):sharedAdd(key,text);LIB.cases[key].active=a.id;
   if(!saveLibrary())return;document.getElementById('algPicker').hidden=true;
   if(PL){closePlayer();}done();
@@ -2712,10 +2729,19 @@ function fingerEditorUI(){
   document.getElementById('regrip').setAttribute('aria-pressed',!!a?.regrips.includes(PL.selected));
   for(const [id,grip] of [['gripUp','up'],['gripDown','down']]){document.getElementById(id).disabled=!a;document.getElementById(id).setAttribute('aria-pressed',a?.grip===grip);}
   document.getElementById('editPlayerAlg').disabled=!a;
+  document.getElementById('reverseDouble').disabled=!a||!PL.moves[PL.selected]?.dbl;
 }
 function saveFinger(){saveLibrary();plChips();fingerEditorUI();renderAllTables();}
 document.getElementById('fingerNote').oninput=e=>{const a=sharedEntry(PL?.libraryKey);if(a){a.notes[PL.selected]=e.target.value;saveLibrary();plChips();renderAllTables();}};
 document.getElementById('regrip').onclick=()=>{const a=sharedEntry(PL?.libraryKey);if(!a)return;const i=PL.selected;a.regrips=a.regrips.includes(i)?a.regrips.filter(k=>k!==i):[...a.regrips,i];saveFinger();};
+document.getElementById('reverseDouble').onclick=()=>{
+  const a=sharedEntry(PL?.libraryKey);if(!a||!PL.moves[PL.selected]?.dbl)return;
+  plPause();const before=a.text;a.text=toggleDoubleDirection(before,PL.selected);
+  if(!saveLibrary()){a.text=before;return;}
+  PL.alg=a.text;PL.moves=parseAlg(a.text).moves;
+  document.getElementById('plAlg').innerHTML=algHTML(a.text);
+  plSeek(PL.selected);fingerEditorUI();renderAllBooks();
+};
 for(const [id,grip] of [['gripUp','up'],['gripDown','down']])document.getElementById(id).onclick=()=>{const a=sharedEntry(PL?.libraryKey);if(a){a.grip=a.grip===grip?'home':grip;saveFinger();}};
 document.getElementById('editPlayerAlg').onclick=()=>{if(PL?.libraryKey)openAlgPicker(PL.libraryKey,[],renderAllBooks,true);};
 
