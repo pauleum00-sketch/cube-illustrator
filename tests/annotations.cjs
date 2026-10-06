@@ -30,6 +30,10 @@ assert(diagram.includes('class="grip-tag"'));assert(diagram.includes('class="fin
 const labels=[...diagram.matchAll(/class="move-label" x="([^"]+)" y="([^"]+)"/g)];assert(labels.every(l=>l[2]===labels[0][2]),'notes must not change label height');
 const label0=labels[0][1],note0=diagram.match(/class="finger-note" x="([^"]+)"/)[1];assert.equal(label0,note0,'note and label must share their center');
 assert(!c.fingerHTML('oll2:L',a.text,false,false).includes('finger-note'));
+a.grip='home';assert(!c.fingerHTML('oll2:L',a.text,true).includes('grip-tag'),'home grip must not have a tag');
+assert(!c.fingerHTML('oll2:L',a.text,false).includes('홈그립'));
+a.grip='up';assert(c.fingerHTML('oll2:L',a.text,true).includes('업그립'));
+a.grip='down';assert(c.fingerHTML('oll2:L',a.text,true).includes('다운그립'));
 for(const text of ["R U R' U'","(R U / R' U') // F R","R (U R') / F"]){
  const markup=c.notationHTML(c.parseAlg(text).moves,undefined,[[0,3]]);
  assert.equal((markup.match(/<span/g)||[]).length,(markup.match(/<\/span>/g)||[]).length);
