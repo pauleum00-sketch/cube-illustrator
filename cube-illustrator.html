@@ -20,20 +20,27 @@ h1 .a{color:#fff}h1 .b{color:var(--teal)}
 .ver{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:11px;font-weight:600;
   color:var(--muted);letter-spacing:0;border:1px solid var(--line);border-radius:999px;padding:2px 8px}
 nav{display:flex;flex-direction:column;gap:4px;margin-top:24px}
-.navgrp{font-size:10.5px;letter-spacing:1.3px;text-transform:uppercase;color:var(--muted);
-  font-weight:700;margin:12px 0 4px 10px}
-.navgrp:first-child{margin-top:0}
+nav details{width:100%}
+nav summary{padding:10px 12px;border-radius:9px;cursor:pointer;font-weight:700;color:var(--ink)}
+nav details details{padding-left:12px}
+nav .navleaves{display:flex;flex-direction:column;padding-left:14px;gap:3px}
 nav button{background:transparent;border:1.5px solid transparent;color:var(--muted);text-align:left;
   padding:9px 12px;border-radius:9px;font:inherit;font-size:14px;font-weight:600;cursor:pointer}
 nav button:hover{color:var(--ink);background:rgba(255,255,255,.05)}
 nav button[aria-selected=true]{border-color:var(--teal);color:var(--teal);background:rgba(77,216,207,.10)}
 main{flex:1;min-width:0;padding:24px}
+.dashboard-tools{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.lesson-header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:16px}
+.lesson-header[hidden]{display:none}
+.lesson-header h2{margin:0 auto 0 0;font-size:18px}
+.lesson-modes{display:flex;gap:4px;padding:4px;background:rgba(0,0,0,.2);border-radius:10px}
+.dashboard-tools [aria-selected=true],.lesson-modes [aria-selected=true]{color:var(--teal);border-color:var(--teal)}
 @media(max-width:900px){
   .app{flex-direction:column}
   main{width:100%}
   .side{width:100%;min-height:0;position:static;border-right:none;border-bottom:1px solid var(--line);padding:16px 18px}
   nav{flex-direction:row;flex-wrap:wrap;gap:7px;margin-top:14px}
-  .navgrp{display:block;flex-basis:100%;margin:6px 0 0;font-size:10px}
+  nav>details{flex:1;min-width:140px}
   nav button{border-color:var(--line);padding:8px 14px}
 }
 .panel{display:none}.panel.on{display:block}
@@ -239,26 +246,31 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.19.0</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.20.0</span></div>
   <nav>
-    <div class="navgrp">도구</div>
-    <button id="t1" aria-selected="true">큐브 시뮬레이터</button>
-    <button id="t2" aria-selected="false">회전기호 그림 생성기</button>
-    <div class="navgrp">3×3</div>
-    <button id="t3" aria-selected="false">F2L 학습</button>
-    <button id="t4" aria-selected="false">F2L 연습</button>
-    <button id="t5" aria-selected="false">PLL 학습</button>
-    <div class="navgrp">2×2</div>
-    <button id="t6" aria-selected="false">오르테가 OLL</button>
-    <button id="t7" aria-selected="false">오르테가 PBL</button>
-    <button id="t8" aria-selected="false">2×2 연습</button>
-    <button id="twoDiagramNav">2×2 회전 도해</button>
-    <div class="navgrp">피라밍크스</div>
-    <button id="pyraNav">피라밍크스 도해</button>
+    <details id="nav3"><summary>3×3</summary><details><summary>CFOP</summary><div class="navleaves">
+      <button id="t3" data-topic="f2l" aria-selected="false">F2L</button>
+      <button id="t9" data-topic="oll3" aria-selected="false">OLL</button>
+      <button id="t5" data-topic="pll" aria-selected="false">PLL</button>
+    </div></details></details>
+    <details id="nav2"><summary>2×2</summary><details><summary>Ortega</summary><div class="navleaves">
+      <button id="t6" data-topic="oll2" aria-selected="false">OLL</button>
+      <button id="t7" data-topic="pbl2" aria-selected="false">PBL</button>
+    </div></details></details>
   </nav>
 </aside>
 
 <main>
+<div class="dashboard-tools no-print">
+  <button class="btn" id="t1" aria-selected="true">큐브 시뮬레이터</button>
+  <button class="btn" id="t2" aria-selected="false">회전기호 그림 생성기</button>
+</div>
+<div class="lesson-header no-print" id="lessonHeader" hidden>
+  <h2 id="lessonTitle"></h2><div class="lesson-modes" role="tablist" aria-label="학습 방식">
+    <button class="btn" id="learnMode" role="tab" aria-selected="true">학습</button>
+    <button class="btn" id="practiceMode" role="tab" aria-selected="false">연습</button>
+  </div>
+</div>
 <section class="panel on" id="p1"><div class="grid">
   <div>
     <div class="card"><div class="cols">
@@ -1248,7 +1260,7 @@ function renderBoxes(list,T){
 function head(a,b){
   const an=Math.atan2(b[1]-a[1],b[0]-a[0]),w=Math.min(6.5,Math.hypot(b[0]-a[0],b[1]-a[1])*.6);
   const dx=-Math.sin(an)*w,dy=Math.cos(an)*w;
-  return `<polygon points="${b.join(',')} ${a[0]+dx},${a[1]+dy} ${a[0]-dx},${a[1]-dy}" fill="#111" stroke="#fff" stroke-width="1.2" stroke-linejoin="round" paint-order="stroke fill"/>`;
+  return `<polygon points="${b.join(',')} ${a[0]+dx},${a[1]+dy} ${a[0]-dx},${a[1]-dy}" fill="#111"/>`;
 }
 // 투영된 선을 머리 밑변에서 끝내 곡선이 삼각형 한쪽을 덮지 않게 한다.
 function arrowShaft(pts,cut){
@@ -1582,10 +1594,11 @@ pllPanel.innerHTML=pllPanel.innerHTML.replace('숫자 순서대로','이름 순�
 pllPanel.querySelector('p.hint').insertAdjacentHTML('beforeend',' PLL 그림은 탑다운, 재생은 3D입니다.');
 document.querySelector('main').append(pllPanel);
 const TWO_PANELS={};
-for(const [i,prefix] of [[6,'oll2'],[7,'pbl2']]){
+for(const [i,prefix] of [[6,'oll2'],[7,'pbl2'],[9,'oll3']]){
   const panel=pllPanel.cloneNode(true);panel.id='p'+i;
   panel.querySelectorAll('[id]').forEach(e=>e.id=prefix+e.id.replace(/^pll/,''));
   panel.querySelectorAll('[name]').forEach(e=>e.name=prefix+e.name.replace(/^pll/,''));
+  if(prefix==='oll3')panel.innerHTML=panel.innerHTML.replace('이름 순서대로','숫자 순서대로');
   document.querySelector('main').append(panel);TWO_PANELS[prefix]=panel;
 }
 const practice2=document.getElementById('p4').cloneNode(true);practice2.id='p8';
@@ -1593,16 +1606,27 @@ practice2.querySelectorAll('[id]').forEach(e=>e.id='two'+e.id);
 practice2.querySelectorAll('[name]').forEach(e=>e.name='two'+e.name);
 practice2.querySelector('[name=twoprside]').closest('span').remove();
 document.querySelector('main').append(practice2);
-const TABS=[1,2,3,4,5,6,7,8].map(i=>document.getElementById('t'+i));
+const TOPICS={f2l:{label:'3×3 / CFOP / F2L',learn:3,practice:4},oll3:{label:'3×3 / CFOP / OLL',learn:9,practice:8},pll:{label:'3×3 / CFOP / PLL',learn:5,practice:8},oll2:{label:'2×2 / Ortega / OLL',learn:6,practice:8},pbl2:{label:'2×2 / Ortega / PBL',learn:7,practice:8}};
+let activeTab=1,dashboardTopic='f2l',dashboardMode='learn';
 function tab(n){
-  TABS.forEach((b,i)=>{b.setAttribute('aria-selected',i===n-1);
-    document.getElementById('p'+(i+1)).classList.toggle('on',i===n-1);});
+  document.querySelectorAll('main>.panel').forEach(p=>p.classList.toggle('on',p.id==='p'+n));
+  const learning=n>2;
+  document.querySelectorAll('[data-topic]').forEach(b=>b.setAttribute('aria-selected',learning&&b.dataset.topic===dashboardTopic));
+  for(const i of [1,2])document.getElementById('t'+i).setAttribute('aria-selected',i===n);
+  document.getElementById('lessonHeader').hidden=!learning;
+  document.getElementById('lessonTitle').textContent=TOPICS[dashboardTopic].label;
+  for(const [id,mode] of [['learnMode','learn'],['practiceMode','practice']])document.getElementById(id).setAttribute('aria-selected',dashboardMode===mode);
   activeTab=n;persist();
   if(n===4) prRefresh();}
-let activeTab=1;
-TABS.forEach((b,i)=>b.onclick=()=>tab(i+1));
-document.getElementById('pyraNav').onclick=()=>{tab(2);puzzleSelect.value='pyraminx';puzzleSelect.onchange();};
-document.getElementById('twoDiagramNav').onclick=()=>{tab(2);puzzleSelect.value='cube2';puzzleSelect.onchange();};
+function selectTopic(topic,mode='learn'){
+  dashboardTopic=topic;dashboardMode=mode;
+  if(mode==='practice'&&topic!=='f2l')setPracticeTopic(topic);
+  tab(TOPICS[topic][mode]);
+}
+for(const i of [1,2])document.getElementById('t'+i).onclick=()=>tab(i);
+document.querySelectorAll('[data-topic]').forEach(b=>b.onclick=()=>selectTopic(b.dataset.topic));
+document.getElementById('learnMode').onclick=()=>selectTopic(dashboardTopic,'learn');
+document.getElementById('practiceMode').onclick=()=>selectTopic(dashboardTopic,'practice');
 
 /* ========== 로컬 자동 저장 ========== */
 const LSKEY='cubeIllustrator.v1';
@@ -1610,7 +1634,7 @@ let saveTimer=null;
 function persistNow(){
   try{
     localStorage.setItem(LSKEY,JSON.stringify({
-      state,stateTop,orient,auxOn,pick,view,tab:activeTab,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
+      state,stateTop,orient,auxOn,pick,view,tab:activeTab,dashboardTopic,dashboardMode,zoom,slots,alpha:cubeAlpha,gap:auxGap,arrows:topArrows,
       custom:COLORS.C[0],bg:bgCol,lefty:isLefty(),faceRole,zoom3d:cubeZoom,
       alg:diagramPuzzle==='cube3'?ta.value:(diagramAlgs.cube3??DIAGRAM_PUZZLES.cube3.example),
       diagramPuzzle,diagramAlgs:{...diagramAlgs,[diagramPuzzle]:ta.value},
@@ -1667,7 +1691,10 @@ function loadLocal(){
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
-    if([2,3,4,5,6,7,8].includes(d.tab)) tab(d.tab);
+    if(d.tab>2){
+      const topic=Object.hasOwn(TOPICS,d.dashboardTopic)?d.dashboardTopic:({3:'f2l',4:'f2l',5:'pll',6:'oll2',7:'pbl2',8:'oll2',9:'oll3'}[d.tab]||'f2l');
+      selectTopic(topic,d.dashboardMode==='practice'||[4,8].includes(d.tab)?'practice':'learn');
+    }else if(d.tab===2)tab(2);
   }catch(e){}
 }
 
@@ -1856,6 +1883,7 @@ function validateShared(key,text){
   const p=key.startsWith('oll2:')||key.startsWith('pbl2:')?parseTwoAlg(text):parsePLL(text);
   if(p.bad.length||!p.moves.length)return p.bad.length?`모르는 기호: ${p.bad.join(', ')}`:'공식을 입력하세요';
   if(key.startsWith('pll:'))return pllInfo(text).error||'';
+  if(key.startsWith('oll3:'))return ollInfo(text).error||'';
   if(key.startsWith('oll2:')||key.startsWith('pbl2:'))return twoCase(text,key.split(':')[0]).error||'';
   return '';
 }
@@ -1873,7 +1901,7 @@ function fingerCheckbox(panel,id,on,change){
 }
 function renderAllBooks(){
   renderGroups();refreshF2l();pllGroups();for(const b of Object.values(TWO_BOOKS))b.render();
-  twoPracticeGroups();if(twoPrCurrent){twoPrEl('prSetup').innerHTML=twoPicture(twoPrCurrent);twoPrEl('prPic').innerHTML=twoPicture(twoPrCurrent);twoPrEl('prAlg').innerHTML=algHTML(sharedText(twoPrCurrent));}
+  twoPracticeGroups();practiceShow(!twoPrEl('prAnswer').hidden);
   if(prNo)prShow(!document.getElementById('prAnswer').hidden);
 }
 function renderAllTables(){renderTable();pllTable();for(const b of Object.values(TWO_BOOKS))b.table();}
@@ -2461,6 +2489,66 @@ pllEl('groups').insertAdjacentHTML('beforebegin','<p class="hint">그림은 선�
 pllProfilesUI();pllFrontUI();pllGroups();
 
 /* ========== 2×2 오르테가: SCDB 2026-10-06 공개 목록 ========== */
+// 3×3 OLL: SCDB 공개 57개 케이스의 상위 4개 공식 (2026-10-06).
+const OLL_DATA=[
+["1","OLL 1",["R U2 R2 F R F' U2 R' F R F'","y R U' R2 D' r U' r' D R2 U R'","f R U R' U' R f' U' r' U' R U M'","L' U2 L2 F' L' F U2 L F' L' F"],"점 모양"],
+["2","OLL 2",["y' R U' R2 D' r U r' D R2 U R'","F R U R' U' S R U R' U' f'","F R U R' U' F' f R U R' U' f'","y r U r' U2 R U2 R' U2 r U' r'"],"점 모양"],
+["3","OLL 3",["y' f R U R' U' f' U' F R U R' U' F'","y R' F2 R2 U2 R' F R U2 R2 F2 R","r' R2 U R' U r U2 r' U M'","M R U R' U r U2 r' U M'"],"점 모양"],
+["4","OLL 4",["y' R' F2 R2 U2 R' F' R U2 R2 F2 R","y' f R U R' U' f' U F R U R' U' F'","R' F R F' U' S R' U' R U R S'","y F U R U' R' F' U' F R U R' U' F'"],"점 모양"],
+["5","OLL 5",["r' U2 R U R' U r","y2 l' U2 L U L' U l","y2 R' F2 r U r' F R","y2 R' F2 L F L' F R"],"사각형 모양"],
+["6","OLL 6",["r U2 R' U' R U' r'","F U' R2 D R' U' R D' R2 U F'","y2 l U2 L' U' L U' l'","L F2 l' U' l F' L'"],"사각형 모양"],
+["7","OLL 7",["r U R' U R U2 r'","S' R U R' U R U2 R' U S","L' U2 L U2 L F' L' F","y2 f R U R' U' f' y2 F R' F' r U R U' r'"],"번개 모양"],
+["8","OLL 8",["y2 r' U' R U' R' U2 r","l' U' L U' L' U2 l","R U2 R' U2 R' F R F'","R' F' r U' r' F2 R"],"번개 모양"],
+["9","OLL 9",["y R U R' U' R' F R2 U R' U' F'","R U2 R' U' S' R U' R' S","y2 F' U' F r U' r' U r U r'","y' L' U' L U' L F' L' F L' U2 L"],"물고기 모양"],
+["10","OLL 10",["R U R' U R' F R F' R U2 R'","y F U F' R' F R U' R' F' R","y M' R' U2 R U R' U R U M","y2 L' U' L U L F' L2 U' L U F"],"물고기 모양"],
+["11","OLL 11",["r' R2 U R' U R U2 R' U M'","y2 r U R' U R' F R F' R U2 r'","S R U R' U R U2 R' U2 S'","M R U R' U R U2 R' U M'"],"번개 모양"],
+["12","OLL 12",["y' M' R' U' R U' R' U2 R U' M","F R U R' U' F' U F R U R' U' F'","y' S R' U' R U' R' U2 R U2 S'","y M L' U' L U' L' U2 L U' M'"],"번개 모양"],
+["13","OLL 13",["F U R U2 R' U' R U R' F'","F U R U' R2 F' R U R U' R'","r U' r' U' r U r' F' U F","y2 f R U R2 U' R' U R U' f'"],"나이트 모양"],
+["14","OLL 14",["R' F R U R' F' R F U' F'","r U R' U' r' F R2 U R' U' F'","l' U l U l' U' l F U' F'","S R U R' U' R' F R2 U R' U' f'"],"나이트 모양"],
+["15","OLL 15",["r' U' r R' U' R U r' U r","y2 l' U' l L' U' L U l' U l","r' U' M' U' R U r' U r","y2 R' F' R L' U' L U R' F R"],"나이트 모양"],
+["16","OLL 16",["r U r' R U R' U' r U' r'","r U M U R' U' r U' r'","y2 R' F R U R' U' F' R U' R' U2 R","y2 l U l' L U L' U' l U' l'"],"나이트 모양"],
+["17","OLL 17",["R U R' U R' F R F' U2 R' F R F'","y2 F R' F' R U S' R U' R' S","y2 F R' F' R2 r' U R U' R' U' M'","y' F' r U r' U' S r' F r S'"],"점 모양"],
+["18","OLL 18",["y R U2 R2 F R F' U2 M' U R U' r'","r U R' U R U2 r2 U' R U' R' U2 r","y F S' R U' R' S R U2 R' U' F'","R D r' U' r D' R' U' R2 F R F' R"],"점 모양"],
+["19","OLL 19",["y S' R U R' S U' R' F R F'","M U R U R' U' M' R' F R F'","R' U2 F R U R' U' F2 U2 F R","r' R U R U R' U' r R2 F R F'"],"점 모양"],
+["20","OLL 20",["r U R' U' M2 U R U' R' U' M'","M' U2 M U2 M' U M U2 M' U2 M","S' R U R' S U' M' U R U' r'","S R' U' R U R U R U' R' S'"],"점 모양"],
+["21","OLL 21",["R U R' U R U' R' U R U2 R'","y R U2 R' U' R U R' U' R U' R'","y F R U R' U' R U R' U' R U R' U' F'","R' U' R U' R' U R U' R' U2 R"],"엣지 방향 완성"],
+["22","OLL 22",["R U2 R2 U' R2 U' R2 U2 R","R' U2 R2 U R2 U R2 U2 R'","f R U R' U' S' R U R' U' F'","f R U R' U' f' F R U R' U' F'"],"엣지 방향 완성"],
+["23","OLL 23",["R2 D R' U2 R D' R' U2 R'","y2 R2 D' R U2 R' D R U2 R","R U R' U R U2 R2 U' R U' R' U2 R","y R U R' U' R U' R' U2 R U' R' U2 R U R'"],"엣지 방향 완성"],
+["24","OLL 24",["r U R' U' r' F R F'","y2 R' F' r U R U' r' F","y R U R D R' U' R D' R2","y' x' R U R' D R U' R' D' x"],"엣지 방향 완성"],
+["25","OLL 25",["R U2 R D R' U2 R D' R2","y F' r U R' U' r' F R","F R' F' r U R U' r'","x R' U R D' R' U' R D x'"],"엣지 방향 완성"],
+["26","OLL 26",["y R U2 R' U' R U' R'","R' U' R U' R' U2 R","y2 L' U' L U' L' U2 L","y2 L' U R U' L U R'"],"엣지 방향 완성"],
+["27","OLL 27",["R U R' U R U2 R'","y' R' U2 R U R' U R","y L' U2 L U L' U L","y2 L U L' U L U2 L'"],"엣지 방향 완성"],
+["28","OLL 28",["r U R' U' M U R U' R'","r U R' U' r' R U R U' R'","R' F R S R' F' R S'","y2 M' U M U2 M' U M"],"코너 방향 완성"],
+["29","OLL 29",["r2 D' r U r' D r2 U' r' U' r","y R U R' U' R U' R' F' U' F R U R'","y S' R U R' U' R' F R F' U S","M U R U R' U' R' F R F' M'"],"비정형 모양"],
+["30","OLL 30",["y2 F U R U2 R' U' R U2 R' U' F'","y' r' D' r U' r' D r2 U' r' U r U r'","y2 F R' F R2 U' R' U' R U R' F2","y S' R' U' R f R' U R U' F'"],"비정형 모양"],
+["31","OLL 31",["R' U' F U R U' R' F' R","y2 S' L' U' L U L F' L' f","y S R U R' U' f' U' F","y' F R' F' R U R U R' U' R U' R'"],"P 모양"],
+["32","OLL 32",["S R U R' U' R' F R f'","y2 L U F' U' L' U L F L'","R U B' U' R' U R B R'","y' R' F R F' U' r U' r' U r U r'"],"P 모양"],
+["33","OLL 33",["R U R' U' R' F R F'","y2 L' U' L U L F' L' F","y2 r' F' r U r U' r' F","R U R' F' U' F R U' R'"],"T 모양"],
+["34","OLL 34",["y f R f' U' r' U' R U M'","y2 R U R2 U' R' F R U R U' F'","F R U R' U' R' F' r U R U' r'","y2 R U R' U' B' R' F R F' B"],"C 모양"],
+["35","OLL 35",["R U2 R2 F R F' R U2 R'","f R U R' U' f' R U R' U R U2 R'","R U2 R' d' R' F R U' R' F' R","y L' U2 L2 F' L' F L' U2 L"],"물고기 모양"],
+["36","OLL 36",["y R U R2 F' U' F U R2 U2 R'","y2 L' U' L U' L' U L U L F' L' F","y2 R U R' F' R U R' U' R' F R U' R' F R F'","R U R' U' F' U2 F U R U R'"],"W 모양"],
+["37","OLL 37",["F R' F' R U R U' R'","F R U' R' U' R U R' F'","y F' r U r' U' r' F r","y2 r2 D' r U' r' D r U r"],"물고기 모양"],
+["38","OLL 38",["R U R' U R U' R' U' R' F R F'","y F R U' R' S U' R U R' f'","r U R' U' r' F R U R U' R' F'","y2 L U L' U L U' L' U' L' B L B'"],"W 모양"],
+["39","OLL 39",["y' f' r U r' U' r' F r S","y' R U R' F' U' F U R U2 R'","y L F' L' U' L U F U' L'","y' f' L F L' U' L' U L S"],"번개 모양"],
+["40","OLL 40",["y R' F R U R' U' F' U R","y' f R' F' R U R U' R' S'","R r D r' U r D' r' U' R'","y' L' U' L F U F' U' L' U2 L"],"번개 모양"],
+["41","OLL 41",["y2 R U R' U R U2 R' F R U R' U' F'","y2 F U R2 D R' U' R D' R2 F'","y' S U' R' F' U' F U R S'","M U' F' L' U' L U F M'"],"비정형 모양"],
+["42","OLL 42",["R' U' R U' R' U2 R F R U R' U' F'","y F S' R U R' U' F' U S","y R' F R F' R' F R F' R U R' U' R U R'","y R' U' F2 u' R U R' D R2 B"],"비정형 모양"],
+["43","OLL 43",["y R' U' F' U F R","y2 F' U' L' U L F","f' L' U' L U f","B' U' R' U R B"],"P 모양"],
+["44","OLL 44",["f R U R' U' f'","y2 F U R U' R' F'","y R U B U' B' R'","y' L U F U' F' L'"],"P 모양"],
+["45","OLL 45",["F R U R' U' F'","y R' F' U' F U R","y2 f U R U' R' f'","y2 F' L' U' L U F"],"T 모양"],
+["46","OLL 46",["R' U' R' F R F' U R","R' F' U' F R U' R' U2 R","y F R U R' U' F' U' R U R' U R U2 R'","l' U2 L2 F' L' F U L' U l"],"C 모양"],
+["47","OLL 47",["y' F R' F' R U2 R U' R' U R U2 R'","F' L' U' L U L' U' L U F","R' U' R' F R F' R' F R F' U R","y' R' F' U' F U F' U' F U R"],"L 모양"],
+["48","OLL 48",["F R U R' U' R U R' U' F'","y2 f U R U' R' U R U' R' f'","R U2 R' U' R U R' U2 R' F R F'","F R' F' U2 R U R' U R2 U2 R'"],"L 모양"],
+["49","OLL 49",["y2 r U' r2 U r2 U r2 U' r","l U' l2 U l2 U l2 U' l","R B' R2 F R2 B R2 F' R","y2 R' F R' F' R2 U2 B' R B R'"],"L 모양"],
+["50","OLL 50",["r' U r2 U' r2 U' r2 U r'","y2 R' F R2 B' R2 F' R2 B R'","y' R U2 R' U' R U' R' F R U R' U' F'","y2 l' U l2 U' l2 U' l2 U l'"],"L 모양"],
+["51","OLL 51",["y2 F U R U' R' U R U' R' F'","f R U R' U' R U R' U' f'","y' R' U' R' F R F' R U' R' U2 R","y r' F' U' F U F' U' F U r"],"선 모양"],
+["52","OLL 52",["y2 R' F' U' F U' R U R' U R","R U R' U R U' B U' B' R'","R U R' U R d' R U' R' F'","R U R' U R U' y R U' R' F'"],"선 모양"],
+["53","OLL 53",["r' U' R U' R' U R U' R' U2 r","y2 l' U' L U' L' U L U' L' U2 l","y r' U2 R U R' U' R U R' U r","y' l' U2 L U L' U' L U L' U l"],"L 모양"],
+["54","OLL 54",["r U R' U R U' R' U R U2 r'","y' r U2 R' U' R U R' U' R U' r'","y' r U r' R U R' U' R U R' U' r U' r'","y2 l U L' U L U' L' U L U2 l'"],"L 모양"],
+["55","OLL 55",["y R' F U R U' R2 F' R2 U R' U' R","y R' F R U R U' R2 F' R2 U' R' U R U R'","R U2 R2 U' R U' R' U2 F R F'","r U2 R2 F R F' U2 r' F R F'"],"선 모양"],
+["56","OLL 56",["r U r' U R U' R' U R U' R' r U' r'","r U r' U R U' R' M' U R U2 r'","F R U R' U' R F' r U R' U' r'","r' U' r U' R' U R U' R' U R r' U r"],"선 모양"],
+["57","OLL 57",["R U R' U' M' U R U' r'","y R U' R' S' R U R' S","y R U R' S' R U' R' S","R U R' U' R' r U R U' r'"],"코너 방향 완성"]
+];
 const TWO_DATA={
  oll2:[
  ['Sune','수네',["R U R' U R U2 R'","R U R2 U' R2 U R","R U' L' U R' U' L","y' R' U2 R U R' U R"]],
@@ -2480,6 +2568,17 @@ const TWO_DATA={
  ['Opp Adj','위 대각·아래 인접',["y R2 U R2 U' R2 U R2 U' R2","R' D R' F2 R D' R","z2 R U' R F2 R' U R'","y R2 U' R2 U R2 U' R2 U R2"]]
  ]
 };
+const BOOK_DATA={...TWO_DATA,oll3:OLL_DATA};
+const OLL_CACHE=new Map();
+function ollInfo(alg){
+  if(OLL_CACHE.has(alg))return OLL_CACHE.get(alg);
+  const p=parsePLL(alg);if(p.bad.length||!p.moves.length)return {error:p.bad.length?`모르는 기호: ${p.bad.join(', ')}`:'공식을 입력하세요'};
+  const end=p.moves.reduce(applyMoveTo,pllSolved());
+  const target=PLL_ORIENTATIONS.find(e=>pllCenterKey(e.st)===pllCenterKey(end));
+  const base=invMoves(p.moves).reduce(applyMoveTo,target.st);
+  if(!base.D.flat().every(c=>c==='W')||!['F','B','L','R'].every(f=>base[f].slice(1).flat().every(c=>c===PLL_CENTER[f])))return {error:'OLL 공식인지 확인해 주세요 (아래 두 층이 유지되어야 합니다)'};
+  const info={moves:p.moves,base};OLL_CACHE.set(alg,info);return info;
+}
 function parseTwoAlg(text){
   if(/[()\/]/.test(text))return parseNotation(text,parseTwoAlg);
   const tokens=text.trim().split(/[\s,]+/).filter(Boolean),bad=tokens.filter(t=>!/^([RLUDFBxyz])(?:['’]2|2['’]|['’]|2)?$/.test(t));
@@ -2507,7 +2606,8 @@ function twoTopSVG(st,oll=false,down=false){
   return out+'</svg>';
 }
 function twoPicture(key){
-  const kind=key.split(':')[0],info=twoCase(sharedText(key),kind);if(info.error)return `<span>${esc(info.error)}</span>`;
+  const kind=key.split(':')[0],info=kind==='oll3'?ollInfo(sharedText(key)):twoCase(sharedText(key),kind);if(info.error)return `<span>${esc(info.error)}</span>`;
+  if(kind==='oll3')return buildTopSVG(Object.fromEntries(FKEYS.map(f=>[f,info.base[f].map(row=>row.map(c=>c==='Y'?'Y':'X'))])),[],false);
   const b=TWO_BOOKS[kind],st=Object.fromEntries(FKEYS.map(f=>[f,info.base[f].map(row=>row.map(c=>{const i=F2LRING.indexOf(c);return i<0?c:F2LRING[(i+b.options.color)%4];}))]));
   return kind==='oll2'?twoTopSVG(st,true):`<div>위${twoTopSVG(st)}아래${twoTopSVG(st,false,true)}</div>`;
 }
@@ -2516,34 +2616,38 @@ const TWO_BOOKS={};
 function createTwoBook(kind,title){
   let stored={};try{stored=JSON.parse(localStorage.getItem(kind+'Workbook.v1')||'{}');}catch(e){}
   const b={kind,title,panel:TWO_PANELS[kind],profiles:stored.profiles?.length?stored.profiles:[newProfile('기본')],options:{diag:false,order:'num',reviewOn:false,reviewN:10,color:0,finger:false,...stored.options}};
-  b.profiles.forEach(p=>p.sel=new Set((p.sel||[]).filter(n=>TWO_DATA[kind].some(d=>d[0]===n))));b.current=b.profiles.find(p=>p.id===stored.current)||b.profiles[0];
+  b.profiles.forEach(p=>p.sel=new Set((p.sel||[]).filter(n=>BOOK_DATA[kind].some(d=>d[0]===n))));b.current=b.profiles.find(p=>p.id===stored.current)||b.profiles[0];
   b.el=id=>document.getElementById(kind+id);
   b.save=()=>{try{localStorage.setItem(kind+'Workbook.v1',JSON.stringify({profiles:b.profiles.map(p=>({...p,sel:[...p.sel]})),current:b.current.id,options:b.options}));}catch(e){toast('저장 공간을 확인해 주세요');}};
-  for(const [n,,algs] of TWO_DATA[kind])sharedAdd(kind+':'+n,algs[0]);
+  for(const [n,,algs] of BOOK_DATA[kind])sharedAdd(kind+':'+n,algs[0]);
   b.table=()=>{
-    const rows=TWO_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options;
-    const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* 오르테가/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
+    const rows=BOOK_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options;
+    const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* (오르테가|OLL)/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
     b.el('meta').textContent=`${b.current.name} · ${rows.length}개 케이스 · 공식 출처: SpeedCubeDB (2026-10-06)`;
-    b.el('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${rows.map(([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}<br><small>${esc(n)}</small></td><td class="pic">${twoPicture(key)}</td><td class="alg">${o.diag?twoAlgSVG(alg):algHTML(alg)}${o.finger?fingerHTML(key,alg):''}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;}).join('')}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
+    const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}</td><td class="pic">${twoPicture(key)}</td><td class="alg">${o.diag?(kind==='oll3'?algSVG(alg):twoAlgSVG(alg)):algHTML(alg)}${o.finger?fingerHTML(key,alg):''}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
+    const body=o.order==='cat'&&kind==='oll3'?[...new Set(OLL_DATA.map(d=>d[3]))].map(cat=>{const group=rows.filter(d=>d[3]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${esc(cat)}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
+    b.el('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
   };
   b.render=()=>{
     b.el('profSel').innerHTML=b.profiles.map(p=>`<option value="${p.id}"${p===b.current?' selected':''}>${esc(p.name)}</option>`).join('');
-    b.el('groups').innerHTML=`<div class="cases">${TWO_DATA[kind].map(([n,label])=>`<div class="case${b.current.sel.has(n)?' on':''}" data-two-case="${pllAttr(n)}"><div class="top"><input type="checkbox" aria-label="${pllAttr(label)} 선택"${b.current.sel.has(n)?' checked':''}>${esc(label)}<button class="btn play" title="3D 재생">▶</button></div><div class="img">${twoPicture(kind+':'+n)}</div><select aria-label="${pllAttr(n)} 공식">${sharedOptions(kind+':'+n)}</select></div>`).join('')}</div>`;
+    const card=([n,label])=>`<div class="case${b.current.sel.has(n)?' on':''}" data-two-case="${pllAttr(n)}"><div class="top"><input type="checkbox" aria-label="${pllAttr(label)} 선택"${b.current.sel.has(n)?' checked':''}>${esc(label)}<button class="btn play" title="3D 재생">▶</button></div><div class="img">${twoPicture(kind+':'+n)}</div><select aria-label="${pllAttr(n)} 공식">${sharedOptions(kind+':'+n)}</select></div>`;
+    b.el('groups').innerHTML=b.options.order==='cat'&&kind==='oll3'?[...new Set(OLL_DATA.map(d=>d[3]))].map(cat=>`<div class="cat"><label class="cat-head"><input type="checkbox" data-book-cat="${pllAttr(cat)}"${OLL_DATA.filter(d=>d[3]===cat).every(d=>b.current.sel.has(d[0]))?' checked':''}>${esc(cat)}</label><div class="cases">${OLL_DATA.filter(d=>d[3]===cat).map(card).join('')}</div></div>`).join(''):`<div class="cases">${BOOK_DATA[kind].map(card).join('')}</div>`;
+    b.el('groups').querySelectorAll('[data-book-cat]').forEach(cb=>{const rows=OLL_DATA.filter(d=>d[3]===cb.dataset.bookCat);cb.indeterminate=rows.some(d=>b.current.sel.has(d[0]))&&!cb.checked;cb.onchange=()=>{rows.forEach(([n])=>cb.checked?b.current.sel.add(n):b.current.sel.delete(n));b.save();b.render();};});
     b.el('groups').querySelectorAll('[data-two-case]').forEach(el=>{
       const n=el.dataset.twoCase,key=kind+':'+n;
       const toggle=()=>{b.current.sel.has(n)?b.current.sel.delete(n):b.current.sel.add(n);b.save();b.render();};
       el.onclick=e=>{if(!e.target.closest('input,select,button'))toggle();};el.querySelector('input').onchange=toggle;
-      el.querySelector('select').onchange=e=>{if(e.target.value==='add'){e.target.value=sharedEntry(key).id;openAlgPicker(key,TWO_DATA[kind].find(d=>d[0]===n)[2],renderAllBooks);}else{sharedSelect(key,e.target.value);renderAllBooks();}};
+      el.querySelector('select').onchange=e=>{if(e.target.value==='add'){e.target.value=sharedEntry(key).id;openAlgPicker(key,BOOK_DATA[kind].find(d=>d[0]===n)[2],renderAllBooks);}else{sharedSelect(key,e.target.value);renderAllBooks();}};
       el.querySelector('button').onclick=()=>openTwoPlayer(key);
     });b.table();
   };
-  b.el('sheet').className='sheet2';b.panel.querySelector('p.hint').textContent='케이스를 선택하고 공식을 고르세요. 공식·핑거 설명은 모든 과외생이 공유합니다. OLL은 윗면 방향, PBL은 위·아래 교환을 확인합니다.';
-  b.panel.querySelector('[name='+kind+'ord]').closest('span').remove();
+  b.el('sheet').className='sheet2';b.panel.querySelector('p.hint').textContent=kind==='oll3'?'57개 OLL 케이스를 선택하고 공식을 고르세요. 그림은 탑다운, 재생은 3D입니다. 공식·핑거 설명은 모든 과외생이 공유합니다.':'케이스를 선택하고 공식을 고르세요. 공식·핑거 설명은 모든 과외생이 공유합니다. OLL은 윗면 방향, PBL은 위·아래 교환을 확인합니다.';
+  if(kind==='oll3'){b.panel.querySelectorAll('[name=oll3ord]').forEach(r=>{r.checked=r.value===b.options.order;r.onchange=()=>{b.options.order=r.value;b.save();b.render();};});}else b.panel.querySelector('[name='+kind+'ord]').closest('span').remove();
   b.el('profSel').onchange=()=>{b.current=b.profiles.find(p=>p.id===b.el('profSel').value);b.save();b.render();};
   b.el('profAdd').onclick=()=>{const name=prompt('과외생 이름')?.trim();if(name){b.current=newProfile(name);b.current.sel=new Set();b.profiles.push(b.current);b.save();b.render();}};
   b.el('profRename').onclick=()=>{const name=prompt('새 이름',b.current.name)?.trim();if(name){b.current.name=name;b.save();b.render();}};
   b.el('profDel').onclick=()=>{if(b.profiles.length===1){toast('마지막 과외생은 지울 수 없습니다');return;}if(confirm('이 과외생의 케이스 선택을 지울까요?')){b.profiles=b.profiles.filter(p=>p!==b.current);b.current=b.profiles[0];b.save();b.render();}};
-  b.el('selAll').onclick=()=>{b.current.sel=new Set(TWO_DATA[kind].map(d=>d[0]));b.save();b.render();};b.el('selNone').onclick=()=>{b.current.sel.clear();b.save();b.render();};
+  b.el('selAll').onclick=()=>{b.current.sel=new Set(BOOK_DATA[kind].map(d=>d[0]));b.save();b.render();};b.el('selNone').onclick=()=>{b.current.sel.clear();b.save();b.render();};
   for(const [id,key] of [['diagMode','diag'],['reviewOn','reviewOn']]){b.el(id).checked=b.options[key];b.el(id).onchange=()=>{b.options[key]=b.el(id).checked;b.save();b.table();};}
   b.el('reviewN').value=b.options.reviewN;b.el('reviewN').oninput=()=>{b.options.reviewN=Math.max(1,Math.min(60,+b.el('reviewN').value||1));b.save();b.table();};
   fingerCheckbox(b.panel,kind+'fingerOn',b.options.finger,v=>{b.options.finger=v;b.save();b.table();});
@@ -2551,15 +2655,16 @@ function createTwoBook(kind,title){
   const front=document.createElement('span');front.className='chk';front.innerHTML='<button class="btn" aria-label="이전 정면 색">&lt;</button><span>정면</span><button class="btn" aria-label="다음 정면 색">&gt;</button>';b.el('printBtn').before(front);
   const refreshFront=()=>front.querySelector('span').textContent='정면 '+f2lColorName(F2LRING[(3+b.options.color)%4]);
   front.querySelectorAll('button').forEach((bt,i)=>bt.onclick=()=>{b.options.color=(b.options.color+(i?1:3))%4;b.save();refreshFront();b.render();});refreshFront();
-  b.el('groups').before(Object.assign(document.createElement('p'),{className:'hint',innerHTML:`공식 출처: <a href="https://speedcubedb.com/a/2x2/${kind==='oll2'?'OrtegaOLL':'OrtegaPBL'}" target="_blank" rel="noopener">SCDB 오르테가 ${kind==='oll2'?'OLL':'PBL'}</a>`}));
+  b.el('groups').before(Object.assign(document.createElement('p'),{className:'hint',innerHTML:`공식 출처: <a href="https://speedcubedb.com/a/${kind==='oll3'?'3x3/OLL':'2x2/'+(kind==='oll2'?'OrtegaOLL':'OrtegaPBL')}" target="_blank" rel="noopener">SCDB ${title}</a> · 그림은 선택한 공식의 시작 방향에 맞춰 표시합니다.`}));
   return b;
 }
 function openTwoPlayer(key){
-  const kind=key.split(':')[0],alg=sharedText(key),info=twoCase(alg,kind);if(info.error){toast(info.error);return;}
+  const kind=key.split(':')[0],alg=sharedText(key),info=kind==='oll3'?ollInfo(alg):twoCase(alg,kind);if(info.error){toast(info.error);return;}
   const b=TWO_BOOKS[kind],st=Object.fromEntries(FKEYS.map(f=>[f,info.base[f].map(row=>row.map(c=>{const i=F2LRING.indexOf(c);return i<0?c:F2LRING[(i+b.options.color)%4];}))]));
-  startPlayer(`${b.title} ${key.split(':')[1]} 재생`,alg,info.moves,st,PLEYE,'','기호를 선택해 핑거 설명을 편집합니다',key,true);
+  startPlayer(`${b.title} ${key.split(':')[1]} 재생`,alg,info.moves,st,PLEYE,'','기호를 선택해 핑거 설명을 편집합니다',key,kind!=='oll3');
 }
 TWO_BOOKS.oll2=createTwoBook('oll2','오르테가 OLL');TWO_BOOKS.pbl2=createTwoBook('pbl2','오르테가 PBL');
+TWO_BOOKS.oll3=createTwoBook('oll3','OLL');
 for(const b of Object.values(TWO_BOOKS))b.render();saveLibrary();
 
 /* 공용 공식 추가 창과 핑거 편집 */
@@ -2590,30 +2695,57 @@ document.getElementById('regrip').onclick=()=>{const a=sharedEntry(PL?.libraryKe
 for(const [id,grip] of [['gripUp','up'],['gripDown','down']])document.getElementById(id).onclick=()=>{const a=sharedEntry(PL?.libraryKey);if(a){a.grip=a.grip===grip?'home':grip;saveFinger();}};
 document.getElementById('editPlayerAlg').onclick=()=>{if(PL?.libraryKey)openAlgPicker(PL.libraryKey,[],renderAllBooks,true);};
 
-/* 2×2 연습: OLL·PBL 케이스를 선택하고 한 바퀴씩 섞어 출제한다. */
-const TWO_PRKEY='twoPractice.v1';let twoPrSel=new Set(),twoPrDeck=[],twoPrCurrent=null;
-try{twoPrSel=new Set(JSON.parse(localStorage.getItem(TWO_PRKEY)||'[]'));}catch(e){}
+/* 분류별 연습: 케이스 선택·출제 순환은 OLL/PLL/오르테가 각각 독립 저장. */
+const PRACTICE_KEY='cubeCasePractice.v1',CASE_PRACTICE={};let practiceKind='oll2';
+let practiceSaved={},oldTwoSelection=[];
+try{practiceSaved=JSON.parse(localStorage.getItem(PRACTICE_KEY)||'{}');oldTwoSelection=JSON.parse(localStorage.getItem('twoPractice.v1')||'[]');}catch(e){}
+const practiceRows=kind=>kind==='pll'?PLL_DATA.map(([n])=>[n,'PLL '+n]):BOOK_DATA[kind];
+for(const kind of ['oll3','pll','oll2','pbl2']){
+  const valid=new Set(practiceRows(kind).map(([n])=>kind+':'+n));
+  CASE_PRACTICE[kind]={sel:new Set((practiceSaved[kind]||oldTwoSelection).filter(k=>valid.has(k))),deck:[],current:null};
+}
+function saveCasePractice(){try{localStorage.setItem(PRACTICE_KEY,JSON.stringify(Object.fromEntries(Object.entries(CASE_PRACTICE).map(([k,q])=>[k,[...q.sel]]))));}catch(e){toast('저장 공간을 확인해 주세요');}}
 const twoPrEl=id=>document.getElementById('two'+id);
-practice2.querySelector('.card h2').textContent='2×2 연습 케이스';
-twoPrEl('prCat').closest('label').hidden=true;twoPrEl('prSetup').previousElementSibling.textContent='케이스 — 맞는 공식을 떠올려 보세요';
+twoPrEl('prCat').closest('label').style.display='none';twoPrEl('prSetup').previousElementSibling.textContent='케이스 — 맞는 공식을 떠올려 보세요';
+function practicePicture(key){return key.startsWith('pll:')?pllSVG(key.slice(4)):twoPicture(key);}
+function setPracticeTopic(kind){
+  practiceKind=kind;practice2.querySelector('.card h2').textContent=TOPICS[kind].label+' 연습 케이스';
+  twoPracticeGroups();if(!CASE_PRACTICE[kind].current)twoPracticeNext();else practiceShow();
+}
 function twoPracticeGroups(){
-  twoPrEl('prGroups').innerHTML=Object.entries(TWO_DATA).map(([kind,rows])=>`<h2>${TWO_BOOKS[kind].title}</h2><div class="cases">${rows.map(([n,label])=>{const key=kind+':'+n;return `<label class="case mini"><input type="checkbox" data-two-pr="${pllAttr(key)}"${twoPrSel.has(key)?' checked':''}> ${esc(label)}<div class="img">${twoPicture(key)}</div></label>`;}).join('')}</div>`).join('');
-  twoPrEl('prGroups').querySelectorAll('[data-two-pr]').forEach(cb=>cb.onchange=()=>{cb.checked?twoPrSel.add(cb.dataset.twoPr):twoPrSel.delete(cb.dataset.twoPr);twoPrDeck=[];localStorage.setItem(TWO_PRKEY,JSON.stringify([...twoPrSel]));});
+  const q=CASE_PRACTICE[practiceKind];
+  twoPrEl('prGroups').innerHTML=`<div class="cases">${practiceRows(practiceKind).map(([n,label])=>{const key=practiceKind+':'+n;return `<label class="case mini"><input type="checkbox" data-two-pr="${pllAttr(key)}"${q.sel.has(key)?' checked':''}> ${esc(label)}<div class="img">${practicePicture(key)}</div></label>`;}).join('')}</div>`;
+  twoPrEl('prGroups').querySelectorAll('[data-two-pr]').forEach(cb=>cb.onchange=()=>{cb.checked?q.sel.add(cb.dataset.twoPr):q.sel.delete(cb.dataset.twoPr);q.deck=[];if(q.current&&!q.sel.has(q.current)){q.current=null;practiceShow();}saveCasePractice();});
+}
+function practiceShow(answer=false){
+  const q=CASE_PRACTICE[practiceKind],key=q.current;
+  twoPrEl('prAnswer').hidden=!answer||!key;
+  twoPrEl('prSetup').innerHTML=key?practicePicture(key):'연습할 케이스를 선택하고 다음 케이스를 누르세요';
+  twoPrEl('prSetup').style.maxWidth='210px';twoPrEl('prRange').textContent=key?`이번 순환 ${q.sel.size-q.deck.length}/${q.sel.size}`:'';
+  if(!key)return;
+  twoPrEl('prCase').textContent=practiceRows(practiceKind).find(([n])=>key===practiceKind+':'+n)[1];
+  twoPrEl('prPic').innerHTML=practicePicture(key);twoPrEl('prAlg').innerHTML=algHTML(sharedText(key));
+  twoPrEl('prAlt').innerHTML='<button class="btn" id="twoPracticePlay">3D 재생</button>';
+  document.getElementById('twoPracticePlay').onclick=()=>{
+    if(practiceKind!=='pll'){openTwoPlayer(key);return;}
+    const alg=sharedText(key),info=pllInfo(alg);if(info.error){toast(info.error);return;}
+    startPlayer(`${twoPrEl('prCase').textContent} 재생`,alg,info.moves,pllColors(info.base),PLEYE,'','기호를 선택해 핑거 설명을 편집합니다',key);
+  };
 }
 function twoPracticeNext(){
-  if(!twoPrSel.size){twoPrEl('prSetup').textContent='연습할 케이스를 선택하세요';return;}
-  if(!twoPrDeck.length){twoPrDeck=[...twoPrSel].filter(k=>LIB.cases[k]);for(let i=twoPrDeck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[twoPrDeck[i],twoPrDeck[j]]=[twoPrDeck[j],twoPrDeck[i]];}}
-  twoPrCurrent=twoPrDeck.pop();twoPrEl('prSetup').innerHTML=twoPicture(twoPrCurrent);twoPrEl('prSetup').style.maxWidth='210px';twoPrEl('prAnswer').hidden=true;
-  twoPrEl('prRange').textContent=`이번 순환 ${twoPrSel.size-twoPrDeck.length}/${twoPrSel.size}`;
+  const q=CASE_PRACTICE[practiceKind];
+  if(!q.sel.size){q.current=null;practiceShow();return;}
+  if(!q.deck.length){q.deck=[...q.sel];for(let i=q.deck.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q.deck[i],q.deck[j]]=[q.deck[j],q.deck[i]];}}
+  q.current=q.deck.pop();practiceShow();
 }
-twoPrEl('prSolve').onclick=()=>{if(!twoPrCurrent)return;const key=twoPrCurrent;twoPrEl('prAnswer').hidden=false;twoPrEl('prCase').textContent=TWO_BOOKS[key.split(':')[0]].title+' '+key.split(':')[1];twoPrEl('prPic').innerHTML=twoPicture(key);twoPrEl('prAlg').innerHTML=algHTML(sharedText(key));twoPrEl('prAlt').innerHTML='<button class="btn" id="twoPracticePlay">3D 재생</button>';document.getElementById('twoPracticePlay').onclick=()=>openTwoPlayer(key);};
+twoPrEl('prSolve').onclick=()=>practiceShow(true);
 twoPrEl('prNext').onclick=twoPracticeNext;
-twoPrEl('prAll').onclick=()=>{twoPrSel=new Set(Object.keys(LIB.cases).filter(k=>k.startsWith('oll2:')||k.startsWith('pbl2:')));twoPrDeck=[];localStorage.setItem(TWO_PRKEY,JSON.stringify([...twoPrSel]));twoPracticeGroups();};
-twoPrEl('prNone').onclick=()=>{twoPrSel.clear();twoPrDeck=[];localStorage.setItem(TWO_PRKEY,'[]');twoPracticeGroups();};
-twoPracticeGroups();twoPracticeNext();
+twoPrEl('prAll').onclick=()=>{const q=CASE_PRACTICE[practiceKind];q.sel=new Set(practiceRows(practiceKind).map(([n])=>practiceKind+':'+n));q.deck=[];saveCasePractice();twoPracticeGroups();};
+twoPrEl('prNone').onclick=()=>{const q=CASE_PRACTICE[practiceKind];q.sel.clear();q.deck=[];q.current=null;saveCasePractice();twoPracticeGroups();practiceShow();};
+setPracticeTopic('oll2');
 practice2.querySelector('#twoprAlt').previousElementSibling.textContent='재생';
-practice2.querySelectorAll('.hint').forEach(p=>{if(p.textContent.includes('F2L'))p.textContent='여기서 고른 2×2 케이스만 출제됩니다. 교본의 케이스 선택과는 별개입니다.';});
-for(const id of ['p3','p5','p6','p7']){
+practice2.querySelectorAll('.hint').forEach(p=>{if(p.textContent.includes('F2L'))p.textContent='현재 분류에서 고른 케이스만 한 바퀴씩 섞어 출제합니다. 교본의 케이스 선택과는 별개이며 분류마다 따로 저장됩니다.';});
+for(const id of ['p3','p5','p6','p7','p9']){
   const hint=document.querySelector('#'+id+' .row .hint');if(hint)hint.textContent='과외생별로 케이스를 분류합니다. 공식과 핑거 설명은 공용으로 저장됩니다.';
 }
 addEventListener('keydown',e=>{if(activeTab!==8||!document.getElementById('player').hidden||/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(document.activeElement.tagName))return;if(e.key===' '){twoPrEl('prSolve').click();e.preventDefault();}else if(e.key==='Enter'||e.key==='ArrowRight'){twoPracticeNext();e.preventDefault();}});

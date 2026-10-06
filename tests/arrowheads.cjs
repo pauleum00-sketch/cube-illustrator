@@ -17,6 +17,7 @@ for(const dbl of [false,true])for(const dash of [false,true]){
  const svg=drawArrow([[0,0],[20,0],[40,0]],p=>p,dbl,dash);
  assert.equal((svg.match(/<polygon/g)||[]).length,dbl?2:1);
  assert.equal(svg.includes('stroke-dasharray'),dash);
+ assert(!svg.includes('stroke="#fff"'),'Arrow heads must connect to the shaft without a white outline');
  assert(!/NaN|Infinity/.test(svg));
 }
-console.log('Arrowheads: symmetric wings, trimmed shaft, double heads and dashed strokes OK');
+console.log('Arrowheads: symmetric wings, connected black heads/shaft, double heads and dashed strokes OK');

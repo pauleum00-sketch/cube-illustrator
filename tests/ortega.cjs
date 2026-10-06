@@ -6,7 +6,7 @@ const part=(a,b)=>script.slice(script.indexOf(a),script.indexOf(b));
 const code=part('const RAD=','/* ========== 상태')+part('const applyM=','const matMul=')+
  part('function rotM(','const CM=')+part('const dot3=','/* 화면 기준 적용')+
  part('const AX=','const GAP=')+part('function parseAlg(','/* ========== 도해 SVG')+
- part('const PLL_CENTER=','const PLL_CACHE=')+part('const TWO_DATA=','function twoPicture(');
+ part('const PLL_CENTER=','const PLL_CACHE=')+part('const OLL_DATA=','function twoPicture(');
 const c=vm.runInNewContext(code+';({TWO_DATA,twoCase,cornerColors,applyMoveTo,parseTwoAlg,FKEYS})');
 assert.equal(c.TWO_DATA.oll2.length,7);assert.equal(c.TWO_DATA.pbl2.length,6);let checked=0;
 for(const [kind,rows] of Object.entries(c.TWO_DATA))for(const [name,,algs] of rows){
