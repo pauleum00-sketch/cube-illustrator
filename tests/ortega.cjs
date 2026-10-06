@@ -9,7 +9,8 @@ const code=part('const RAD=','/* ========== 상태')+part('const applyM=','const
  part('const PLL_CENTER=','const PLL_CACHE=')+part('const OLL_DATA=','function twoPicture(');
 const c=vm.runInNewContext(code+';({TWO_DATA,twoCase,cornerColors,applyMoveTo,parseTwoAlg,FKEYS})');
 assert.equal(c.TWO_DATA.oll2.length,7);assert.equal(c.TWO_DATA.pbl2.length,6);let checked=0;
-for(const [kind,rows] of Object.entries(c.TWO_DATA))for(const [name,,algs] of rows){
+for(const [kind,rows] of Object.entries(c.TWO_DATA))for(const [name,label,algs] of rows){
+ assert.equal(label,name,'Ortega case names must keep the SCDB English spelling');
  const reference=c.twoCase(algs[0],kind);assert(!reference.error,`${name}: ${reference.error}`);
  const masks=new Set();let rotated=reference.base;
  for(let i=0;i<4;i++){masks.add(['U','F','R','B','L'].flatMap(f=>c.cornerColors(rotated,f).map(x=>x==='Y'?1:0)).join(''));rotated=c.applyMoveTo(rotated,{letter:'y'});}
