@@ -229,10 +229,14 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .chip2 small,.finger-token small{display:block;font-size:11px;font-weight:400;white-space:normal;max-width:130px;line-height:1.4;margin-top:4px}
 .chip2 small{text-align:center;font-family:Arial,sans-serif}
 .regrip-mark{display:inline-block;font-size:32px;font-weight:400;margin:0 8px;color:#555;vertical-align:middle}
-.grip-mark{display:inline-block;background:#ddf2ef;color:#175d56;padding:4px 7px;border-radius:4px;font-size:12px;font-weight:700;margin:0 6px 4px 0}
+.grip-tag{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:72px;flex:0 0 72px;padding:5px 7px;border-radius:5px;font:700 12px/18px Arial,sans-serif;white-space:nowrap;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.grip-home{background:#e8edf3;color:#455467}
+.grip-down{background:#ddf2ef;color:#175d56}
+.grip-up{background:#fff0cc;color:#7a5315}
+.finger-layout{display:flex;align-items:center;gap:8px;min-width:0}
+.finger-formula{flex:1;min-width:0}
 .finger-print{max-width:100%;height:auto;display:block;color:#111}
-#plChips{flex-wrap:nowrap;align-items:flex-start}
-#plChips .grip-mark{flex:none;margin-top:12px}
+#plChips{flex-wrap:nowrap;align-items:center;gap:8px}
 #plChips>.notation{width:auto;min-width:0;flex:1}
 #fingerNote{background:#f6f6f6;color:#111;width:100%;font-family:inherit}
 #fingerEditor{font-size:12px}
@@ -271,7 +275,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.2</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.3</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -1540,9 +1544,9 @@ function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls='',detail=null){
   const notes=moves.map((m,i)=>detail?wrapFingerNote(detail.notes?.[i]):[]);
   const noteH=Math.max(0,...notes.map(lines=>lines.length))*18;
   const highlights=detail?.highlights||[],highlightPad=10,highlightGap=6;
-  const step=CH+LBL+noteH,placed=[],subdivided=notationSubchunks(moves),left=detail?.grip?detail.grip.length*12+24:0;let x=left,y=0,W=0;
+  const step=CH+LBL+noteH,placed=[],subdivided=notationSubchunks(moves);let x=0,y=0,W=0;
   moves.forEach((m,i)=>{
-    if(m.lineBefore){x=left;y+=step;}
+    if(m.lineBefore){x=0;y+=step;}
     else if(m.spaceBefore&&x)x+=CW*((m.chunk&&moves[i-1]?.chunk===m.chunk)?0.06:0.28);
     if(highlights.some(([start,end])=>i===start||(m.lineBefore&&i>start&&i<=end)))x+=highlightPad+highlightGap;
     const w=Math.max(CW,...notes[i].map(l=>l.width+16));
@@ -1567,7 +1571,6 @@ function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls='',detail=null){
     const rows=new Map();for(const p of placed.filter(p=>p.i>=start&&p.i<=end)){const b=rows.get(p.y);if(b)b.w=p.x+p.w-b.x;else rows.set(p.y,{x:p.x,y:p.y,w:p.w});}
     s+=[...rows.values()].map(b=>`<rect class="alg-highlight" x="${b.x-highlightPad+1}" y="${b.y+1}" width="${b.w+highlightPad*2-2}" height="${step-2}" rx="6" fill="#deecf8" fill-opacity=".85" stroke="#a9c9e4"/>`).join('');
   }
-  if(detail?.grip)s+=`<g class="grip-tag"><rect x="0" y="${CH+2}" width="${left-8}" height="24" rx="4" fill="#ddf2ef"/><text x="${(left-8)/2}" y="${CH+18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#175d56">${esc(detail.grip)}</text></g>`;
   s+=placed.map(({m,i,x,y,w})=>`<g class="alg-move" transform="translate(${x},${y})">${draw?(w===CW?draw(m,CW,CH):`<g transform="translate(${(w-CW)/2},0)">${draw(m,CW,CH)}</g>`):''}<text class="move-label" x="${w/2}" y="${CH+LBL*.675}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${LBL*.625}" font-weight="700" fill="#000">${esc(lab(m))}</text>${notes[i].map((l,n)=>`<text class="finger-note" x="${w/2}" y="${CH+LBL+14+n*18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#111">${esc(l.text)}</text>`).join('')}${detail?.regrips?.includes(i)?`<line class="regrip-line" x1="${w+9}" x2="${w+9}" y1="${CH+2}" y2="${CH+LBL+noteH-2}" stroke="#555" stroke-width="3"/>`:''}</g>`).join('');
   return s+'</svg>';
 }
@@ -2018,11 +2021,28 @@ function toggleHighlight(a,start,end,count){
   const range=[Math.min(start,end),Math.max(start,end)],ranges=highlightRanges(a,count),i=ranges.findIndex(r=>r[0]===range[0]&&r[1]===range[1]);
   if(i>=0)ranges.splice(i,1);else ranges.push(range);a.highlights=highlightRanges({highlights:ranges},count);
 }
+function gripTag(grip){
+  const kind=grip==='up'||grip==='down'?grip:'home';
+  return `<span class="grip-tag grip-${kind}">${{home:'홈그립',up:'업그립',down:'다운그립'}[kind]}</span>`;
+}
+function alignFingerRows(sheet){
+  const rows=[...sheet.querySelectorAll('.finger-layout .finger-print')].map(svg=>{
+    const move=svg.querySelector('.alg-move'),label=move.querySelector('.move-label');
+    return {svg,box:svg.viewBox.baseVal,origin:move.transform.baseVal.getItem(0).matrix.e+label.x.baseVal.getItem(0).value};
+  });
+  if(!rows.length)return;
+  const anchor=Math.max(...rows.map(r=>r.origin));
+  const width=Math.max(...rows.map(r=>r.box.width+r.box.x-r.origin+anchor));
+  for(const {svg,box,origin}of rows){
+    svg.setAttribute('viewBox',`${origin-anchor} 0 ${width} ${box.height}`);
+    svg.setAttribute('width',width);
+  }
+}
 function fingerHTML(key,alg,diagram=false,finger=true){
   const a=sharedEntry(key),p=parseAlg(alg);if(p.bad.length||!p.moves.length)return esc(alg);
-  const grip=finger?(a?.grip==='up'?'업그립':a?.grip==='down'?'다운그립':''):'';
-  return notationSVG(p.moves,diagram?(m,w,h)=>`<g transform="scale(.5)">${moveDiagram(m,w*2,h*2,key.startsWith('oll2:')||key.startsWith('pbl2:')?2:3)}</g>`:null,diagram?62:28,diagram?66:0,28,1,'finger-print',{
-    grip,notes:finger?a?.notes:{},regrips:finger?a?.regrips:[],highlights:highlightRanges(a,p.moves.length)});
+  const svg=notationSVG(p.moves,diagram?(m,w,h)=>`<g transform="scale(.5)">${moveDiagram(m,w*2,h*2,key.startsWith('oll2:')||key.startsWith('pbl2:')?2:3)}</g>`:null,diagram?62:28,diagram?66:0,28,1,'finger-print',{
+    notes:finger?a?.notes:{},regrips:finger?a?.regrips:[],highlights:highlightRanges(a,p.moves.length)});
+  return finger?`<div class="finger-layout">${gripTag(a?.grip)}<div class="finger-formula">${svg}</div></div>`:svg;
 }
 function workbookAlg(key,alg,diagram,finger){
   if(!alg.trim())return '<span>공식 관리에서 공식을 추가하세요.</span>';
@@ -2176,6 +2196,7 @@ function renderTable(){
   document.getElementById('tablebox').innerHTML = !rows.length
     ? '<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>'
     : `<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th><th>셋업</th>${reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`;
+  alignFingerRows(document.getElementById('tablebox'));
   refreshTitle();
 }
 const diagCb=document.getElementById('diagMode');
@@ -2256,8 +2277,8 @@ function plBtn(){
   b.textContent=PL.playing?'⏸ 일시정지':(PL.i>=PL.moves.length?'↺ 다시 재생':'▶ 재생');
 }
 function plChips(){
-  const a=sharedEntry(PL.libraryKey),grip=a?(a.grip==='up'?'업그립':a.grip==='down'?'다운그립':''):'';
-  document.getElementById('plChips').innerHTML=(grip?`<span class="grip-mark">${grip}</span>`:'')+notationHTML(PL.moves,(m,k)=>
+  const a=sharedEntry(PL.libraryKey);
+  document.getElementById('plChips').innerHTML=(a?gripTag(a.grip):'')+notationHTML(PL.moves,(m,k)=>
     `<button class="chip2${k<PL.i?' done':''}${k===PL.i?' now':''}${k===PL.selected?' selected':''}${k===PL.highlightStart?' range-start':''}" data-mv="${k}" title="이 기호의 핑거 설명 편집"><b>${esc(lab(m))}</b>${a?.notes[k]?`<small>${esc(a.notes[k])}</small>`:''}</button>${a?.regrips.includes(k)?'<span class="regrip-mark" title="홈그립으로 리그립">|</span>':''}`,highlightRanges(a,PL.moves.length));
   document.querySelectorAll('#plChips [data-mv]').forEach(b=>b.onclick=()=>{
     plPause();PL.selected=+b.dataset.mv;
@@ -2585,6 +2606,7 @@ function pllTable(){
   const body=o.order==='cat'?PLL_CATS.map(cat=>{const group=rows.filter(d=>d[1]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${cat}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
   pllEl('meta').textContent=`${PP.name} · ${rows.length}개 케이스`;
   pllEl('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
+  alignFingerRows(pllEl('tablebox'));
   pllTitle();
 }
 function pllRefresh(){
@@ -2784,6 +2806,7 @@ function createTwoBook(kind,title){
     const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}</td><td class="pic">${twoPicture(key)}</td><td class="alg">${workbookAlg(key,alg,o.diag,o.finger)}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
     const body=o.order==='cat'&&kind==='oll3'?[...new Set(OLL_DATA.map(d=>d[3]))].map(cat=>{const group=rows.filter(d=>d[3]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${esc(cat)}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
     b.el('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
+    alignFingerRows(b.el('tablebox'));
   };
   b.render=()=>{
     b.el('profSel').innerHTML=b.profiles.map(p=>`<option value="${p.id}"${p===b.current?' selected':''}>${esc(p.name)}</option>`).join('');

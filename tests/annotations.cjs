@@ -10,7 +10,7 @@ const code=part('const RAD=','/* ========== 상태')+part('const applyM=','const
  part('function parseAlg(','/* ========== 도해 SVG')+part('function wrapFingerNote(','function drawAlg(')+
  part('const PLL_CENTER=','const PLL_CACHE=')+part('const OLL_DATA=','function twoPicture(')+
  part('const LIBKEY=','let fingerOn=')+part('function orientOrtegaL(','const TWO_BOOKS=');
-const c=vm.runInNewContext(code+';({LIB,sharedEntry,orientOrtegaL,highlightRanges,toggleHighlight,fingerHTML,notationHTML,parseAlg,twoCase,applyMoveTo,cornerColors,FKEYS})',{
+const c=vm.runInNewContext(code+';({LIB,sharedEntry,orientOrtegaL,highlightRanges,toggleHighlight,fingerHTML,alignFingerRows,notationHTML,parseAlg,twoCase,applyMoveTo,cornerColors,FKEYS})',{
  localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v)},crypto:{randomUUID:()=> 'new'},toast(){},esc:s=>s.replace(/&/g,'&amp;').replace(/</g,'&lt;'),moveDiagram:()=>'<path class="demo-diagram"/>'});
 const rotated=c.applyMoveTo(c.twoCase(old,'oll2').base,{letter:'y'});
 c.orientOrtegaL();const a=c.sharedEntry('oll2:L'),next=c.twoCase(a.text,'oll2');
@@ -26,14 +26,25 @@ assert.equal(JSON.stringify(c.highlightRanges({highlights:[[0,1],[2,99],[-1,2],[
 a.highlights=[[0,3]];
 const diagram=c.fingerHTML('oll2:L',"(F' R / U R') // U' R' F R",true);
 assert.equal((diagram.match(/demo-diagram/g)||[]).length,8);assert.equal((diagram.match(/class="move-label"/g)||[]).length,8);
-assert(diagram.includes('class="grip-tag"'));assert(diagram.includes('class="finger-note"'));assert(diagram.includes('class="regrip-line"'));assert(diagram.includes('class="alg-highlight"'));assert(diagram.includes('class="alg-subchunk"'));
+assert(diagram.includes('class="grip-tag grip-down"'));assert(diagram.includes('class="finger-note"'));assert(diagram.includes('class="regrip-line"'));assert(diagram.includes('class="alg-highlight"'));assert(diagram.includes('class="alg-subchunk"'));
 const labels=[...diagram.matchAll(/class="move-label" x="([^"]+)" y="([^"]+)"/g)];assert(labels.every(l=>l[2]===labels[0][2]),'notes must not change label height');
 const label0=labels[0][1],note0=diagram.match(/class="finger-note" x="([^"]+)"/)[1];assert.equal(label0,note0,'note and label must share their center');
 assert(!c.fingerHTML('oll2:L',a.text,false,false).includes('finger-note'));
-a.grip='home';assert(!c.fingerHTML('oll2:L',a.text,true).includes('grip-tag'),'home grip must not have a tag');
-assert(!c.fingerHTML('oll2:L',a.text,false).includes('홈그립'));
-a.grip='up';assert(c.fingerHTML('oll2:L',a.text,true).includes('업그립'));
-a.grip='down';assert(c.fingerHTML('oll2:L',a.text,true).includes('다운그립'));
+for(const [grip,label]of [['home','홈그립'],['up','업그립'],['down','다운그립']]){
+ a.grip=grip;
+ for(const diagram of [false,true]){const markup=c.fingerHTML('oll2:L',a.text,diagram);assert(markup.includes(`class="grip-tag grip-${grip}"`));assert(markup.includes(label));assert(markup.indexOf('grip-tag')<markup.indexOf('<svg'),'fixed tag must be outside the scaled diagram');}
+ assert(!c.fingerHTML('oll2:L',a.text,true,false).includes('grip-tag'),'finger option controls all grip tags');
+}
+assert.match(html,/\.grip-tag\{[^}]*width:72px;flex:0 0 72px/);
+assert.match(html,/\.finger-layout\{[^}]*align-items:center;gap:8px/);
+const svgs=[[500,94,14],[700,112,42]].map(([width,height,origin])=>({
+ viewBox:{baseVal:{x:0,width,height}},
+ querySelector:()=>({transform:{baseVal:{getItem:()=>({matrix:{e:0}})}},querySelector:()=>({x:{baseVal:{getItem:()=>({value:origin})}}})}),
+ setAttribute(k,v){if(k==='viewBox'){const [x,,width,height]=v.split(' ').map(Number);Object.assign(this.viewBox.baseVal,{x,width,height});}else this.width=+v;}
+}));
+const sheet={querySelectorAll:()=>svgs};c.alignFingerRows(sheet);
+assert.deepEqual(svgs.map(s=>[s.viewBox.baseVal.x,s.width,s.viewBox.baseVal.height]),[[-28,700,94],[0,700,112]]);
+const aligned=JSON.stringify(svgs);c.alignFingerRows(sheet);assert.equal(JSON.stringify(svgs),aligned,'alignment is idempotent');c.alignFingerRows({querySelectorAll:()=>[]});
 for(const text of ["R U R' U'","(R U / R' U') // F R","R (U R') / F"]){
  const markup=c.notationHTML(c.parseAlg(text).moves,undefined,[[0,3]]);
  assert.equal((markup.match(/<span/g)||[]).length,(markup.match(/<\/span>/g)||[]).length);
