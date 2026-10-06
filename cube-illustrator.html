@@ -229,15 +229,15 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .chip2 small,.finger-token small{display:block;font-size:11px;font-weight:400;white-space:normal;max-width:130px;line-height:1.4;margin-top:4px}
 .chip2 small{text-align:center;font-family:Arial,sans-serif}
 .regrip-mark{display:inline-block;font-size:32px;font-weight:400;margin:0 8px;color:#555;vertical-align:middle}
-.grip-tag{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:72px;flex:0 0 72px;padding:5px 7px;border-radius:5px;font:700 12px/18px Arial,sans-serif;white-space:nowrap;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.grip-tag{display:inline-flex;align-items:center;justify-content:center;box-sizing:border-box;width:72px;flex:none;padding:5px 7px;border-radius:5px;font:700 12px/18px Arial,sans-serif;white-space:nowrap;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .grip-home{background:#e8edf3;color:#455467}
 .grip-down{background:#ddf2ef;color:#175d56}
 .grip-up{background:#fff0cc;color:#7a5315}
-.finger-layout{display:flex;align-items:center;gap:8px;min-width:0}
-.finger-formula{flex:1;min-width:0}
+.finger-layout{display:flex;flex-direction:column;align-items:flex-start;gap:6px;min-width:0}
+.finger-formula{width:100%;min-width:0}
 .finger-print{max-width:100%;height:auto;display:block;color:#111}
-#plChips{flex-wrap:nowrap;align-items:center;gap:8px}
-#plChips>.notation{width:auto;min-width:0;flex:1}
+#plChips{flex-wrap:nowrap;flex-direction:column;align-items:flex-start;gap:6px}
+#plChips>.notation{width:100%;min-width:0;flex:none}
 #fingerNote{background:#f6f6f6;color:#111;width:100%;font-family:inherit}
 #fingerEditor{font-size:12px}
 .picker-choice{display:block;margin:8px 0;padding:8px;border:1px solid var(--line);border-radius:6px;cursor:pointer}
@@ -255,6 +255,9 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .sheet2 th{border-bottom:2px solid #111;font-size:12px}
 .sheet2 tr{break-inside:avoid;page-break-inside:avoid}
 .sheet2 .pic{width:120px}.sheet2 .pic svg{width:110px;height:auto;display:block}
+:is(#oll2sheet,#pbl2sheet) .pic{width:128px}
+:is(#oll2sheet,#pbl2sheet) .pic svg{width:118px}
+:is(#oll2sheet,#pbl2sheet) :is(th,td){padding:5px 8px}
 .sheet2 .alg{font-family:ui-monospace,monospace;font-size:14px}
 .sheet2 .alg svg{max-width:100%;height:auto;display:block}
 .sheet2 .idx{font-weight:700;white-space:nowrap}
@@ -275,7 +278,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.3</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.4</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -2800,12 +2803,12 @@ function createTwoBook(kind,title){
   b.save=()=>{try{localStorage.setItem(kind+'Workbook.v1',JSON.stringify({profiles:b.profiles.map(p=>({...p,sel:[...p.sel]})),current:b.current.id,options:b.options}));}catch(e){toast('저장 공간을 확인해 주세요');}};
   for(const [n,,algs] of BOOK_DATA[kind])if(!LIB.cases[kind+':'+n])sharedAdd(kind+':'+n,algs[0]);
   b.table=()=>{
-    const rows=BOOK_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options;
+    const rows=BOOK_DATA[kind].filter(d=>b.current.sel.has(d[0])),o=b.options,showNames=kind!=='oll2'&&kind!=='pbl2';
     const heading=b.el('sheet').querySelector('h1');if(!heading.textContent.trim()||/^\d{6} .* (오르테가|Ortega|OLL)/.test(heading.textContent)){const d=new Date();heading.textContent=`${String(d.getFullYear()).slice(2)}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')} ${b.current.name} ${title} 복습`;}
     b.el('meta').textContent=`${b.current.name} · ${rows.length}개 케이스`;
-    const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr><td class="idx">${esc(label)}</td><td class="pic">${twoPicture(key)}</td><td class="alg">${workbookAlg(key,alg,o.diag,o.finger)}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
+    const row=([n,label])=>{const key=kind+':'+n,alg=sharedText(key);return `<tr>${showNames?`<td class="idx">${esc(label)}</td>`:''}<td class="pic"${showNames?'':` aria-label="${pllAttr(label)}"`}>${twoPicture(key)}</td><td class="alg">${workbookAlg(key,alg,o.diag,o.finger)}</td>${o.reviewOn?`<td><div class="rv">${'<span></span>'.repeat(o.reviewN)}</div></td>`:''}</tr>`;};
     const body=o.order==='cat'&&kind==='oll3'?[...new Set(OLL_DATA.map(d=>d[3]))].map(cat=>{const group=rows.filter(d=>d[3]===cat);return group.length?`<tr class="cathead"><td colspan="${o.reviewOn?4:3}">${esc(cat)}</td></tr>`+group.map(row).join(''):'';}).join(''):rows.map(row).join('');
-    b.el('tablebox').innerHTML=rows.length?`<table><thead><tr><th>케이스</th><th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
+    b.el('tablebox').innerHTML=rows.length?`<table><thead><tr>${showNames?'<th>케이스</th>':''}<th>그림</th><th>공식</th>${o.reviewOn?'<th>복습</th>':''}</tr></thead><tbody>${body}</tbody></table>`:'<div class="empty">위에서 케이스를 선택하면 표가 만들어집니다.</div>';
     alignFingerRows(b.el('tablebox'));
   };
   b.render=()=>{

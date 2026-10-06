@@ -35,8 +35,8 @@ for(const [grip,label]of [['home','홈그립'],['up','업그립'],['down','다�
  for(const diagram of [false,true]){const markup=c.fingerHTML('oll2:L',a.text,diagram);assert(markup.includes(`class="grip-tag grip-${grip}"`));assert(markup.includes(label));assert(markup.indexOf('grip-tag')<markup.indexOf('<svg'),'fixed tag must be outside the scaled diagram');}
  assert(!c.fingerHTML('oll2:L',a.text,true,false).includes('grip-tag'),'finger option controls all grip tags');
 }
-assert.match(html,/\.grip-tag\{[^}]*width:72px;flex:0 0 72px/);
-assert.match(html,/\.finger-layout\{[^}]*align-items:center;gap:8px/);
+assert.match(html,/\.grip-tag\{[^}]*width:72px;flex:none/);
+assert.match(html,/\.finger-layout\{[^}]*flex-direction:column;align-items:flex-start;gap:6px/);
 const svgs=[[500,94,14],[700,112,42]].map(([width,height,origin])=>({
  viewBox:{baseVal:{x:0,width,height}},
  querySelector:()=>({transform:{baseVal:{getItem:()=>({matrix:{e:0}})}},querySelector:()=>({x:{baseVal:{getItem:()=>({value:origin})}}})}),
