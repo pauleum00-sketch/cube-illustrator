@@ -222,7 +222,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .finger-board .chip2 b{display:block;text-align:center;line-height:28px}
 .finger-board .notation>span{vertical-align:top}
 .finger-board .notation .chunk,.finger-board .notation .subchunk{align-items:flex-start}
-.notation .highlight-span{display:inline-flex;gap:4px;align-items:flex-start;background:#deecf8;border:1px solid #a9c9e4;border-radius:7px;padding:4px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
+.notation .highlight-span{display:inline-flex;gap:4px;align-items:flex-start;background:#deecf8;border:1px solid #a9c9e4;border-radius:7px;padding:4px 10px;margin:0 6px;print-color-adjust:exact;-webkit-print-color-adjust:exact}
 .finger-board .notation :is(.chunk,.subchunk,.highlight-span){padding-top:0;padding-bottom:0}
 .finger-board .notation .highlight-span{border:0;box-shadow:inset 0 0 0 1px #a9c9e4}
 .finger-board .chip2.range-start{outline:2px dashed #397bb5;outline-offset:2px}
@@ -265,7 +265,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.21.1</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.21.2</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -1533,12 +1533,16 @@ function wrapFingerNote(text){
 function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls='',detail=null){
   const notes=moves.map((m,i)=>detail?wrapFingerNote(detail.notes?.[i]):[]);
   const noteH=Math.max(0,...notes.map(lines=>lines.length))*18;
+  const highlights=detail?.highlights||[],highlightPad=10,highlightGap=6;
   const step=CH+LBL+noteH,placed=[],subdivided=notationSubchunks(moves),left=detail?.grip?detail.grip.length*12+24:0;let x=left,y=0,W=0;
   moves.forEach((m,i)=>{
     if(m.lineBefore){x=left;y+=step;}
     else if(m.spaceBefore&&x)x+=CW*((m.chunk&&moves[i-1]?.chunk===m.chunk)?0.06:0.28);
+    if(highlights.some(([start,end])=>i===start||(m.lineBefore&&i>start&&i<=end)))x+=highlightPad+highlightGap;
     const w=Math.max(CW,...notes[i].map(l=>l.width+16));
-    placed.push({m,i,x,y,w});x+=w+(detail?.regrips?.includes(i)?18:0);W=Math.max(W,x);
+    placed.push({m,i,x,y,w});x+=w+(detail?.regrips?.includes(i)?18:0);
+    if(highlights.some(([start,end])=>i===end||(moves[i+1]?.lineBefore&&i>=start&&i<end)))x+=highlightPad+highlightGap;
+    W=Math.max(W,x);
   });
   const H=y+step,boxes=[],subboxes=[];
   placed.forEach(p=>{if(!p.m.chunk)return;const last=boxes.at(-1);
@@ -1553,9 +1557,9 @@ function notationSVG(moves,draw,CW,CH,LBL,scale=1,cls='',detail=null){
   let s=`<svg class="${cls}" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W*scale}" height="${H*scale}">`;
   s+=boxes.map(b=>`<rect class="alg-chunk" x="${b.x+2}" y="${b.y+2}" width="${b.w-4}" height="${step-4}" rx="8" fill="#e6e6e6" stroke="#ccc"/>`).join('');
   s+=subboxes.map(b=>`<rect class="alg-subchunk" x="${b.x+8}" y="${b.y+8}" width="${b.w-16}" height="${step-16}" rx="5" fill="#c6c6c6" stroke="#aaa"/>`).join('');
-  for(const [start,end] of detail?.highlights||[]){
+  for(const [start,end] of highlights){
     const rows=new Map();for(const p of placed.filter(p=>p.i>=start&&p.i<=end)){const b=rows.get(p.y);if(b)b.w=p.x+p.w-b.x;else rows.set(p.y,{x:p.x,y:p.y,w:p.w});}
-    s+=[...rows.values()].map(b=>`<rect class="alg-highlight" x="${b.x+1}" y="${b.y+1}" width="${b.w-2}" height="${step-2}" rx="6" fill="#deecf8" fill-opacity=".85" stroke="#a9c9e4"/>`).join('');
+    s+=[...rows.values()].map(b=>`<rect class="alg-highlight" x="${b.x-highlightPad+1}" y="${b.y+1}" width="${b.w+highlightPad*2-2}" height="${step-2}" rx="6" fill="#deecf8" fill-opacity=".85" stroke="#a9c9e4"/>`).join('');
   }
   if(detail?.grip)s+=`<g class="grip-tag"><rect x="0" y="${CH+2}" width="${left-8}" height="24" rx="4" fill="#ddf2ef"/><text x="${(left-8)/2}" y="${CH+18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" font-weight="700" fill="#175d56">${esc(detail.grip)}</text></g>`;
   s+=placed.map(({m,i,x,y,w})=>`<g class="alg-move" transform="translate(${x},${y})">${draw?(w===CW?draw(m,CW,CH):`<g transform="translate(${(w-CW)/2},0)">${draw(m,CW,CH)}</g>`):''}<text class="move-label" x="${w/2}" y="${CH+LBL*.675}" text-anchor="middle" font-family="Arial,Helvetica,sans-serif" font-size="${LBL*.625}" font-weight="700" fill="#000">${esc(lab(m))}</text>${notes[i].map((l,n)=>`<text class="finger-note" x="${w/2}" y="${CH+LBL+14+n*18}" text-anchor="middle" font-family="Arial,sans-serif" font-size="12" fill="#111">${esc(l.text)}</text>`).join('')}${detail?.regrips?.includes(i)?`<line class="regrip-line" x1="${w+9}" x2="${w+9}" y1="${CH+2}" y2="${CH+LBL+noteH-2}" stroke="#555" stroke-width="3"/>`:''}</g>`).join('');

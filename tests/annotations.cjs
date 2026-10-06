@@ -39,4 +39,12 @@ for(const text of ["R U R' U'","(R U / R' U') // F R","R (U R') / F"]){
  assert.equal((markup.match(/<span/g)||[]).length,(markup.match(/<\/span>/g)||[]).length);
 }
 assert.equal((c.notationHTML(c.parseAlg("R U R' U'").moves,undefined,[[0,3]]).match(/highlight-span/g)||[]).length,1);
+a.grip='home';a.notes={};a.regrips=[];a.highlights=[];
+const plain=c.fingerHTML('oll2:L','R U F L');assert(plain.includes('viewBox="0 0 112 28"'));
+a.highlights=[[1,2]];const spaced=c.fingerHTML('oll2:L','R U F L');
+assert(spaced.includes('viewBox="0 0 144 28"'));
+assert(spaced.includes('class="alg-highlight" x="35" y="1" width="74"'));
+assert.deepEqual([...spaced.matchAll(/class="alg-move" transform="translate\(([^,]+),([^\)]+)\)"/g)].map(m=>[+m[1],+m[2]]),[[0,0],[44,0],[72,0],[116,0]]);
+const broken=c.fingerHTML('oll2:L','R U // F L');
+assert.equal((broken.match(/class="alg-highlight"/g)||[]).length,2);assert(broken.includes('translate(16,28)'));
 console.log('Annotations: L starts after y with IDs/notes/regrips/highlights backed up and shifted once; highlight toggle/merge; integrated diagram/label/note centers and explicit grouping/breaks OK');
