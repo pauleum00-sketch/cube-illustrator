@@ -259,18 +259,19 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 @media print{
   header,.side,.foot,.no-print{display:none !important}
   body{background:#fff}
-  main{padding:0;max-width:none}
+  /* 브라우저 머리말/꼬리말 공간은 없애고, 교본 여백은 매 페이지 안쪽에 반복한다. */
+  main{padding:14mm 0;max-width:none;box-decoration-break:clone;-webkit-box-decoration-break:clone}
   :is(#sheet,#pllsheet){border-radius:0;padding:0;margin:0}
   #pllsheet{overflow:visible}
   .sheet2{padding:0;border-radius:0;overflow:visible;margin:0}
-  @page{margin:14mm 12mm}
+  @page{margin:0 12mm}
 }
 </style>
 
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.0</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.1</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
