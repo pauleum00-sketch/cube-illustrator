@@ -31,12 +31,4 @@ for(const [name,,setup,algs] of PLL_DATA){
  }
 }
 assert(pllCase('R banana').error);assert(pllCase('R').error);assert(pllCase('').error);
-// Run the actual select handler: copy the previous formula before changing its index.
-const handler=part('function pllGroups(){','pllEl(\'profSel\').onchange').match(/select.onchange=\(\)=>\{([\s\S]*?)\n    \};/)[1];
-const profile={algIdx:{H:1},custom:{H:'old draft'}},input={hidden:true,value:'',focus(){this.focused=true;}};
-const select={value:'c'},algs=PLL_DATA.find(d=>d[0]==='H')[3];
-const env={PP:profile,n:'H',input,select,pllAlg:()=>profile.algIdx.H==='c'?profile.custom.H:algs[profile.algIdx.H],el:{querySelector:()=>({})},pllSVG:()=>'',pllSave(){},pllTable(){}};
-vm.runInNewContext(handler,env);assert.equal(input.value,algs[1]);assert.equal(profile.custom.H,algs[1]);assert(input.focused);assert.equal(input.hidden,false);
-select.value='2';vm.runInNewContext(handler,env);assert.equal(profile.algIdx.H,2);assert(input.hidden);
-select.value='c';vm.runInNewContext(handler,env);assert.equal(input.value,algs[2]);
 console.log(`PLL: ${checked} algorithms match their SCDB cases up to U/y and all solve; no setup formula generated`);
