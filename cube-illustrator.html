@@ -183,6 +183,8 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .phead b{font-size:16px}
 .pstage{background:#fff;border-radius:12px;padding:10px;display:flex;justify-content:center}
 .pstage svg{width:100%;max-width:380px;height:auto;display:block}
+.pstage.orbit{cursor:grab;touch-action:none;user-select:none}
+.pstage.orbit.dragging{cursor:grabbing}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .prbox{background:#0c1e35;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
 .prlabel{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -278,7 +280,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.22.4</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.23.0</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -520,6 +522,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
     <div class="phead">
       <b id="plTitle">F2L</b>
       <span style="flex:1"></span>
+      <button class="btn" id="plResetView" title="기본 각도로 되돌리기" aria-label="기본 각도로 되돌리기" hidden>↺</button>
       <button class="btn gh" id="plClose">닫기 ✕</button>
     </div>
     <div class="pstage" id="plStage"></div>
@@ -2243,7 +2246,8 @@ document.getElementById('printBtn').onclick=()=>printSheet();
 document.getElementById('pdfBtn').onclick=()=>printSheet();
 /* ========== 공식 재생 플레이어 ========== */
 const PLW=420, PLH=380, PLEYE=[[1,0,0],[0,1,0],[0,0,1]];
-let PL=null, plLastSpeed=1;
+let PL=null, plLastSpeed=1, plViewDrag=null;
+const plStageEl=document.getElementById('plStage');
 function playT(view){                    /* 층이 45° 돌아도 안 잘리는 고정 프레임 */
   const c=[];
   for(const x of [-1.5,1.5])for(const y of [-1.5,1.5])for(const z of [-1.5,1.5]) c.push([x,y,z]);
@@ -2273,8 +2277,34 @@ const plEase=p=>p<.5?2*p*p:1-2*(1-p)*(1-p);
 /* 탭이 숨겨지면 requestAnimationFrame이 멈춰 재생이 얼어붙는다. 그때는 타이머로 돌린다 */
 const plFrame=cb=>document.hidden?setTimeout(()=>cb(performance.now()),16):requestAnimationFrame(cb);
 function plRender(geo,ang){
-  document.getElementById('plStage').innerHTML=playSVG(PL.st,PL.view,PL.T,geo,ang,PL.two);
+  PL.geo=geo;PL.ang=ang;                 /* 시점 변경 중에도 현재 층의 재생 각도 유지 */
+  plStageEl.innerHTML=playSVG(PL.st,PL.view,PL.T,geo,ang,PL.two);
 }
+plStageEl.addEventListener('pointerdown',e=>{
+  if(!PL?.canOrbit||plViewDrag||e.button!==0)return;
+  e.preventDefault();
+  plViewDrag={id:e.pointerId,x:e.clientX,y:e.clientY};
+  plStageEl.setPointerCapture(e.pointerId);plStageEl.classList.add('dragging');
+});
+plStageEl.addEventListener('pointermove',e=>{
+  if(!plViewDrag||e.pointerId!==plViewDrag.id)return;
+  const dx=e.clientX-plViewDrag.x,dy=e.clientY-plViewDrag.y;
+  plViewDrag.x=e.clientX;plViewDrag.y=e.clientY;
+  const R=matMul(rotM('x',dy*.0075),rotM('y',dx*.0075));
+  PL.view=matMul(CMT,matMul(R,matMul(CM,PL.view)));
+  PL.T=playT(PL.view);plRender(PL.geo,PL.ang);
+});
+function plEndViewDrag(e){
+  if(!plViewDrag||(e&&e.pointerId!==plViewDrag.id))return;
+  const id=plViewDrag.id;plViewDrag=null;plStageEl.classList.remove('dragging');
+  if(plStageEl.hasPointerCapture(id))plStageEl.releasePointerCapture(id);
+  PL.view=orthonormalize(PL.view);PL.T=playT(PL.view);plRender(PL.geo,PL.ang);
+}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])plStageEl.addEventListener(type,plEndViewDrag);
+document.getElementById('plResetView').onclick=()=>{
+  if(!PL?.canOrbit)return;
+  plEndViewDrag();PL.view=PL.homeView;PL.T=playT(PL.view);plRender(PL.geo,PL.ang);
+};
 function plBtn(){
   const b=document.getElementById('plToggle');
   b.textContent=PL.playing?'⏸ 일시정지':(PL.i>=PL.moves.length?'↺ 다시 재생':'▶ 재생');
@@ -2363,8 +2393,10 @@ function openPlayer(n){
     `${slotSide==='fl'?'Front Left(왼손)':'Front Right'} · 정면 ${f2lColorName(f2lFront(slotSide))} · 기호를 선택해 핑거 설명을 편집합니다`,f2lKey(n));
 }
 function startPlayer(title,alg,moves,base,view,setup,subtitle,libraryKey='',two=false){
-  plPause();
-  PL={alg,moves,base,st:base,view,T:playT(view),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0,libraryKey,two,selected:0,highlighting:false,highlightStart:null};
+  plEndViewDrag();plPause();
+  PL={alg,moves,base,st:base,view,homeView:view,T:playT(view),canOrbit:/^(pll|oll[23]|pbl2):/.test(libraryKey),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0,libraryKey,two,selected:0,highlighting:false,highlightStart:null};
+  plStageEl.classList.toggle('orbit',PL.canOrbit);
+  document.getElementById('plResetView').hidden=!PL.canOrbit;
   document.getElementById('plTitle').textContent=title;
   document.getElementById('plSetup').textContent=setup;
   document.getElementById('plSetup').parentElement.hidden=!setup;
@@ -2374,7 +2406,7 @@ function startPlayer(title,alg,moves,base,view,setup,subtitle,libraryKey='',two=
   plChips(); plRender(null,0); plBtn();fingerEditorUI();
   document.getElementById('player').hidden=false;
 }
-function closePlayer(){ plPause(); PL=null; document.getElementById('player').hidden=true; }
+function closePlayer(){ plEndViewDrag();plPause(); PL=null; document.getElementById('player').hidden=true; }
 document.getElementById('plClose').onclick=closePlayer;
 document.getElementById('player').onclick=e=>{if(e.target.id==='player')closePlayer();};
 document.getElementById('plToggle').onclick=()=>{PL&&(PL.playing?plPause():plPlay());};
