@@ -57,4 +57,15 @@ for(let i=0;i<100;i++){pointer('pointerdown');pointer('pointermove',1,170+i,150-
 for(const row of ctx.player().view)assert(Math.abs(Math.hypot(...row)-1)<1e-12);
 assert.match(html,/id="plResetView"[^>]*aria-label="기본 각도로 되돌리기"/);
 assert.match(html,/\.pstage\.orbit\{[^}]*touch-action:none/);
-console.log('Player view: four topics, live/paused pose preservation, angle-only reset, pointer capture/cancel/reopen, stable matrices; F2L unchanged');
+vm.runInContext(part('function playT(','function playSVG('),ctx);
+const math=vm.runInContext('({applyM,matMul})',ctx),corners=[];
+for(const x of [-1.5,1.5])for(const y of [-1.5,1.5])for(const z of [-1.5,1.5])corners.push([x,y,z]);
+const upsideDown=math.matMul(ctx.rotM('x',7*Math.PI/4),ctx.rotM('y',Math.PI/9)),T=ctx.playT(upsideDown,true);
+for(const ax of ['x','y','z'])for(let a=0;a<360;a+=5)for(const q of corners){
+  const p=T(math.applyM(upsideDown,math.applyM(ctx.rotM(ax,a*Math.PI/180),q)));
+  assert(p[0]>=0&&p[0]<=420&&p[1]>=0&&p[1]<=380,'No clipping while orbiting upside down');
+}
+const legacy=corners.concat(['x','y','z'].flatMap(ax=>corners.map(q=>math.applyM(ctx.rotM(ax,Math.PI/4),q))));
+const oldFit=ctx.fit(legacy,420,380,8),f2lFit=ctx.playT(ctx.eye);
+for(const q of corners)assert.deepEqual(f2lFit(q),oldFit(q));
+console.log('Player view: four topics, pose preservation, angle-only reset, pointer lifecycle, stable matrices, upside-down frame; F2L view/size unchanged');

@@ -2248,11 +2248,12 @@ document.getElementById('pdfBtn').onclick=()=>printSheet();
 const PLW=420, PLH=380, PLEYE=[[1,0,0],[0,1,0],[0,0,1]];
 let PL=null, plLastSpeed=1, plViewDrag=null;
 const plStageEl=document.getElementById('plStage');
-function playT(view){                    /* 층이 45° 돌아도 안 잘리는 고정 프레임 */
+function playT(view,free=false){          /* 자유 시점은 중간 회전 각도까지 여유 확보 */
   const c=[];
   for(const x of [-1.5,1.5])for(const y of [-1.5,1.5])for(const z of [-1.5,1.5]) c.push([x,y,z]);
   let pts=c.slice();
-  ['x','y','z'].forEach(ax=>{const M=rotM(ax,45*RAD); c.forEach(q=>pts.push(applyM(M,q)));});
+  for(const a of free?[15,30,45,60,75]:[45])
+    ['x','y','z'].forEach(ax=>{const M=rotM(ax,a*RAD); c.forEach(q=>pts.push(applyM(M,q)));});
   return fit(pts.map(q=>applyM(view,q)),PLW,PLH,8);
 }
 function playSVG(st,view,T,geo,ang,two=false){
@@ -2292,18 +2293,18 @@ plStageEl.addEventListener('pointermove',e=>{
   plViewDrag.x=e.clientX;plViewDrag.y=e.clientY;
   const R=matMul(rotM('x',dy*.0075),rotM('y',dx*.0075));
   PL.view=matMul(CMT,matMul(R,matMul(CM,PL.view)));
-  PL.T=playT(PL.view);plRender(PL.geo,PL.ang);
+  PL.T=playT(PL.view,true);plRender(PL.geo,PL.ang);
 });
 function plEndViewDrag(e){
   if(!plViewDrag||(e&&e.pointerId!==plViewDrag.id))return;
   const id=plViewDrag.id;plViewDrag=null;plStageEl.classList.remove('dragging');
   if(plStageEl.hasPointerCapture(id))plStageEl.releasePointerCapture(id);
-  PL.view=orthonormalize(PL.view);PL.T=playT(PL.view);plRender(PL.geo,PL.ang);
+  PL.view=orthonormalize(PL.view);PL.T=playT(PL.view,true);plRender(PL.geo,PL.ang);
 }
 for(const type of ['pointerup','pointercancel','lostpointercapture'])plStageEl.addEventListener(type,plEndViewDrag);
 document.getElementById('plResetView').onclick=()=>{
   if(!PL?.canOrbit)return;
-  plEndViewDrag();PL.view=PL.homeView;PL.T=playT(PL.view);plRender(PL.geo,PL.ang);
+  plEndViewDrag();PL.view=PL.homeView;PL.T=playT(PL.view,true);plRender(PL.geo,PL.ang);
 };
 function plBtn(){
   const b=document.getElementById('plToggle');
@@ -2394,7 +2395,8 @@ function openPlayer(n){
 }
 function startPlayer(title,alg,moves,base,view,setup,subtitle,libraryKey='',two=false){
   plEndViewDrag();plPause();
-  PL={alg,moves,base,st:base,view,homeView:view,T:playT(view),canOrbit:/^(pll|oll[23]|pbl2):/.test(libraryKey),i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0,libraryKey,two,selected:0,highlighting:false,highlightStart:null};
+  const canOrbit=/^(pll|oll[23]|pbl2):/.test(libraryKey);
+  PL={alg,moves,base,st:base,view,homeView:view,T:playT(view,canOrbit),canOrbit,i:0,k:0,playing:false,speed:plLastSpeed,stopAt:null,gen:0,libraryKey,two,selected:0,highlighting:false,highlightStart:null};
   plStageEl.classList.toggle('orbit',PL.canOrbit);
   document.getElementById('plResetView').hidden=!PL.canOrbit;
   document.getElementById('plTitle').textContent=title;
