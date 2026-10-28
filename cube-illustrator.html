@@ -185,6 +185,14 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 .pstage svg{width:100%;max-width:380px;height:auto;display:block}
 .pstage.orbit{cursor:grab;touch-action:none;user-select:none}
 .pstage.orbit.dragging{cursor:grabbing}
+#p10 .card{max-width:860px;margin:0 auto}
+#crossScramble,#crossAnswer{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:clamp(20px,3vw,28px);line-height:1.7;overflow-wrap:anywhere}
+#crossScramble{background:#0c1e35;border:1px solid var(--line);border-radius:12px;padding:18px;margin:14px 0;min-height:86px}
+#crossAnswer{color:var(--teal);margin-top:12px}
+#crossStage{margin-top:16px}
+#crossStage svg{max-width:420px}
+#crossStage[hidden]{display:none}
+#crossStage:focus-visible{outline:3px solid var(--teal);outline-offset:3px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:12px}
 .prbox{background:#0c1e35;border:1px solid var(--line);border-radius:12px;padding:18px 20px}
 .prlabel{font-size:11px;letter-spacing:1.2px;text-transform:uppercase;color:var(--muted);font-weight:700}
@@ -280,7 +288,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
 <div class="app">
 <aside class="side no-print">
   <h1><span class="a">3D Cube</span><span class="b"> Simulator</span></h1>
-  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.23.0</span></div>
+  <div class="sub">큐브 학습 도구 모음<span class="ver">v1.24.0</span></div>
   <nav>
     <button class="tool-link" id="t1" aria-selected="true">큐브 시뮬레이터</button>
     <button class="tool-link" id="t2" aria-selected="false">회전기호 그림 생성기</button>
@@ -289,6 +297,7 @@ kbd{background:#0c1e35;border:1px solid var(--line);border-radius:5px;padding:1p
       <div class="nav-collapse" id="nav3Children" inert><div class="nav-content"><div class="nav-branch">
         <button class="nav-toggle" aria-expanded="false" aria-controls="cfopChildren">CFOP</button>
         <div class="nav-collapse" id="cfopChildren" inert><div class="nav-content navleaves">
+          <button id="t10" aria-selected="false">Cross trainer</button>
           <button id="t3" data-topic="f2l" aria-selected="false">F2L</button>
           <button id="t9" data-topic="oll3" aria-selected="false">OLL</button>
           <button id="t5" data-topic="pll" aria-selected="false">PLL</button>
@@ -1696,20 +1705,21 @@ const TOPICS={f2l:{label:'3×3 / CFOP / F2L',learn:3,practice:4},oll3:{label:'3�
 let activeTab=1,dashboardTopic='f2l',dashboardMode='learn';
 function tab(n){
   document.querySelectorAll('main>.panel').forEach(p=>p.classList.toggle('on',p.id==='p'+n));
-  const learning=n>2;
+  const learning=n>2&&n!==10;
   document.querySelectorAll('[data-topic]').forEach(b=>b.setAttribute('aria-selected',learning&&b.dataset.topic===dashboardTopic));
-  for(const i of [1,2])document.getElementById('t'+i).setAttribute('aria-selected',i===n);
+  for(const i of [1,2,10])document.getElementById('t'+i).setAttribute('aria-selected',i===n);
   document.getElementById('lessonHeader').hidden=!learning;
   document.getElementById('lessonTitle').textContent=TOPICS[dashboardTopic].label;
   for(const [id,mode] of [['learnMode','learn'],['practiceMode','practice']])document.getElementById(id).setAttribute('aria-selected',dashboardMode===mode);
   activeTab=n;persist();
+  if(n===10&&!crossProblem)crossNew();
   if(n===4) prRefresh();}
 function selectTopic(topic,mode='learn'){
   dashboardTopic=topic;dashboardMode=mode;
   if(mode==='practice'&&topic!=='f2l')setPracticeTopic(topic);
   tab(TOPICS[topic][mode]);
 }
-for(const i of [1,2])document.getElementById('t'+i).onclick=()=>tab(i);
+for(const i of [1,2,10])document.getElementById('t'+i).onclick=()=>tab(i);
 document.querySelectorAll('nav .nav-toggle').forEach(button=>button.onclick=()=>{
   const open=button.getAttribute('aria-expanded')!=='true';
   button.setAttribute('aria-expanded',open);
@@ -1783,7 +1793,8 @@ function loadLocal(){
     if(typeof d.trans==='boolean') document.getElementById('trans').checked=d.trans;
     if(typeof d.trans2==='boolean') document.getElementById('trans2').checked=d.trans2;
     if(d.view==='top'||d.view==='3d') setView(d.view);
-    if(d.tab>2){
+    if(d.tab===10)tab(10);
+    else if(d.tab>2){
       const topic=Object.hasOwn(TOPICS,d.dashboardTopic)?d.dashboardTopic:({3:'f2l',4:'f2l',5:'pll',6:'oll2',7:'pbl2',8:'oll2',9:'oll3'}[d.tab]||'f2l');
       selectTopic(topic,d.dashboardMode==='practice'||[4,8].includes(d.tab)?'practice':'learn');
     }else if(d.tab===2)tab(2);
@@ -2989,6 +3000,134 @@ for(const id of ['p3','p5','p6','p7','p9']){
   const hint=document.querySelector('#'+id+' .row .hint');if(hint)hint.textContent='과외생별로 케이스를 분류합니다. 공식과 핑거 설명은 공용으로 저장됩니다.';
 }
 addEventListener('keydown',e=>{if(activeTab!==8||!document.getElementById('player').hidden||/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(document.activeElement.tagName))return;if(e.key===' '){twoPrEl('prSolve').click();e.preventDefault();}else if(e.key==='Enter'||e.key==='ArrowRight'){twoPracticeNext();e.preventDefault();}});
+
+/* ========== Cross trainer: 4개 엣지의 정확한 최단 거리 (HTM) ========== */
+const CROSS_MOVES=['U',"U'",'U2','D',"D'",'D2','F',"F'",'F2','B',"B'",'B2','R',"R'",'R2','L',"L'",'L2'].map(s=>parseAlg(s).moves[0]);
+const CROSS_EDGES=[];
+for(const f of FKEYS)for(let r=0;r<3;r++)for(let c=0;c<3;c++)if((r+c)%2===1){
+  const key=stickerPos(f,r,c).map(Math.sign).join(',');
+  let edge=CROSS_EDGES.find(e=>e.key===key);
+  if(!edge){edge={key,cells:[]};CROSS_EDGES.push(edge);}edge.cells.push([f,r,c]);
+}
+const CROSS_CELLS=CROSS_EDGES.flatMap(e=>e.cells);
+const CROSS_TARGETS=CROSS_CELLS.flatMap(([f],i)=>f==='D'?[i]:[]);
+const CROSS_GOAL=CROSS_TARGETS.reduce((code,slot,i)=>code+slot*24**i,0);
+const CROSS_BASES={};
+for(const alg of ['', 'x2', "x'", 'x', 'z', "z'"]){const st=parseAlg(alg).moves.reduce(applyMoveTo,mkState());CROSS_BASES[st.D[1][1]]=st;}
+let crossTable=null;
+function crossStep(code,move){
+  const t=crossTable.turns[move];
+  const a=code%24,b=Math.floor(code/24)%24,c=Math.floor(code/576)%24,d=Math.floor(code/13824);
+  return t[a]+24*t[b]+576*t[c]+13824*t[d];
+}
+function crossBuild(){
+  if(crossTable)return crossTable;
+  const labels=Object.fromEntries(FKEYS.map(f=>[f,[0,1,2].map(r=>[0,1,2].map(c=>f+r+c))]));
+  const turns=CROSS_MOVES.map(m=>{
+    const moved=applyMoveTo(labels,m),t=new Uint8Array(24);
+    CROSS_CELLS.forEach(([f,r,c],dest)=>{const src=CROSS_CELLS.findIndex(([g,y,x])=>g+y+x===moved[f][r][c]);t[src]=dest;});return t;
+  });
+  const dist=new Uint8Array(24**4).fill(255),queue=new Uint32Array(190080),layers=[[CROSS_GOAL]];
+  crossTable={turns,dist,layers};dist[CROSS_GOAL]=0;queue[0]=CROSS_GOAL;
+  let tail=1;
+  for(let head=0;head<tail;head++){
+    const code=queue[head],depth=dist[code]+1;
+    for(let m=0;m<18;m++){const next=crossStep(code,m);if(dist[next]!==255)continue;
+      dist[next]=depth;queue[tail++]=next;(layers[depth]??=[]).push(next);
+    }
+  }
+  return crossTable;
+}
+function crossSolution(code){
+  const moves=[];
+  while(crossTable.dist[code]>0){
+    const choices=[];
+    for(let m=0;m<18;m++)if(crossTable.dist[crossStep(code,m)]===crossTable.dist[code]-1)choices.push(m);
+    const m=choices[Math.floor(Math.random()*choices.length)];moves.push(CROSS_MOVES[m]);code=crossStep(code,m);
+  }return moves;
+}
+function crossGenerate(depth,previous){
+  crossBuild();const layer=crossTable.layers[depth];let code;
+  do{code=layer[Math.floor(Math.random()*layer.length)];}while(code===previous&&layer.length>1);
+  const solution=crossSolution(code),easy=invMoves(solution),mixed=[];let current=CROSS_GOAL,last='';
+  for(let i=0;i<18;i++){
+    let m;do{m=Math.floor(Math.random()*18);}while(CROSS_MOVES[m].letter===last);
+    last=CROSS_MOVES[m].letter;mixed.push(CROSS_MOVES[m]);current=crossStep(current,m);
+  }
+  return {code,solution,easy,normal:[...mixed,...crossSolution(current),...easy]};
+}
+function crossSolved(color){
+  const st=mkState(true),full=CROSS_BASES[color];st.D[1][1]=color;
+  CROSS_EDGES.filter(e=>e.cells.some(([f])=>f==='D')).forEach(e=>e.cells.forEach(([f,r,c])=>st[f][r][c]=full[f][r][c]));return st;
+}
+const CROSS_KEY='crossTrainer.v1',crossOptions={color:'W',depth:4,easy:true,visual:false};
+try{const s=JSON.parse(localStorage.getItem(CROSS_KEY)||'null');
+  if(s&&Object.hasOwn(CROSS_BASES,s.color))crossOptions.color=s.color;
+  if(Number.isInteger(s?.depth)&&s.depth>=1&&s.depth<=7)crossOptions.depth=s.depth;
+  for(const k of ['easy','visual'])if(typeof s?.[k]==='boolean')crossOptions[k]=s[k];
+}catch(e){}
+const CROSS_VIEW=matMul(CMT,matMul(rotM('x',-2*PH),CM));
+let crossProblem=null,crossBusy=false,crossView=CROSS_VIEW,crossDrag=null;
+document.querySelector('main').insertAdjacentHTML('beforeend',`<section class="panel" id="p10"><div class="card">
+  <h2>Cross trainer</h2><p class="hint">선택한 크로스 색을 D(아래)에 놓고 스크램블하세요. U2도 1수로 셉니다.</p>
+  <div class="row" style="margin-top:16px;gap:12px">
+    <label>크로스 색 <select id="crossColor" class="alginput" style="width:auto">${['W','Y','R','O','G','B'].map(c=>`<option value="${c}">${COLORS[c][1]}</option>`).join('')}</select></label>
+    <label>최단 해답 <select id="crossDepth" class="alginput" style="width:auto">${[1,2,3,4,5,6,7].map(n=>`<option value="${n}">${n}수</option>`).join('')}</select></label>
+    <label class="chk"><input type="checkbox" id="crossEasy"> 쉬운 스크램블</label>
+  </div>
+  <p class="hint" id="crossOrientation"></p><div id="crossScramble" aria-label="스크램블"></div>
+  <div class="row"><button class="btn pri" id="crossNew">새로운 스크램블</button><button class="btn" id="crossShow" aria-expanded="false" aria-controls="crossAnswer">해답 보기</button>
+    <label class="chk"><input type="checkbox" id="crossVisual"> 3D visualizer</label><button class="btn" id="crossReset" title="기본 각도로 되돌리기" aria-label="기본 각도로 되돌리기" hidden>↺</button></div>
+  <p class="hint" id="crossStatus" role="status" aria-live="polite"></p><div id="crossAnswer" hidden></div>
+  <div class="pstage orbit" id="crossStage" tabindex="0" role="group" aria-label="크로스 3D 큐브. 드래그 또는 방향키로 시점을 돌립니다." hidden></div>
+  <p class="hint" id="crossVisualHint" hidden>크로스 엣지 4개와 선택한 센터만 색상 표시 · 드래그/방향키로 시점 변경 · ↺ 기본 각도</p>
+</div></section>`);
+const crossEl=id=>document.getElementById('cross'+id),crossStage=crossEl('Stage');
+function crossSave(){try{localStorage.setItem(CROSS_KEY,JSON.stringify(crossOptions));}catch(e){toast('Cross trainer 설정을 저장하지 못했습니다');}}
+function crossDraw(){
+  crossEl('Color').value=crossOptions.color;crossEl('Depth').value=String(crossOptions.depth);
+  crossEl('Easy').checked=crossOptions.easy;crossEl('Visual').checked=crossOptions.visual;
+  const full=CROSS_BASES[crossOptions.color];
+  crossEl('Orientation').textContent=`아래 D: ${COLORS[crossOptions.color][1]} · 정면 F: ${COLORS[full.F[1][1]][1]} · 오른쪽 R: ${COLORS[full.R[1][1]][1]}`;
+  crossStage.hidden=crossEl('Reset').hidden=crossEl('VisualHint').hidden=!crossOptions.visual;
+  if(!crossProblem)return;
+  crossEl('Scramble').textContent=(crossOptions.easy?crossProblem.easy:crossProblem.normal).map(lab).join(' ');
+  if(crossOptions.visual){const st=crossProblem.easy.reduce(applyMoveTo,crossSolved(crossOptions.color));crossStage.innerHTML=playSVG(st,crossView,playT(crossView,true),null,0);}
+}
+async function crossNew(){
+  if(crossBusy)return;crossBusy=true;
+  crossEl('New').disabled=crossEl('Depth').disabled=true;crossEl('Show').disabled=true;crossEl('Answer').hidden=true;
+  crossEl('Show').textContent='해답 보기';crossEl('Show').setAttribute('aria-expanded','false');
+  crossEl('Status').textContent=crossTable?'새 문제를 만드는 중…':'최단 거리 표를 준비하는 중…';
+  try{
+    await new Promise(resolve=>setTimeout(resolve,0));
+    crossProblem=crossGenerate(crossOptions.depth,crossProblem?.code);crossEndDrag();crossView=CROSS_VIEW;
+    crossEl('Answer').textContent=crossProblem.solution.map(lab).join(' ');
+    crossDraw();crossEl('Status').textContent=`최단 해답 ${crossOptions.depth}수 · 쉬운 스크램블은 해답의 역순입니다.`;
+  }catch(e){
+    crossProblem=null;crossTable=null;crossEl('Scramble').textContent='';crossStage.innerHTML='';
+    crossEl('Status').textContent='문제를 만들지 못했습니다. 새로운 스크램블을 다시 눌러 주세요';
+  }
+  finally{crossBusy=false;crossEl('New').disabled=crossEl('Depth').disabled=false;crossEl('Show').disabled=!crossProblem;}
+}
+crossEl('New').onclick=crossNew;
+crossEl('Color').onchange=e=>{crossOptions.color=e.target.value;crossSave();crossDraw();};
+crossEl('Depth').onchange=e=>{crossOptions.depth=+e.target.value;crossSave();crossNew();};
+for(const [id,key] of [['Easy','easy'],['Visual','visual']])crossEl(id).onchange=e=>{crossOptions[key]=e.target.checked;crossEndDrag();crossSave();crossDraw();};
+crossEl('Show').onclick=()=>{const answer=crossEl('Answer');answer.hidden=!answer.hidden;crossEl('Show').textContent=answer.hidden?'해답 보기':'해답 숨기기';crossEl('Show').setAttribute('aria-expanded',String(!answer.hidden));};
+function crossRotate(dx,dy){
+  const R=matMul(rotM('x',dy*.0075),rotM('y',dx*.0075));crossView=matMul(CMT,matMul(R,matMul(CM,crossView)));crossDraw();
+}
+crossStage.onpointerdown=e=>{if(crossDrag||e.button!==0)return;e.preventDefault();crossDrag={id:e.pointerId,x:e.clientX,y:e.clientY};crossStage.setPointerCapture(e.pointerId);crossStage.classList.add('dragging');};
+crossStage.onpointermove=e=>{if(!crossDrag||e.pointerId!==crossDrag.id)return;const dx=e.clientX-crossDrag.x,dy=e.clientY-crossDrag.y;crossDrag.x=e.clientX;crossDrag.y=e.clientY;crossRotate(dx,dy);};
+function crossEndDrag(e){
+  if(!crossDrag||(e&&e.pointerId!==crossDrag.id))return;const id=crossDrag.id;crossDrag=null;crossStage.classList.remove('dragging');
+  if(crossStage.hasPointerCapture(id))crossStage.releasePointerCapture(id);crossView=orthonormalize(crossView);
+}
+for(const type of ['pointerup','pointercancel','lostpointercapture'])crossStage.addEventListener(type,crossEndDrag);
+crossStage.onkeydown=e=>{const d={ArrowLeft:[-20,0],ArrowRight:[20,0],ArrowUp:[0,-20],ArrowDown:[0,20]}[e.key];if(d){e.preventDefault();crossRotate(...d);}};
+crossEl('Reset').onclick=()=>{crossEndDrag();crossView=CROSS_VIEW;crossDraw();};
+crossDraw();
 
 loadLocal();
 updateAngleUI();
